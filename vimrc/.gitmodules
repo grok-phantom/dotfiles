@@ -1,0 +1,18 @@
+[submodule "my_plugins/YouCompleteMe"]
+	path = my_plugins/YouCompleteMe
+	url = git@github.com:ycm-core/YouCompleteMe.git
+[submodule "my_plugins/vim-autopep8"]
+	path = my_plugins/vim-autopep8
+	url = git@github.com:tell-k/vim-autopep8.git
+[submodule "my_plugins/supertab"]
+	path = my_plugins/supertab
+	url = git@github.com:ervandew/supertab.git
+[submodule "my_plugins/vim-clang-format"]
+	path = my_plugins/vim-clang-format
+	url = git@github.com:rhysd/vim-clang-format.git
+[submodule "my_plugins/ultisnips"]
+	path = my_plugins/ultisnips
+	url = git@github.com:SirVer/ultisnips.git
+[submodule "my_plugins/vim-cpp-modern"]
+	path = my_plugins/vim-cpp-modern
+	url = git@github.com:bfrg/vim-cpp-modern.git
