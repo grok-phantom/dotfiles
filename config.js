@@ -31,7 +31,7 @@ module.exports = {
     // better, more recent grep
     'homebrew/dupes/grep',
     // https://github.com/jkbrzt/httpie
-    'httpie',
+    //'httpie',
     // jq is a sort of JSON grep
     'jq',
     // Mac App Store CLI: https://github.com/mas-cli/mas
