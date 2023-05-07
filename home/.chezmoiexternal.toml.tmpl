@@ -30,6 +30,27 @@
     stripComponents = 1
     exact = true
 
+[".vim_runtime/my_plugins/jedi-vim"]
+    type = "archive"
+    url = "https://github.com/davidhalter/jedi-vim/archive/master.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "168h"
+    exact = true
+
+[".vim_runtime/my_plugins/jedi-vim/pythonx/jedi"]
+    type = "archive"
+    url = "https://github.com/davidhalter/jedi/archive/master.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "168h"
+    exact = true
+
+[".vim_runtime/my_plugins/jedi-vim/pythonx/parso"]
+    type = "archive"
+    url = "https://github.com/davidhalter/parso/archive/master.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "168h"
+    exact = true
+
 {{- if and (not .ephemeral) (not .headless) }}
 {{-   $fontDir := "" }}
 {{-   if eq .chezmoi.os "darwin" }}
