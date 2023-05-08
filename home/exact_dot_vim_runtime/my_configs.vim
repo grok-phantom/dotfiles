@@ -17,3 +17,6 @@ let g:ale_fixers = {
 \}
 let g:ale_python_flake8_options = '--max-line-length=88 --extend-ignore=E203'
 map <F6> :ALEFix<CR>
+
+call pathogen#infect()
+
