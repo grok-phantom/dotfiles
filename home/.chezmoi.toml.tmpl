@@ -55,6 +55,8 @@
 {{-   end -}}
 {{- end -}}
 
+{{- $company = promptBoolOnce . "company" "company" -}}
+
 {{- $email := "grok.phantom@gmail.com" -}}
 {{- if $company -}}
 {{-   $email = "chenlei4@sensetime.com" -}}
