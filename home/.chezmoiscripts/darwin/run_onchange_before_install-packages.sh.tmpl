@@ -2,6 +2,12 @@
 
 set -eufo pipefail
 
+export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
+export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
+export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
+export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
+export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+
 {{ $brews := list
      "bat"
      "curl"
@@ -12,6 +18,7 @@ set -eufo pipefail
      "git"
      "git-lfs"
      "ranger"
+     "autojump"
      "jq"
      "ripgrep"
      "tmux"
@@ -23,12 +30,13 @@ set -eufo pipefail
      "visual-studio-code" -}}
 
 brew bundle --no-lock --file=/dev/stdin <<EOF
-{{ range ($brews | sortAlpha | uniq) -}}
-brew "{{ . }}"
+{{ range $name := ($brews | sortAlpha | uniq) }}
+brew "{{ $name }}"
 {{ end -}}
-{{ range ($casks | sortAlpha | uniq) -}}
-{{ if (joinPath "/Applications"  "{{ . }}" | lstat)}}
-cask "{{ . }}"
+{{ range $name := ($casks | sortAlpha | uniq) }}
+{{ $appname := (output "brew" "info"  $name  "--json=v2"  | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }} 
+{{ if  not (joinPath "/Applications"  $appname | lstat)}}
+cask "{{ $appname }}"
 {{ end -}}
 {{ end -}}
 EOF
