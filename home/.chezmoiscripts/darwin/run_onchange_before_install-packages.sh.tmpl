@@ -27,6 +27,8 @@ brew bundle --no-lock --file=/dev/stdin <<EOF
 brew "{{ . }}"
 {{ end -}}
 {{ range ($casks | sortAlpha | uniq) -}}
+{{ if (joinPath "/Applications"  "{{ . }}" | lstat)}}
 cask "{{ . }}"
+{{ end -}}
 {{ end -}}
 EOF
