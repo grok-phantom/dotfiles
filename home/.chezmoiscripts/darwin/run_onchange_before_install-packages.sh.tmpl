@@ -36,7 +36,7 @@ brew "{{ $name }}"
 {{ range $name := ($casks | sortAlpha | uniq) }}
 {{ $appname := (output "brew" "info"  $name  "--json=v2"  | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }} 
 {{ if  not (joinPath "/Applications"  $appname | lstat)}}
-cask "{{ $appname }}"
+cask "{{ $name }}"
 {{ end -}}
 {{ end -}}
 EOF
