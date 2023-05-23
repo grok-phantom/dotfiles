@@ -20,3 +20,6 @@ map <F6> :ALEFix<CR>
 
 call pathogen#infect()
 
+nmap <leader>c <Plug>OSCYankOperator
+nmap <leader>cc <leader>c_
+vmap <leader>c <Plug>OSCYankVisual
