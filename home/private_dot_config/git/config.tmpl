@@ -1,3 +1,9 @@
 [user]
 	name = Lei Chen
 	email = {{ .email }}
+{{ if .company }}
+[lfs]
+    url = https://lfs.sensetime.com/
+[credential]
+    helper = store
+{{ end -}}
