@@ -4,6 +4,34 @@
 {{- $company := false -}}{{/* true if this machine is used for Company */}}
 {{- $headless := false -}}{{/* true if this machine does not have a screen and keyboard */}}
 {{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
+{{- $homebrew := true -}}
+{{- "" -}}
+
+{{/* Default data values */}}
+{{- $email := "grok.phantom@gmail.com" -}}
+{{- $companyName := "" -}}
+{{- $hostname := .chezmoi.hostname -}}
+{{- "" -}}
+
+{{/* Prompt */}}
+{{- $docker = promptBoolOnce . "docker" "Is this a docker env?" -}}
+{{- $company = promptBoolOnce . "company" "Is this a compny machine?" -}}
+{{- $ephemeral = promptBoolOnce . "ephemeral" "Is this ephemeral?" -}}
+{{- $headless = promptBoolOnce . "headless" "Is this headless?" -}}
+{{- $personal = promptBoolOnce . "personal" "Is this personal?" -}}
+{{- "" -}}
+
+{{/* Setup for company */}}
+{{- if $company -}}
+{{-   $email = "chenlei4@sensetime.com" -}}
+{{-   $companyName = "sensetime" -}}
+{{- end -}}
+{{- "" -}}
+
+{{/* Setup for ephemeral */}}
+{{- if $ephemeral -}}
+{{-   $homebrew = false -}}
+{{- end -}}
 {{- "" -}}
 
 {{- $osID := .chezmoi.os -}}
@@ -11,55 +39,9 @@
 {{-   $osID = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
 {{- end -}}
 
-{{/* detect GitHub codespaces, VSCode remote containers, Docker containers, Multipass VMs, and Vagrant boxes */}}
-{{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vagrant" "vscode") -}}
+{{- if or (eq .chezmoi.username "root" $companyName) -}}
 {{-   $ephemeral = true -}}
 {{-   $headless = true -}}
-{{- end -}}
-
-{{/* work around unreliable hostname on darwin */}}
-{{- $hostname := .chezmoi.hostname -}}
-{{- if eq .chezmoi.os "darwin" -}}
-{{-   $computerName := output "scutil" "--get" "ComputerName" | trim -}}
-{{-   if eq $computerName "Tom’s MacBook Air" -}}
-{{-     $hostname = "toms-mba" -}}
-{{-   else -}}
-{{-     $hostname = $computerName -}}
-{{-   end -}}
-{{- end -}}
-
-{{- if eq .chezmoi.os "windows" -}}
-{{-   $ephemeral = true -}}
-{{- end -}}
-
-{{- if not $ephemeral -}}
-{{-   if eq $hostname "legion" -}}
-{{-     $docker = true -}}
-{{-     $flarm = true -}}
-{{-   else if eq $hostname "raspberrypi4" -}}
-{{-     $headless = true -}}
-{{-     $personal = true -}}
-{{-   else if eq $hostname "thinkpad" -}}
-{{-     $personal = true -}}
-{{-   else if eq $hostname "toms-mba" -}}
-{{-     $personal = true -}}
-{{-   else if stdinIsATTY -}}
-{{-     $headless = promptBoolOnce . "headless" "headless" -}}
-{{-     $ephemeral = promptBoolOnce . "ephemeral" "ephemeral" -}}
-{{-     if not $ephemeral -}}
-{{-       $docker = promptBoolOnce . "docker" "docker" -}}
-{{-     end -}}
-{{-   else -}}
-{{-     $ephemeral = true -}}
-{{-     $headless = true -}}
-{{-   end -}}
-{{- end -}}
-
-{{- $company = promptBoolOnce . "company" "company" -}}
-
-{{- $email := "grok.phantom@gmail.com" -}}
-{{- if $company -}}
-{{-   $email = "chenlei4@sensetime.com" -}}
 {{- end -}}
 
 [data]
@@ -71,3 +53,4 @@
     hostname = {{ $hostname | quote }}
     personal = {{ $personal }}
     osid = {{ $osID | quote }}
+    homebrew = {{ $homebrew }}
