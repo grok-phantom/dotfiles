@@ -54,7 +54,6 @@ plugins=(
   autojump
 )
 
-[[ -d $HOME/.zsh/completion ]] && fpath=($HOME/.zsh/completion $fpath)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -74,7 +73,6 @@ alias ls=exa
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-autoload -Uz compinit && compinit
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
