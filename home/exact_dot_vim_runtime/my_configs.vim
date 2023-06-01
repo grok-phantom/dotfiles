@@ -18,6 +18,8 @@ let g:ale_fixers = {
 let g:ale_python_flake8_options = '--max-line-length=88 --extend-ignore=E203'
 map <F6> :ALEFix<CR>
 
+let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
+
 call pathogen#infect()
 
 nmap <leader>c <Plug>OSCYankOperator
