@@ -7,3 +7,8 @@
 [credential]
     helper = store
 {{ end -}}
+{{- if not .ephemeral }}
+[url "git@github.com:grok-phantom/"]
+	insteadOf = https://github.com/grok-phantom/
+{{- end -}}
+{{/* vim: set filetype=gitconfig: */}}

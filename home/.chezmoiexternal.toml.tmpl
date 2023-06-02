@@ -82,17 +82,6 @@
     stripComponents = 1
     exact = true
 
-{{- $bwVersion := "2023.4.0" }}
-{{- $bwOS := "linux"}}
-{{- if eq .chezmoi.os "darwin" }}
-{{- $bwOS = "macos" }}
-{{- end }}
-
-[".local/bin/bw"]
-    type = "file"
-    url = "https://github.com/bitwarden/clients/releases/download/cli-v{{ $bwVersion }}/bw-{{ $bwOS }}-{{ $bwVersion }}.zip"
-    executable = true
-
 {{- if and (not .ephemeral) (not .headless) }}
 {{-   $fontDir := "" }}
 {{-   if eq .chezmoi.os "darwin" }}
