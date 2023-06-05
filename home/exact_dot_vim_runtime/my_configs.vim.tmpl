@@ -21,7 +21,11 @@ map <F6> :ALEFix<CR>
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
 
 call pathogen#infect()
+{{ if eq .chezmoi.os "linux" }}
+set rtp+=/home/linuxbrew/.linuxbrew/opt/fzf
+{{ end }}
 
 nmap <leader>c <Plug>OSCYankOperator
 nmap <leader>cc <leader>c_
 vmap <leader>c <Plug>OSCYankVisual
+{{- /* vim: set filetype=vim: */}}
