@@ -16,6 +16,7 @@ let g:ale_fixers = {
 \    '*': ['remove_trailing_lines', 'trim_whitespace']
 \}
 let g:ale_python_flake8_options = '--max-line-length=88 --extend-ignore=E203'
+let g:ale_c_clangformat_style_option = 'Google'
 map <F6> :ALEFix<CR>
 map <F8> :TagbarToggle<CR>
 
