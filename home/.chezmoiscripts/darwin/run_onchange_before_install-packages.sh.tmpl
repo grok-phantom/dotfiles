@@ -39,7 +39,7 @@ export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bott
      "neteasemusic"
      "visual-studio-code" -}}
 
-brew bundle --no-lock --file=/dev/stdin <<EOF
+/opt/homebrew/bin/brew bundle --no-lock --file=/dev/stdin <<EOF
 {{ range $name := ($brews | sortAlpha | uniq) }}
 brew "{{ $name }}"
 {{ end -}}
