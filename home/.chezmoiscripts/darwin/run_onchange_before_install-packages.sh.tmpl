@@ -46,7 +46,7 @@ brew bundle --no-lock --file=/dev/stdin <<EOF
 brew "{{ $name }}"
 {{ end -}}
 {{ range $name := ($casks | sortAlpha | uniq) }}
-{{ $appname := (output "brew" "info"  $name  "--json=v2"  | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }} 
+{{ $appname := (output "/opt/homebrew/bin/brew" "info"  $name  "--json=v2"  | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }} 
 {{ if  not (joinPath "/Applications"  $appname | lstat)}}
 cask "{{ $name }}"
 {{ end -}}
