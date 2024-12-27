@@ -11,7 +11,7 @@ export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bott
 {{ $brews := list
      "bat"
      "curl"
-     "exa"
+     "eza"
      "fd"
      "ffmpeg"
      "gh"
@@ -24,11 +24,19 @@ export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bott
      "the_silver_searcher"
      "ripgrep"
      "tmux"
+     "yazi"
+     "uv"
      "wget" -}}
 {{ $casks := list
-     "hammerspoon"
+     "google-chrome"
+     "obsidian"
+     "typora"
+     "zotero"
+     "discord"
+     "wezterm"
      "iterm2"
      "iina"
+     "neteasemusic"
      "visual-studio-code" -}}
 
 brew bundle --no-lock --file=/dev/stdin <<EOF

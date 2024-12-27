@@ -67,8 +67,9 @@ alias cat=batcat
 {{- if lookPath "fdfind" }}
 alias fd=fdfind
 {{- end }}
-{{- if lookPath "exa" }}
-alias ls=exa
+{{- if lookPath "eza" }}
+alias ll="eza -l -g --icons"
+alias ls="eza --icons"
 {{- end }}
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
@@ -94,7 +95,5 @@ export LANG=en_US.UTF-8
 export EDITOR='vim'
 export VISUAL=$EDITOR
 
-alias aws1424="aws --endpoint-url=http://sh1424ssd.ceph.sensebee.xyz --profile cluster1424"
-alias aws="aws --endpoint-url=http://sh40.ceph.sensebee.xyz --profile default"
 export PATH=/usr/local/cuda/bin:$PATH
 {{- /* vim: set filetype=zsh: */}}
