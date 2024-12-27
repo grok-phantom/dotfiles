@@ -89,7 +89,7 @@
     stripComponents = 1
     exact = true
 
-{{- if and (not .ephemeral) (not .headless) }}
+{{- if and (not .ephemeral) }}
 {{-   $fontDir := "" }}
 {{-   if eq .chezmoi.os "darwin" }}
 {{-     $fontDir = "Library/Fonts" }}
