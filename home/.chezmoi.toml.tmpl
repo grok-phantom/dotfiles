@@ -2,7 +2,6 @@
 {{- $docker := false -}}{{/* true if this machine should have Docker installed */}}
 {{- $ephemeral := false -}}{{/* true if this machine is ephemeral, e.g. a cloud or VM instance */}}
 {{- $company := false -}}{{/* true if this machine is used for Company */}}
-{{- $headless := false -}}{{/* true if this machine does not have a screen and keyboard */}}
 {{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
 {{- $homebrew := true -}}
 {{- "" -}}
@@ -17,7 +16,6 @@
 {{- $docker = promptBoolOnce . "docker" "Is this a docker env?" -}}
 {{- $company = promptBoolOnce . "company" "Is this a compny machine?" -}}
 {{- $ephemeral = promptBoolOnce . "ephemeral" "Is this ephemeral?" -}}
-{{- $headless = promptBoolOnce . "headless" "Is this headless?" -}}
 {{- $personal = promptBoolOnce . "personal" "Is this personal?" -}}
 {{- "" -}}
 
@@ -39,17 +37,12 @@
 {{-   $osID = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
 {{- end -}}
 
-{{- if or (eq .chezmoi.username "root" $companyName) -}}
-{{-   $ephemeral = true -}}
-{{-   $headless = true -}}
-{{- end -}}
 
 [data]
     docker = {{ $docker }}
     ephemeral = {{ $ephemeral }}
     email = {{ $email | quote }}
     company = {{ $company }}
-    headless = {{ $headless }}
     hostname = {{ $hostname | quote }}
     personal = {{ $personal }}
     osid = {{ $osID | quote }}
