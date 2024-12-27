@@ -8,6 +8,8 @@ export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.aliyun.com/homebrew/brew.git"
 export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.aliyun.com/homebrew/homebrew-core.git"
 export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bottles"
 
+alias brew="/opt/homebrew/bin/brew"
+
 {{ $brews := list
      "bat"
      "curl"
@@ -39,7 +41,7 @@ export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bott
      "neteasemusic"
      "visual-studio-code" -}}
 
-/opt/homebrew/bin/brew bundle --no-lock --file=/dev/stdin <<EOF
+brew bundle --no-lock --file=/dev/stdin <<EOF
 {{ range $name := ($brews | sortAlpha | uniq) }}
 brew "{{ $name }}"
 {{ end -}}
