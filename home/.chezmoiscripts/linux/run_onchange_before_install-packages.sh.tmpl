@@ -12,10 +12,6 @@
      "zsh" -}}
 {{ $classicSnaps := list -}}
 
-{{ if not .headless -}}
-{{   $packages = mustAppend $packages "xclip" -}}
-{{ end -}}
-
 {{ $sudo := "sudo " -}}
 {{ if eq .chezmoi.username "root" -}}
 {{   $sudo = "" -}}
