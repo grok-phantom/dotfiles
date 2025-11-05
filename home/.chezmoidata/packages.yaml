@@ -1,0 +1,44 @@
+packages:
+  darwin:
+    brews:
+      - ack
+      - autojump
+      - bat
+      - curl
+      - eza
+      - fd
+      - ffmpeg
+      - gh
+      - git
+      - git-lfs
+      - jq
+      - ranger
+      - ripgrep
+      - the_silver_searcher
+      - tmux
+      - uv
+      - wget
+      - yazi
+    casks:
+      - discord
+      - google-chrome
+      - iina
+      - iterm2
+      - neteasemusic
+      - obsidian
+      - typora
+      - visual-studio-code
+      - wezterm
+      - zotero
+  linux:
+    apt:
+      - ack
+      - autojump
+      - bat
+      - curl
+      - direnv
+      - git-lfs
+      - jq
+      - ranger
+      - zsh
+    snaps_classic: []

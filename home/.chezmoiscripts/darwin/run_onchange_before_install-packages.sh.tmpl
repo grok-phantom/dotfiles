@@ -1,3 +1,4 @@
+{{ if and (eq .chezmoi.os "darwin") (hasKey .packages "darwin") -}}
 #!/bin/bash
 
 set -eufo pipefail
@@ -8,45 +9,19 @@ export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.aliyun.com/homebrew/brew.git"
 export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.aliyun.com/homebrew/homebrew-core.git"
 export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bottles"
 
-{{ $brews := list
-     "bat"
-     "curl"
-     "eza"
-     "fd"
-     "ffmpeg"
-     "gh"
-     "git"
-     "git-lfs"
-     "ranger"
-     "autojump"
-     "jq"
-     "ack"
-     "the_silver_searcher"
-     "ripgrep"
-     "tmux"
-     "yazi"
-     "uv"
-     "wget" -}}
-{{ $casks := list
-     "google-chrome"
-     "obsidian"
-     "typora"
-     "zotero"
-     "discord"
-     "wezterm"
-     "iterm2"
-     "iina"
-     "neteasemusic"
-     "visual-studio-code" -}}
+{{- $darwin := index .packages "darwin" -}}
+{{- $brews := index $darwin "brews" -}}
+{{- $casks := index $darwin "casks" -}}
 
 /opt/homebrew/bin/brew bundle --no-lock --file=/dev/stdin <<EOF
-{{ range $name := ($brews | sortAlpha | uniq) }}
+{{- range $name := ($brews | sortAlpha | uniq) }}
 brew "{{ $name }}"
-{{ end -}}
-{{ range $name := ($casks | sortAlpha | uniq) }}
-{{ $appname := (output "/opt/homebrew/bin/brew" "info"  $name  "--json=v2"  | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }} 
-{{ if  not (joinPath "/Applications"  $appname | lstat)}}
+{{- end }}
+{{- range $name := ($casks | sortAlpha | uniq) }}
+{{-   $appname := (output "/opt/homebrew/bin/brew" "info" $name "--json=v2" | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }}
+{{-   if not (joinPath "/Applications" $appname | lstat) }}
 cask "{{ $name }}"
-{{ end -}}
-{{ end -}}
+{{-   end }}
+{{- end }}
 EOF
+{{ end -}}
