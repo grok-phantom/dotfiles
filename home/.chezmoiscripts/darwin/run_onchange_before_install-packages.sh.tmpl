@@ -18,10 +18,7 @@ export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.aliyun.com/homebrew/homebrew-bott
 brew "{{ $name }}"
 {{- end }}
 {{- range $name := ($casks | sortAlpha | uniq) }}
-{{-   $appname := (output "/opt/homebrew/bin/brew" "info" $name "--json=v2" | fromJsonc | jq ".casks[0].artifacts[] | if (.app) then .app[0] else empty end" | first ) }}
-{{-   if not (joinPath "/Applications" $appname | lstat) }}
 cask "{{ $name }}"
-{{-   end }}
 {{- end }}
 EOF
 {{ end -}}
