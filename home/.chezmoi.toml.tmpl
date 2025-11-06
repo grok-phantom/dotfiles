@@ -1,8 +1,6 @@
 {{/* boolean feature tags */}}
-{{- $docker := false -}}{{/* true if this machine should have Docker installed */}}
 {{- $ephemeral := false -}}{{/* true if this machine is ephemeral, e.g. a cloud or VM instance */}}
 {{- $company := false -}}{{/* true if this machine is used for Company */}}
-{{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
 {{- $homebrew := true -}}
 {{- "" -}}
 
@@ -13,10 +11,8 @@
 {{- "" -}}
 
 {{/* Prompt */}}
-{{- $docker = promptBoolOnce . "docker" "Is this a docker env?" -}}
 {{- $company = promptBoolOnce . "company" "Is this a compny machine?" -}}
 {{- $ephemeral = promptBoolOnce . "ephemeral" "Is this ephemeral?" -}}
-{{- $personal = promptBoolOnce . "personal" "Is this personal?" -}}
 {{- "" -}}
 
 {{/* Setup for company */}}
@@ -39,11 +35,9 @@
 
 
 [data]
-    docker = {{ $docker }}
     ephemeral = {{ $ephemeral }}
     email = {{ $email | quote }}
     company = {{ $company }}
     hostname = {{ $hostname | quote }}
-    personal = {{ $personal }}
     osid = {{ $osID | quote }}
     homebrew = {{ $homebrew }}

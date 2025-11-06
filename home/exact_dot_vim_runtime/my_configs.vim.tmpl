@@ -23,8 +23,10 @@ map <F8> :TagbarToggle<CR>
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
 
 call pathogen#infect()
-{{ $brew_prefix := (output "/opt/homebrew/bin/brew"  "--prefix" | trim) }}
+{{ if lookPath "brew" -}}
+{{ $brew_prefix := (output "brew" "--prefix" | trim) }}
 set rtp+={{ $brew_prefix }}/opt/fzf
+{{ end -}}
 
 nmap <leader>c <Plug>OSCYankOperator
 nmap <leader>cc <leader>c_
