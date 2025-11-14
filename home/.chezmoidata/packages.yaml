@@ -2,7 +2,6 @@ packages:
   darwin:
     brews:
       - ack
-      - autojump
       - bat
       - btop
       - curl
@@ -42,7 +41,6 @@ packages:
   linux:
     apt:
       - ack
-      - autojump
       - bat
       - btop
       - curl
