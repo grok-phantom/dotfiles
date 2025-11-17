@@ -3,9 +3,11 @@
 
 set -eufo pipefail
 
+
 {{- $darwin := index .packages "darwin" -}}
 {{- $brews := index $darwin "brews" -}}
 {{- $casks := index $darwin "casks" -}}
+
 
 /opt/homebrew/bin/brew bundle --file=/dev/stdin <<EOF
 {{- range $name := ($brews | sortAlpha | uniq) }}
