@@ -40,24 +40,23 @@ packages:
   linux:
     brews:
       - yazi
+      - btop
+      - eza
+      - lazygit
+      - zoxide
     apt:
       - ack
       - bat
-      - btop
       - curl
       - direnv
-      - eza
       - fd-find
       - git
       - git-lfs
       - htop
       - jq
-      - lazygit
-      - ranger
       - ripgrep
       - tmux
       - tldr
       - wget
       - zsh
-      - zoxide
     snaps_classic: []
