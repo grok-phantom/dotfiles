@@ -1,12 +1,6 @@
 [user]
 	name = Lei Chen
 	email = {{ .email }}
-{{ if .company }}
-[lfs]
-    url = https://lfs.sensetime.com/
-[credential]
-    helper = store
-{{ end -}}
 {{- if not .ephemeral }}
 [url "git@github.com:grok-phantom/"]
 	insteadOf = https://github.com/grok-phantom/

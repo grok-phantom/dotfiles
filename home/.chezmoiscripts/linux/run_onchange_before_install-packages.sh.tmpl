@@ -2,10 +2,21 @@
 {{- $linux := index .packages "linux" -}}
 {{- $apt := index $linux "apt" -}}
 {{- $classicSnaps := index $linux "snaps_classic" -}}
+{{- $brews := list -}}
+{{- if hasKey $linux "brews" -}}
+{{-   $brews = index $linux "brews" -}}
+{{- end -}}
 
 {{- $sudo := "sudo " -}}
 {{- if eq .chezmoi.username "root" -}}
 {{-   $sudo = "" -}}
+{{- end -}}
+
+{{- $brew := "" -}}
+{{- if lookPath "brew" -}}
+{{-   $brew = "brew" -}}
+{{- else if stat "/home/linuxbrew/.linuxbrew/bin/brew" -}}
+{{-   $brew = "/home/linuxbrew/.linuxbrew/bin/brew" -}}
 {{- end -}}
 
 #!/bin/bash
@@ -20,6 +31,12 @@ set -eufo pipefail
 {{- if and (lookPath "snap") (gt (len $classicSnaps) 0) }}
 {{-   range ($classicSnaps | sortAlpha | uniq) }}
 {{ $sudo }}snap install --classic {{ . }}
+{{-   end }}
+{{- end }}
+
+{{- if and .homebrew (gt (len $brews) 0) (ne $brew "") }}
+{{-   range ($brews | sortAlpha | uniq) }}
+{{ $brew }} install {{ . }}
 {{-   end }}
 {{- end }}
 

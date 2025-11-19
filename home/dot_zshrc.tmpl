@@ -46,6 +46,7 @@ HIST_STAMPS="yyyy-mm-dd"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
   git
+  eza
   extract
   zsh-vi-mode
   fast-syntax-highlighting
@@ -66,33 +67,32 @@ alias cat=batcat
 {{- if lookPath "fdfind" }}
 alias fd=fdfind
 {{- end }}
-{{- if lookPath "eza" }}
-alias ll="eza -l -g --icons"
-alias ls="eza --icons"
-{{- end }}
 {{- if lookPath "zoxide" }}
 eval "$(zoxide init zsh)"
 {{- end }}
 
+# OS-specific customization
+{{- if eq .chezmoi.os "darwin" }}
+# >>> mamba initialize >>>
+# !! Contents within this block are managed by 'mamba shell init' !!
+export MAMBA_EXE='/opt/homebrew/bin/mamba';
+export MAMBA_ROOT_PREFIX='/opt/homebrew/Caskroom/miniforge/base';
+__mamba_setup="$("$MAMBA_EXE" shell hook --shell zsh --root-prefix "$MAMBA_ROOT_PREFIX" 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__mamba_setup"
+else
+    alias mamba="$MAMBA_EXE"  # Fallback on help from mamba activate
+fi
+unset __mamba_setup
+# <<< mamba initialize <<<
+
+
+{{- else if eq .chezmoi.os "linux" }}
+# Linux-only config goes here
+{{- end }}
+
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-if [ -x "$HOME/Developer/miniconda3/bin/conda" ]; then
-    __conda_setup="$($HOME/Developer/miniconda3/bin/conda 'shell.zsh' 'hook' 2> /dev/null)"
-    if [ $? -eq 0 ]; then
-        eval "$__conda_setup"
-    else
-        if [ -f "$HOME/Developer/miniconda3/etc/profile.d/conda.sh" ]; then
-            . "$HOME/Developer/miniconda3/etc/profile.d/conda.sh"
-        else
-            export PATH="$HOME/Developer/miniconda3/bin:$PATH"
-        fi
-    fi
-    unset __conda_setup
-fi
-# <<< conda initialize <<<
 
 export LC_ALL=en_US.UTF-8  
 export LANG=en_US.UTF-8
