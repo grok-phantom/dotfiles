@@ -40,4 +40,27 @@ set -eufo pipefail
 {{-   end }}
 {{- end }}
 
+if command -v zsh >/dev/null 2>&1 && command -v chsh >/dev/null 2>&1; then
+  target_user="{{ .chezmoi.username }}"
+  current_shell="$(getent passwd "${target_user}" | cut -d: -f7 || true)"
+  if [ "${current_shell}" != "" ] && [ "${current_shell}" != "$(command -v zsh)" ]; then
+    {{ $sudo }}chsh -s "$(command -v zsh)" "${target_user}"
+  fi
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  target_user="{{ .chezmoi.username }}"
+  if docker info >/dev/null 2>&1; then
+    :
+  else
+    if id -nG "${target_user}" | grep -qw docker; then
+      echo "docker installed but ${target_user} cannot access it without sudo; ensure the Docker service is running."
+    else
+      {{ $sudo }}groupadd -f docker
+      {{ $sudo }}usermod -aG docker "${target_user}"
+      echo "added ${target_user} to docker group for passwordless docker usage"
+    fi
+  fi
+fi
+
 {{ end -}}
