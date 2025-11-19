@@ -24,11 +24,9 @@ packages:
       - yazi
       - zoxide
     casks:
-      - alfred
       - appcleaner
-      - cubox
       - discord
-      - dropover
+      - chatgpt
       - google-chrome
       - iina
       - iterm2
@@ -37,8 +35,11 @@ packages:
       - obsidian
       - typora
       - visual-studio-code
+      - wechat
       - zotero
   linux:
+    brews:
+      - yazi
     apt:
       - ack
       - bat

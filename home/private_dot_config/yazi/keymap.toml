@@ -1,0 +1,72 @@
+# ======================================================================
+# Normal Mode: Vim/Ranger 风格核心键位
+# ======================================================================
+[normal]
+
+# --- 导航 (Navigation) ---
+
+# j/k: 上下移动 (Down/Up)
+j = "move down"
+k = "move up"
+
+# h: 返回上级目录 (Go up/Left - Ranger's h)
+h = "dir_next"
+
+# l: 进入目录或打开文件 (Go in/Right - Ranger's l)
+l = "open"
+
+# G/gg: 跳转到文件列表的底部/顶部
+G = "seek -to=bottom"
+gg = "seek -to=top"
+
+# M: 跳转到屏幕中间
+M = "seek -to=middle"
+
+# C-d/C-u: 翻页 (Page Down/Up - Vim's Half Page)
+'<C-d>' = "seek -by=half_page -offset=1"
+'<C-u>' = "seek -by=half_page -offset=-1"
+
+
+# --- 动作 (Actions) ---
+
+# dd: 删除选中的文件/目录
+dd = "delete"
+
+# yy: 复制/剪切选中的文件/目录
+yy = "yank"
+
+# p: 粘贴 (Paste)
+p = "paste"
+
+# r: 重命名 (Rename)
+r = "rename"
+
+# v: 进入 Visual 模式 (多选模式)
+v = "visual_mode"
+
+
+# --- 视图与命令 (View & Command) ---
+
+# .: 切换显示隐藏文件
+'.' = "toggle_hidden"
+
+# /: 开始搜索 (Search)
+'/' = "search"
+
+# :: 进入命令行 (Command Mode - 用于执行 yazi 命令)
+':' = "select"
+
+
+# --- 标签页 (Tabs) ---
+
+# t: 新建标签页
+t = "tab_new"
+
+# gt/gT: 切换标签页
+gt = "tab_next"
+gT = "tab_prev"
+
+[[mgr.prepend_keymap]]
+on   = "l"
+run  = "plugin smart-enter"
+desc = "Enter the child directory, or open the file"

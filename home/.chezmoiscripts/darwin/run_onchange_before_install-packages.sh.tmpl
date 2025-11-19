@@ -1,20 +1,15 @@
-{{ if and (eq .chezmoi.os "darwin") (hasKey .packages "darwin") -}}
+{{ if and (eq .chezmoi.os "darwin") (hasKey .packages "darwin") .homebrew -}}
 #!/bin/bash
 
-set -eufo pipefail
 
-
-{{- $darwin := index .packages "darwin" -}}
-{{- $brews := index $darwin "brews" -}}
-{{- $casks := index $darwin "casks" -}}
 
 
 /opt/homebrew/bin/brew bundle --file=/dev/stdin <<EOF
-{{- range $name := ($brews | sortAlpha | uniq) }}
-brew "{{ $name }}"
-{{- end }}
-{{- range $name := ($casks | sortAlpha | uniq) }}
-cask "{{ $name }}"
-{{- end }}
+{{ range .packages.darwin.brews -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ range .packages.darwin.casks -}}
+cask {{ . | quote }}
+{{ end -}}
 EOF
 {{ end -}}

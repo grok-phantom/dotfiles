@@ -18,3 +18,9 @@ if [ -d "$HOME/.tmux" ] && [ -f "$HOME/.tmux/.tmux.conf" ]; then
     fi
   fi
 fi
+
+if command -v ya >/dev/null 2>&1; then
+  if ! ya pkg list | grep -q 'smart-enter'; then
+    ya pkg add yazi-rs/plugins:smart-enter
+  fi
+fi

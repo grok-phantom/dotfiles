@@ -8,11 +8,13 @@
 {{- $email := "grok.phantom@gmail.com" -}}
 {{- $companyName := "" -}}
 {{- $hostname := .chezmoi.hostname -}}
+{{- $sudo := false -}}{{/* whether sudo is available */}}
 {{- "" -}}
 
 {{/* Prompt */}}
 {{- $company = promptBoolOnce . "company" "Is this a compny machine?" -}}
 {{- $ephemeral = promptBoolOnce . "ephemeral" "Is this ephemeral?" -}}
+{{- $sudo = promptBoolOnce . "sudo" "Do you have sudo privileges on this machine?" -}}
 {{- "" -}}
 
 {{/* Setup for company */}}
@@ -24,6 +26,12 @@
 
 {{/* Setup for ephemeral */}}
 {{- if $ephemeral -}}
+{{-   $homebrew = false -}}
+{{- end -}}
+{{- "" -}}
+
+{{/* Homebrew requires sudo and non-ephemeral */}}
+{{- if not $sudo -}}
 {{-   $homebrew = false -}}
 {{- end -}}
 {{- "" -}}
@@ -41,3 +49,4 @@
     hostname = {{ $hostname | quote }}
     osid = {{ $osID | quote }}
     homebrew = {{ $homebrew }}
+    sudo = {{ $sudo }}
