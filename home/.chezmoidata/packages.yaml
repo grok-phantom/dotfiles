@@ -25,9 +25,12 @@ packages:
       - zoxide
     casks:
       - appcleaner
+      - alt-tab
+      - betterdisplay
       - discord
       - chatgpt
       - google-chrome
+      - hazel
       - iina
       - iterm2
       - keka
