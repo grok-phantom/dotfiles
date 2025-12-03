@@ -1,0 +1,82 @@
+local wezterm = require("wezterm")
+local config = {}
+
+{{- $yazi_path := default "/opt/homebrew/bin/yazi" (lookPath "yazi") -}}
+local yazi_path = "{{ $yazi_path }}"
+
+-- 字体：优先 JetBrainsMono Nerd Font，没有就 fallback
+config.font = wezterm.font_with_fallback({
+  "MesloLGS NF",            -- 你在 iTerm 里用的这个
+  "MesloLGS Nerd Font",     -- 预防名字略有不同
+  "MesloLGS Nerd Font Mono",
+  "monospace",
+})
+
+config.font_size = 13.0
+
+-- 颜色方案：WezTerm 内置的 Gruvbox
+-- 可以试试: "Gruvbox Dark", "Gruvbox Dark (Medium)", "Gruvbox Dark (Hard)"
+config.color_scheme = "Gruvbox Dark (Medium)"
+
+-- 轻微透明 + 模糊（macOS 有模糊，Linux 只会用透明）
+config.window_background_opacity = 0.96
+config.macos_window_background_blur = 20
+
+config.enable_scroll_bar = false
+config.window_decorations = "RESIZE"
+config.scrollback_lines = 5000
+
+-- 光标样式（块状光标，跟 Vim 里比较一致）
+config.default_cursor_style = "BlinkingBlock"
+
+----------------------------------------------------------------
+-- 键位：尽量不抢 tmux 的，WezTerm 用 Ctrl+Shift 系列
+----------------------------------------------------------------
+config.keys = {
+  -- Tab 管理
+  { key = "t", mods = "CTRL|SHIFT", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
+  { key = "w", mods = "CTRL|SHIFT", action = wezterm.action.CloseCurrentTab({ confirm = true }) },
+  { key = "RightArrow", mods = "CTRL|SHIFT", action = wezterm.action.ActivateTabRelative(1) },
+  { key = "LeftArrow",  mods = "CTRL|SHIFT", action = wezterm.action.ActivateTabRelative(-1) },
+  { key = "N", mods = "CTRL|SHIFT", action = wezterm.action.SpawnWindow },
+
+  -- 快速起一个 yazi tab（用于浏览文件）
+  { key = "E", mods = "CTRL|SHIFT", action = wezterm.action.SpawnCommandInNewTab({
+      args = { yazi_path },
+    }),
+  },
+
+  -- 快速起一个“裸 shell”tab，不自动进 tmux（方便做一些一次性任务）
+  { key = "P", mods = "CTRL|SHIFT", action = wezterm.action.SpawnCommandInNewTab({
+      args = { os.getenv("SHELL") or "bash", "-l" },
+    }),
+  },
+
+  -- 如果你愿意用 WezTerm 自己分屏，可以留以下按键；否则可以删除，全交给 tmux 管
+  { key = "\\", mods = "ALT", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+  { key = "-",  mods = "ALT", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
+  { key = "h", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Left") },
+  { key = "j", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Down") },
+  { key = "k", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Up") },
+  { key = "l", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Right") },
+}
+
+-- Alt 键行为：保证终端里 M-h/M-l 之类还能用
+config.send_composed_key_when_left_alt_is_pressed = true
+config.send_composed_key_when_right_alt_is_pressed = true
+
+-- 鼠标复制 / 粘贴（按喜好用，也可以删掉）
+config.mouse_bindings = {
+  {
+    event = { Up = { streak = 1, button = "Left" } },
+    mods = "NONE",
+    action = wezterm.action.CompleteSelection("PrimarySelection"),
+  },
+  {
+    event = { Down = { streak = 1, button = "Right" } },
+    mods = "NONE",
+    action = wezterm.action.PasteFrom("Clipboard"),
+  },
+}
+
+return config
