@@ -59,6 +59,9 @@ config.keys = {
   { key = "j", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Down") },
   { key = "k", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Up") },
   { key = "l", mods = "ALT", action = wezterm.action.ActivatePaneDirection("Right") },
+
+  {key="c", mods="ALT", action=wezterm.action.CopyTo "Clipboard"},
+  {key="v", mods="ALT", action=wezterm.action.PasteFrom "Clipboard"},
 }
 
 -- Alt 键行为：保证终端里 M-h/M-l 之类还能用
@@ -76,6 +79,11 @@ config.mouse_bindings = {
     event = { Down = { streak = 1, button = "Right" } },
     mods = "NONE",
     action = wezterm.action.PasteFrom("Clipboard"),
+  },
+  {
+    event={Up={streak=1, button="Left"}},
+    mods="CTRL",
+    action=wezterm.action.OpenLinkAtMouseCursor
   },
 }
 
