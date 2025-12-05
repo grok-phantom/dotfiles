@@ -53,6 +53,15 @@ plugins=(
   zsh-autosuggestions
   command-not-found
   aliases
+  docker
+  history
+  rsync
+  tldr
+  tmux
+  uv
+{{- if eq .chezmoi.os "linux" -}}
+  systemd
+{{- end -}}
 )
 
 
