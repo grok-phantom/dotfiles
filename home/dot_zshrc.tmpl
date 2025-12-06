@@ -44,24 +44,35 @@ HIST_STAMPS="yyyy-mm-dd"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
+{{- $plugins := list
+  "git"
+  "eza"
+  "extract"
+  "zsh-vi-mode"
+  "fast-syntax-highlighting"
+  "zsh-autosuggestions"
+  "command-not-found"
+  "aliases"
+  "history"
+  "tldr"
+  "tmux"
+}}
+{{- if lookPath "docker" }}
+{{-   $plugins = mustAppend $plugins "docker" }}
+{{- end }}
+{{- if lookPath "rsync" }}
+{{-   $plugins = mustAppend $plugins "rsync" }}
+{{- end }}
+{{- if lookPath "uv" }}
+{{-   $plugins = mustAppend $plugins "uv" }}
+{{- end }}
+{{- if eq .chezmoi.os "linux" }}
+{{-   $plugins = mustAppend $plugins "systemd" }}
+{{- end }}
 plugins=(
-  git
-  eza
-  extract
-  zsh-vi-mode
-  fast-syntax-highlighting
-  zsh-autosuggestions
-  command-not-found
-  aliases
-  docker
-  history
-  rsync
-  tldr
-  tmux
-  uv
-{{- if eq .chezmoi.os "linux" -}}
-  systemd
-{{- end -}}
+{{- range $plugins }}
+  {{ . }}
+{{- end }}
 )
 
 
@@ -80,6 +91,13 @@ alias fd=fdfind
 {{- if lookPath "zoxide" }}
 eval "$(zoxide init zsh)"
 {{- end }}
+
+{{- if eq .chezmoi.os "darwin" }}
+alias proxyon='export http_proxy=http://127.0.0.1:8234; export https_proxy=http://127.0.0.1:8234; export all_proxy=socks5://127.0.0.1:8235'
+{{- else if eq .chezmoi.os "linux" }}
+alias proxyon='export http_proxy=http://127.0.0.1:7890; export https_proxy=http://127.0.0.1:7890; export all_proxy=socks5://127.0.0.1:7890'
+{{- end }}
+alias proxyoff='unset http_proxy https_proxy all_proxy'
 
 
  # >>> conda initialize >>>
