@@ -15,8 +15,10 @@ packages:
       - htop
       - jq
       - lazygit
+      - node
       - ranger
       - ripgrep
+      - tokei
       - tmux
       - tldr
       - uv
@@ -36,6 +38,7 @@ packages:
       - keka
       - neteasemusic
       - obsidian
+      - qbittorrent
       - typora
       - visual-studio-code
       - wechat
@@ -46,6 +49,7 @@ packages:
       - btop
       - eza
       - lazygit
+      - tokei
       - zoxide
     apt:
       - ack
