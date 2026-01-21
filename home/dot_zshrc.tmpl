@@ -73,6 +73,7 @@ plugins=(
 {{- range $plugins }}
   {{ . }}
 {{- end }}
+
 )
 
 
@@ -93,7 +94,7 @@ eval "$(zoxide init zsh)"
 {{- end }}
 
 {{- if eq .chezmoi.os "darwin" }}
-alias proxyon='export http_proxy=http://127.0.0.1:8234; export https_proxy=http://127.0.0.1:8234; export all_proxy=socks5://127.0.0.1:8235'
+alias proxyon='export http_proxy=http://127.0.0.1:6152; export https_proxy=http://127.0.0.1:6152; export all_proxy=socks5://127.0.0.1:6153'
 {{- else if eq .chezmoi.os "linux" }}
 alias proxyon='export http_proxy=http://127.0.0.1:7890; export https_proxy=http://127.0.0.1:7890; export all_proxy=socks5://127.0.0.1:7890'
 {{- end }}
@@ -124,4 +125,5 @@ export EDITOR='vim'
 export VISUAL=$EDITOR
 
 export PATH=/usr/local/cuda/bin:$PATH
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 {{- /* vim: set filetype=zsh: */}}
