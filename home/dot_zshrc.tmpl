@@ -77,7 +77,9 @@ plugins=(
 )
 
 
-source "$ZSH/oh-my-zsh.sh"
+if [[ -s "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+fi
 
 # User configuration
 
@@ -101,29 +103,33 @@ alias proxyon='export http_proxy=http://127.0.0.1:7890; export https_proxy=http:
 alias proxyoff='unset http_proxy https_proxy all_proxy'
 
 
- # >>> conda initialize >>>
- # !! Contents within this block are managed by 'conda init' !!
- __conda_setup="$("$HOME/miniforge3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
- if [ $? -eq 0 ]; then
-     eval "$__conda_setup"
- else
-     if [ -f "$HOME/miniforge3/etc/profile.d/conda.sh" ]; then
-         . "$HOME/miniforge3/etc/profile.d/conda.sh"
-     else
-         export PATH="$HOME/miniforge3/bin:$PATH"
-     fi
- fi
- unset __conda_setup
- # <<< conda initialize <<<
+if [[ -x "$HOME/miniforge3/bin/conda" ]]; then
+  __conda_setup="$("$HOME/miniforge3/bin/conda" shell.zsh hook 2>/dev/null)"
+  if [[ $? -eq 0 ]]; then
+    eval "$__conda_setup"
+  elif [[ -f "$HOME/miniforge3/etc/profile.d/conda.sh" ]]; then
+    source "$HOME/miniforge3/etc/profile.d/conda.sh"
+  else
+    export PATH="$HOME/miniforge3/bin:$PATH"
+  fi
+  unset __conda_setup
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-export LC_ALL=en_US.UTF-8  
+export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export EDITOR='vim'
 export VISUAL=$EDITOR
 
-export PATH=/usr/local/cuda/bin:$PATH
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
+if [[ -d /usr/local/cuda/bin ]]; then
+  export PATH=/usr/local/cuda/bin:$PATH
+fi
+
+if [[ "$TERM_PROGRAM" == "vscode" ]] && command -v code >/dev/null 2>&1; then
+  shell_integration="$(code --locate-shell-integration-path zsh 2>/dev/null)"
+  [[ -r "$shell_integration" ]] && source "$shell_integration"
+  unset shell_integration
+fi
 {{- /* vim: set filetype=zsh: */}}
