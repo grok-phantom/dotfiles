@@ -16,7 +16,6 @@ packages:
       - jq
       - lazygit
       - node
-      - ranger
       - ripgrep
       - tokei
       - tmux
@@ -66,4 +65,3 @@ packages:
       - tldr
       - wget
       - zsh
-    snaps_classic: []

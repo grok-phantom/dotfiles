@@ -1,7 +1,6 @@
 {{ if and (eq .osid "linux-debian" "linux-raspbian" "linux-pop" "linux-ubuntu") (hasKey .packages "linux") -}}
 {{- $linux := index .packages "linux" -}}
 {{- $apt := index $linux "apt" -}}
-{{- $classicSnaps := index $linux "snaps_classic" -}}
 {{- $brews := list -}}
 {{- if hasKey $linux "brews" -}}
 {{-   $brews = index $linux "brews" -}}
@@ -26,12 +25,6 @@ set -eufo pipefail
 {{- if gt (len $apt) 0 }}
 {{ $sudo }}apt-get update
 {{ $sudo }}apt-get install -y {{ $apt | sortAlpha | uniq | join " " }}
-{{- end }}
-
-{{- if and (lookPath "snap") (gt (len $classicSnaps) 0) }}
-{{-   range ($classicSnaps | sortAlpha | uniq) }}
-{{ $sudo }}snap install --classic {{ . }}
-{{-   end }}
 {{- end }}
 
 {{- if and .homebrew (gt (len $brews) 0) (ne $brew "") }}
