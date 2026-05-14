@@ -1,0 +1,28 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -euo pipefail
+
+# Safari search provider.
+safari_defaults_ok=true
+defaults write com.apple.Safari SearchProviderIdentifier -string "com.google.www" || safari_defaults_ok=false
+defaults write com.apple.Safari SearchProviderShortName -string "Google" || safari_defaults_ok=false
+defaults write com.apple.Safari SearchProviderURL -string "https://www.google.com/search?q={searchTerms}" || safari_defaults_ok=false
+if [ "$safari_defaults_ok" = false ]; then
+  echo "Warning: could not update Safari search provider. Grant your terminal Full Disk Access and rerun chezmoi apply." >&2
+fi
+
+# Trackpad: tap to click.
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults write NSGlobalDomain com.apple.trackpad.enableSecondaryClick -bool true
+
+# Dock: make icons smaller.
+defaults write com.apple.dock tilesize -int 36
+
+# Restart only the affected services so changes are picked up.
+killall Dock >/dev/null 2>&1 || true
+
+echo "Applied macOS defaults."
+{{ end -}}
