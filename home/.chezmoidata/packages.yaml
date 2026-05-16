@@ -42,6 +42,7 @@ packages:
       - visual-studio-code
       - wechat
       - zotero
+      - raycast
   linux:
     brews:
       - yazi
