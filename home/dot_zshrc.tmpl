@@ -76,6 +76,10 @@ plugins=(
 
 )
 
+# tmux plugin settings
+ZSH_TMUX_AUTOSTART=true
+ZSH_TMUX_AUTOCONNECT=true
+
 
 if [[ -s "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
@@ -145,5 +149,11 @@ if [[ "$TERM_PROGRAM" == "vscode" ]] && command -v code >/dev/null 2>&1; then
   shell_integration="$(code --locate-shell-integration-path zsh 2>/dev/null)"
   [[ -r "$shell_integration" ]] && source "$shell_integration"
   unset shell_integration
+fi
+
+if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
+  iterm2_integration="$HOME/.iterm2_shell_integration.zsh"
+  [[ -r "$iterm2_integration" ]] && source "$iterm2_integration"
+  unset iterm2_integration
 fi
 {{- /* vim: set filetype=zsh: */}}

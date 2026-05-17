@@ -45,6 +45,9 @@ packages:
       - raycast
   linux:
     brews:
+      - gh
+      - node
+      - uv
       - yazi
       - btop
       - eza

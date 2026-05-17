@@ -21,8 +21,19 @@ defaults write NSGlobalDomain com.apple.trackpad.enableSecondaryClick -bool true
 # Dock: make icons smaller.
 defaults write com.apple.dock tilesize -int 36
 
+# Keyboard: fast key repeat (helps vim navigation on held keys).
+defaults write NSGlobalDomain KeyRepeat -int 2
+defaults write NSGlobalDomain InitialKeyRepeat -int 15
+# Disable press-and-hold accent popup so held keys repeat normally.
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+# Finder: show path bar and status bar.
+defaults write com.apple.finder ShowPathbar -bool true
+defaults write com.apple.finder ShowStatusBar -bool true
+
 # Restart only the affected services so changes are picked up.
-killall Dock >/dev/null 2>&1 || true
+killall Dock    >/dev/null 2>&1 || true
+killall Finder  >/dev/null 2>&1 || true
 
 echo "Applied macOS defaults."
 {{ end -}}

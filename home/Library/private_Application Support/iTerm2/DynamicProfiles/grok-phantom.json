@@ -118,7 +118,7 @@
   "Non Ascii Font" : "Monaco 12",
   "Vertical Spacing" : 1,
   "Use Bold Font" : true,
-  "Option Key Sends" : 0,
+  "Option Key Sends" : 2,
   "Selected Text Color" : {
     "Red Component" : 0.32501408457756042,
     "Color Space" : "Calibrated",
@@ -148,7 +148,8 @@
   },
   "Window Type" : 0,
   "Background Image Location" : "",
-  "Blur" : false,
+  "Blur" : true,
+  "Transparency" : 0.05,
   "Badge Color" : {
     "Red Component" : 0.7928692102432251,
     "Color Space" : "Calibrated",
@@ -156,7 +157,7 @@
     "Alpha Component" : 0.5,
     "Green Component" : 0.28100395202636719
   },
-  "Scrollback Lines" : 1000,
+  "Scrollback Lines" : 5000,
   "Send Code When Idle" : false,
   "Close Sessions On End" : true,
   "Terminal Type" : "xterm-256color",
@@ -186,7 +187,6 @@
     "Alpha Component" : 1,
     "Green Component" : 0.82989895343780518
   },
-  "Transparency" : 0,
   "Ansi 1 Color" : {
     "Red Component" : 0.74529051780700684,
     "Color Space" : "Calibrated",
@@ -230,7 +230,7 @@
     "Alpha Component" : 1,
     "Green Component" : 0.55607825517654419
   },
-  "Normal Font" : "MesloLGS-NF-Regular 11",
+  "Normal Font" : "MesloLGS NF Regular 13",
   "Ansi 0 Color" : {
     "Red Component" : 0.11759927868843079,
     "Color Space" : "Calibrated",
