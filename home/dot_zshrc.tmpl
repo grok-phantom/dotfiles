@@ -92,6 +92,10 @@ alias cat=bat
 {{- else if lookPath "batcat" }}
 alias cat=batcat
 {{- end }}
+{{- if lookPath "eza" }}
+alias ls='eza'
+alias ll='eza -lah'
+{{- end }}
 {{- if lookPath "fdfind" }}
 alias fd=fdfind
 {{- end }}
