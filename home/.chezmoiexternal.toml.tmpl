@@ -107,3 +107,10 @@
     refreshPeriod = "168h"
 {{-   end }}
 {{- end }}
+
+{{- if and (eq .chezmoi.os "darwin") (not .ephemeral) }}
+[".iterm2_shell_integration.zsh"]
+    type = "file"
+    url = "https://iterm2.com/shell_integration/zsh"
+    refreshPeriod = "720h"
+{{- end }}
