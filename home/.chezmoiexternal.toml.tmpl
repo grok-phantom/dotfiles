@@ -1,27 +1,27 @@
 [".oh-my-zsh"]
     type = "archive"
-    url = "https://github.com/ohmyzsh/ohmyzsh/archive/3604dc23e0d95b5ce9a3932838a7b103ef5ff0c1.tar.gz"
+    url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".oh-my-zsh/custom/plugins/fast-syntax-highlighting"]
     type = "archive"
-    url = "https://github.com/zdharma-continuum/fast-syntax-highlighting/archive/3d574ccf48804b10dca52625df13da5edae7f553.tar.gz"
+    url = "https://github.com/zdharma-continuum/fast-syntax-highlighting/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
     
 [".oh-my-zsh/custom/plugins/zsh-vi-mode"]
     type = "archive"
-    url = "https://github.com/jeffreytse/zsh-vi-mode/archive/08bd1c04520418faee2b9d1afbc410ee1a59a8f1.tar.gz"
+    url = "https://github.com/jeffreytse/zsh-vi-mode/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".oh-my-zsh/custom/plugins/zsh-autosuggestions"]
     type = "archive"
-    url = "https://github.com/zsh-users/zsh-autosuggestions/archive/85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5.tar.gz"
+    url = "https://github.com/zsh-users/zsh-autosuggestions/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
@@ -34,7 +34,7 @@
 
 [".vim_runtime"]
     type = "archive"
-    url = "https://github.com/amix/vimrc/archive/46294d589d15d2e7308cf76c58f2df49bbec31e8.tar.gz"
+    url = "https://github.com/amix/vimrc/archive/master.tar.gz"
     refreshPeriod = "168h"
     stripComponents = 1
     exact = true
@@ -45,46 +45,46 @@
     refreshPeriod = "168h"
     oneShot = true
     [".vim/bundle/jedi-vim".clone]
-        args = ["--branch", "v0.11.2", "--single-branch", "--depth", "1", "--recurse-submodules", "--shallow-submodules"]
+        args = ["--single-branch", "--depth", "1", "--recurse-submodules",  "--shallow-submodules"]
 
 [".vim/bundle/webapi-vim"]
     type = "archive"
-    url = "https://github.com/mattn/webapi-vim/archive/c7eec04aad31e1665164d8292d0ec8b5c3cc5a57.tar.gz"
+    url = "https://github.com/mattn/webapi-vim/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".vim/bundle/supertab"]
     type = "archive"
-    url = "https://github.com/ervandew/supertab/archive/8705ae0e43b34339c06328fa6dab24ecaf21aab6.tar.gz"
+    url = "https://github.com/ervandew/supertab/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".vim/bundle/vim-oscyank"]
     type = "archive"
-    url = "https://github.com/ojroques/vim-oscyank/archive/d67d76b2f19b868b70a1cf33a779d71dc092cb30.tar.gz"
+    url = "https://github.com/ojroques/vim-oscyank/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".vim/bundle/fzf.vim"]
     type = "archive"
-    url = "https://github.com/junegunn/fzf.vim/archive/b9624aa012ddcbae9e79964bfd30cc1fbe3cf263.tar.gz"
+    url = "https://github.com/junegunn/fzf.vim/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".vim/bundle/tagbar"]
     type = "archive"
-    url = "https://github.com/preservim/tagbar/archive/7bfffca1f121afb7a9e38747500bf5270e006bb1.tar.gz"
+    url = "https://github.com/preservim/tagbar/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
 
 [".tmux"]
     type = "archive"
-    url = "https://github.com/gpakosz/.tmux/archive/af33f07134b76134acca9d01eacbdecca9c9cda6.tar.gz"
+    url = "https://github.com/gpakosz/.tmux/archive/master.tar.gz"
     exact = true
     stripComponents = 1
     refreshPeriod = "168h"
@@ -103,14 +103,7 @@
         "MesloLGS NF Bold Italic.ttf") }}
 ["{{ $fontDir }}/{{ . }}"]
     type = "file"
-    url = "https://github.com/romkatv/powerlevel10k-media/raw/145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d/{{ . }}"
+    url = "https://github.com/romkatv/powerlevel10k-media/raw/master/{{ . }}"
     refreshPeriod = "168h"
 {{-   end }}
-{{- end }}
-
-{{- if and (eq .chezmoi.os "darwin") (not .ephemeral) }}
-[".iterm2_shell_integration.zsh"]
-    type = "file"
-    url = "https://iterm2.com/shell_integration/zsh"
-    refreshPeriod = "720h"
 {{- end }}
