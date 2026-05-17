@@ -31,9 +31,21 @@ defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
 
+# Menu bar: hide icons we don't want cluttering the bar.
+# Spotlight/Search icon.
+defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
+# Wi-Fi (available in Control Center dropdown, no need on bar).
+defaults write com.apple.controlcenter "NSStatusItem Visible WiFi" -bool false
+# Battery (available in Control Center).
+defaults write com.apple.controlcenter "NSStatusItem Visible Battery" -bool false
+# Text Input / input-source switcher.
+defaults write com.apple.TextInputMenu visible -bool false
+
 # Restart only the affected services so changes are picked up.
-killall Dock    >/dev/null 2>&1 || true
-killall Finder  >/dev/null 2>&1 || true
+killall Dock           >/dev/null 2>&1 || true
+killall Finder         >/dev/null 2>&1 || true
+killall SystemUIServer >/dev/null 2>&1 || true
+killall ControlCenter  >/dev/null 2>&1 || true
 
 echo "Applied macOS defaults."
 {{ end -}}
