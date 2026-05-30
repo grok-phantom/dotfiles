@@ -27,9 +27,10 @@ defaults write NSGlobalDomain InitialKeyRepeat -int 15
 # Disable press-and-hold accent popup so held keys repeat normally.
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
-# Finder: show path bar and status bar.
+# Finder: show path bar, status bar, and filename extensions.
 defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 
 # Menu bar: hide icons we don't want cluttering the bar.
 # Spotlight/Search icon.
