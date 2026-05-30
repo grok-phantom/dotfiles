@@ -113,25 +113,54 @@ if command -v yazi >/dev/null 2>&1; then
   alias ranger='y'
 fi
 
+{{- $proxyHost := "127.0.0.1" }}
+{{- $proxyHttpPort := "7890" }}
+{{- $proxySocksPort := "7890" }}
 {{- if eq .chezmoi.os "darwin" }}
-alias proxyon='export http_proxy=http://127.0.0.1:6152; export https_proxy=http://127.0.0.1:6152; export all_proxy=socks5://127.0.0.1:6153'
-{{- else if eq .chezmoi.os "linux" }}
-alias proxyon='export http_proxy=http://127.0.0.1:7890; export https_proxy=http://127.0.0.1:7890; export all_proxy=socks5://127.0.0.1:7890'
+{{-   $proxyHttpPort = "6152" }}
+{{-   $proxySocksPort = "6153" }}
+{{- end }}
+{{- if hasKey . "proxy_host" }}
+{{-   $proxyHost = .proxy_host }}
+{{- end }}
+{{- if hasKey . "proxy_http_port" }}
+{{-   $proxyHttpPort = .proxy_http_port }}
+{{- end }}
+{{- if hasKey . "proxy_socks_port" }}
+{{-   $proxySocksPort = .proxy_socks_port }}
+{{- end }}
+{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") }}
+proxy_host={{ $proxyHost | quote }}
+proxy_http_url="http://${proxy_host}:{{ $proxyHttpPort }}"
+proxy_socks_url="socks5://${proxy_host}:{{ $proxySocksPort }}"
+alias proxyon='export http_proxy="$proxy_http_url"; export https_proxy="$proxy_http_url"; export all_proxy="$proxy_socks_url"'
+{{- if eq .chezmoi.os "darwin" }}
+if command -v brew >/dev/null 2>&1; then
+  brew() {
+    http_proxy="$proxy_http_url" \
+      https_proxy="$proxy_http_url" \
+      all_proxy="$proxy_socks_url" \
+      command brew "$@"
+  }
+fi
+{{- end }}
 {{- end }}
 alias proxyoff='unset http_proxy https_proxy all_proxy'
 
 
-if [[ -x "$HOME/miniforge3/bin/conda" ]]; then
-  __conda_setup="$("$HOME/miniforge3/bin/conda" shell.zsh hook 2>/dev/null)"
+miniforge_dir="$HOME/opt/miniforge3"
+if [[ -x "$miniforge_dir/bin/conda" ]]; then
+  __conda_setup="$("$miniforge_dir/bin/conda" shell.zsh hook 2>/dev/null)"
   if [[ $? -eq 0 ]]; then
     eval "$__conda_setup"
-  elif [[ -f "$HOME/miniforge3/etc/profile.d/conda.sh" ]]; then
-    source "$HOME/miniforge3/etc/profile.d/conda.sh"
+  elif [[ -f "$miniforge_dir/etc/profile.d/conda.sh" ]]; then
+    source "$miniforge_dir/etc/profile.d/conda.sh"
   else
-    export PATH="$HOME/miniforge3/bin:$PATH"
+    export PATH="$miniforge_dir/bin:$PATH"
   fi
   unset __conda_setup
 fi
+unset miniforge_dir
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
