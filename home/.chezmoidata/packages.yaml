@@ -34,6 +34,7 @@ packages:
       - hazel
       - iina
       - iterm2
+      - karabiner-elements
       - keka
       - neteasemusic
       - obsidian
