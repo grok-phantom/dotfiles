@@ -1,0 +1,75 @@
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+#!/bin/bash
+
+set -euo pipefail
+
+install_dir="${HOME}/opt/miniforge3"
+if [ -x "${install_dir}/bin/conda" ]; then
+  exit 0
+fi
+
+if [ -e "${install_dir}" ]; then
+  echo "${install_dir} exists but does not contain bin/conda" >&2
+  exit 1
+fi
+
+case "$(uname -s)" in
+  Darwin)
+    installer_os="MacOSX"
+    ;;
+  Linux)
+    installer_os="Linux"
+    ;;
+  *)
+    echo "Miniforge install skipped on unsupported OS: $(uname -s)" >&2
+    exit 0
+    ;;
+esac
+
+machine="$(uname -m)"
+case "${installer_os}:${machine}" in
+  MacOSX:arm64)
+    installer_arch="arm64"
+    ;;
+  MacOSX:x86_64)
+    installer_arch="x86_64"
+    ;;
+  Linux:x86_64)
+    installer_arch="x86_64"
+    ;;
+  Linux:aarch64|Linux:arm64)
+    installer_arch="aarch64"
+    ;;
+  *)
+    echo "Miniforge install skipped on unsupported architecture: ${machine}" >&2
+    exit 0
+    ;;
+esac
+
+if command -v curl >/dev/null 2>&1; then
+  fetch() {
+    curl -fsSL "$1" -o "$2"
+  }
+elif command -v wget >/dev/null 2>&1; then
+  fetch() {
+    wget -qO "$2" "$1"
+  }
+else
+  echo "curl or wget is required to install Miniforge" >&2
+  exit 1
+fi
+
+mkdir -p "${HOME}/opt"
+tmp_dir="$(mktemp -d)"
+cleanup() {
+  rm -rf "${tmp_dir}"
+}
+trap cleanup EXIT
+
+installer="${tmp_dir}/miniforge.sh"
+installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-${installer_os}-${installer_arch}.sh"
+
+echo "Installing Miniforge to ${install_dir}..."
+fetch "${installer_url}" "${installer}"
+bash "${installer}" -b -p "${install_dir}"
+{{ end -}}
