@@ -8,6 +8,9 @@
 {{- $email := "grok.phantom@gmail.com" -}}
 {{- $companyName := "" -}}
 {{- $hostname := .chezmoi.hostname -}}
+{{- $proxyHost := "127.0.0.1" -}}
+{{- $proxyHttpPort := "7890" -}}
+{{- $proxySocksPort := "7890" -}}
 {{- $sudo := false -}}{{/* whether sudo is available */}}
 {{- "" -}}
 
@@ -36,6 +39,13 @@
 {{- end -}}
 {{- "" -}}
 
+{{/* Platform-specific local proxy ports */}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $proxyHttpPort = "6152" -}}
+{{-   $proxySocksPort = "6153" -}}
+{{- end -}}
+{{- "" -}}
+
 {{- $osID := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
 {{-   $osID = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
@@ -50,3 +60,6 @@
     osid = {{ $osID | quote }}
     homebrew = {{ $homebrew }}
     sudo = {{ $sudo }}
+    proxy_host = {{ $proxyHost | quote }}
+    proxy_http_port = {{ $proxyHttpPort | quote }}
+    proxy_socks_port = {{ $proxySocksPort | quote }}
