@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: port-listen port [port ...]
+
+Show processes listening on TCP ports.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 2
+fi
+
+status=0
+
+for port in "$@"; do
+  if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+    echo "port-listen: invalid port: $port" >&2
+    status=2
+    continue
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    if ! lsof -nP -iTCP:"$port" -sTCP:LISTEN; then
+      echo "port-listen: no TCP listener on :$port" >&2
+      status=1
+    fi
+  elif command -v ss >/dev/null 2>&1; then
+    output="$(ss -H -ltnp "sport = :$port" || true)"
+    if [[ -n "$output" ]]; then
+      printf '%s\n' "$output"
+    else
+      echo "port-listen: no TCP listener on :$port" >&2
+      status=1
+    fi
+  else
+    echo "port-listen: requires lsof or ss" >&2
+    exit 127
+  fi
+done
+
+exit "$status"

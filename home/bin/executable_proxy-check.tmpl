@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- $proxyHost := "127.0.0.1" }}
+{{- $proxyHttpPort := "7890" }}
+{{- if eq .chezmoi.os "darwin" }}
+{{-   $proxyHttpPort = "6152" }}
+{{- end }}
+{{- if hasKey . "proxy_host" }}
+{{-   $proxyHost = .proxy_host }}
+{{- end }}
+{{- if hasKey . "proxy_http_port" }}
+{{-   $proxyHttpPort = .proxy_http_port }}
+{{- end }}
+
+usage() {
+  cat <<'EOF'
+usage: proxy-check [url]
+
+Compare direct connectivity with proxied connectivity.
+
+Environment:
+  PROXY_CHECK_PROXY     Override proxy URL.
+  PROXY_CHECK_TIMEOUT   Curl timeout in seconds. Defaults to 8.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "proxy-check: requires curl" >&2
+  exit 127
+fi
+
+url="${1:-https://api.github.com}"
+timeout="${PROXY_CHECK_TIMEOUT:-8}"
+default_proxy="http://{{ $proxyHost }}:{{ $proxyHttpPort }}"
+proxy="${PROXY_CHECK_PROXY:-${https_proxy:-${HTTPS_PROXY:-${http_proxy:-${HTTP_PROXY:-$default_proxy}}}}}"
+
+check() {
+  local label="$1"
+  shift
+
+  local result
+  if result="$(curl -fsSL --max-time "$timeout" -o /dev/null -w '%{http_code} %{time_total}s' "$@" "$url" 2>&1)"; then
+    printf '%s: ok (%s)\n' "$label" "$result"
+    return 0
+  fi
+
+  printf '%s: fail (%s)\n' "$label" "$result" >&2
+  return 1
+}
+
+direct_status=0
+proxy_status=0
+
+check "direct" --noproxy '*' || direct_status=$?
+check "proxy ${proxy}" -x "$proxy" || proxy_status=$?
+
+if [[ "$direct_status" -ne 0 && "$proxy_status" -eq 0 ]]; then
+  echo "proxy-check: proxy works; direct path failed" >&2
+fi
+
+exit "$proxy_status"
