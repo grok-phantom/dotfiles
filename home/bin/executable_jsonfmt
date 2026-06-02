@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: jsonfmt [file ...]
+
+Format JSON from stdin or one or more files.
+Uses jq when available, otherwise falls back to python3 -m json.tool.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+format_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq .
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 -m json.tool
+  else
+    echo "jsonfmt: requires jq or python3" >&2
+    return 127
+  fi
+}
+
+if [[ $# -eq 0 ]]; then
+  format_json
+else
+  for file in "$@"; do
+    if [[ ! -r "$file" ]]; then
+      echo "jsonfmt: cannot read $file" >&2
+      exit 1
+    fi
+    format_json <"$file"
+  done
+fi
