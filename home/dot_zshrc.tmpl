@@ -6,9 +6,9 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # If you come from bash you might have to change your $PATH.
-{{- $paths := list }}
+{{- $paths := list (joinPath .chezmoi.homeDir "bin") }}
 {{- $homeDir := .chezmoi.homeDir }}
-{{- range $_, $relPath := list "bin" "go/bin" ".cargo/bin" ".local/bin" }}
+{{- range $_, $relPath := list "go/bin" ".cargo/bin" ".local/bin" }}
 {{    $path := joinPath $homeDir $relPath }}
 {{-   if stat $path }}
 {{-     $paths = mustAppend $paths $path }}
@@ -82,71 +82,10 @@ if [[ -s "$ZSH/oh-my-zsh.sh" ]]; then
 fi
 
 # User configuration
-
-{{- if lookPath "bat" }}
-alias cat=bat
-{{- else if lookPath "batcat" }}
-alias cat=batcat
-{{- end }}
-{{- if lookPath "eza" }}
-alias ls='eza'
-alias ll='eza -lah'
-{{- end }}
-{{- if lookPath "fdfind" }}
-alias fd=fdfind
-{{- end }}
-{{- if lookPath "zoxide" }}
-eval "$(zoxide init zsh)"
-{{- end }}
-if command -v yazi >/dev/null 2>&1; then
-  y() {
-    local tmp cwd
-    tmp="$(mktemp "${TMPDIR:-/tmp}/yazi-cwd.XXXXXX")" || return
-    command yazi "$@" --cwd-file="$tmp"
-    if cwd="$(command cat -- "$tmp" 2>/dev/null)" && [[ -n "$cwd" && "$cwd" != "$PWD" ]]; then
-      builtin cd -- "$cwd"
-    fi
-    command rm -f -- "$tmp"
-  }
-  alias yy='y'
-  alias r='y'
-  alias ranger='y'
-fi
-
-{{- $proxyHost := "127.0.0.1" }}
-{{- $proxyHttpPort := "7890" }}
-{{- $proxySocksPort := "7890" }}
-{{- if eq .chezmoi.os "darwin" }}
-{{-   $proxyHttpPort = "6152" }}
-{{-   $proxySocksPort = "6153" }}
-{{- end }}
-{{- if hasKey . "proxy_host" }}
-{{-   $proxyHost = .proxy_host }}
-{{- end }}
-{{- if hasKey . "proxy_http_port" }}
-{{-   $proxyHttpPort = .proxy_http_port }}
-{{- end }}
-{{- if hasKey . "proxy_socks_port" }}
-{{-   $proxySocksPort = .proxy_socks_port }}
-{{- end }}
-{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") }}
-proxy_host={{ $proxyHost | quote }}
-proxy_http_url="http://${proxy_host}:{{ $proxyHttpPort }}"
-proxy_socks_url="socks5://${proxy_host}:{{ $proxySocksPort }}"
-alias proxyon='export http_proxy="$proxy_http_url"; export https_proxy="$proxy_http_url"; export all_proxy="$proxy_socks_url"'
-{{- if eq .chezmoi.os "darwin" }}
-if command -v brew >/dev/null 2>&1; then
-  brew() {
-    http_proxy="$proxy_http_url" \
-      https_proxy="$proxy_http_url" \
-      all_proxy="$proxy_socks_url" \
-      command brew "$@"
-  }
-fi
-{{- end }}
-{{- end }}
-alias proxyoff='unset http_proxy https_proxy all_proxy'
-
+for zsh_file in "$HOME/.config/zsh/conf.d/"*.zsh(N); do
+  source "$zsh_file"
+done
+unset zsh_file
 
 miniforge_dir="$HOME/opt/miniforge3"
 if [[ -x "$miniforge_dir/bin/conda" ]]; then

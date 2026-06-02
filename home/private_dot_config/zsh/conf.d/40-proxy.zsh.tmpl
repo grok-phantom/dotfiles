@@ -1,0 +1,152 @@
+{{- $proxyHost := "127.0.0.1" -}}
+{{- $proxyHttpPort := "7890" -}}
+{{- $proxySocksPort := "7890" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $proxyHttpPort = "6152" -}}
+{{-   $proxySocksPort = "6153" -}}
+{{- end -}}
+{{- if hasKey . "proxy_host" -}}
+{{-   $proxyHost = .proxy_host -}}
+{{- end -}}
+{{- if hasKey . "proxy_http_port" -}}
+{{-   $proxyHttpPort = .proxy_http_port -}}
+{{- end -}}
+{{- if hasKey . "proxy_socks_port" -}}
+{{-   $proxySocksPort = .proxy_socks_port -}}
+{{- end -}}
+{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+proxy_host={{ $proxyHost | quote }}
+proxy_http_port={{ $proxyHttpPort | quote }}
+proxy_socks_port={{ $proxySocksPort | quote }}
+proxy_http_url="http://${proxy_host}:{{ $proxyHttpPort }}"
+proxy_socks_url="socks5://${proxy_host}:{{ $proxySocksPort }}"
+
+proxyon() {
+  export http_proxy="$proxy_http_url"
+  export https_proxy="$proxy_http_url"
+  export all_proxy="$proxy_socks_url"
+  export HTTP_PROXY="$http_proxy"
+  export HTTPS_PROXY="$https_proxy"
+  export ALL_PROXY="$all_proxy"
+}
+
+proxyon-ssh() {
+  local remote_http_port="${SSH_PROXY_REMOTE_HTTP_PORT:-7890}"
+  local remote_socks_port="${SSH_PROXY_REMOTE_SOCKS_PORT:-7891}"
+
+  export http_proxy="http://127.0.0.1:${remote_http_port}"
+  export https_proxy="$http_proxy"
+  export all_proxy="socks5://127.0.0.1:${remote_socks_port}"
+  export HTTP_PROXY="$http_proxy"
+  export HTTPS_PROXY="$https_proxy"
+  export ALL_PROXY="$all_proxy"
+}
+
+proxyoff() {
+  unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
+}
+
+withproxy() {
+  if [[ $# -eq 0 ]]; then
+    echo "usage: withproxy command [args ...]" >&2
+    return 2
+  fi
+
+  env \
+    http_proxy="$proxy_http_url" \
+    https_proxy="$proxy_http_url" \
+    all_proxy="$proxy_socks_url" \
+    HTTP_PROXY="$proxy_http_url" \
+    HTTPS_PROXY="$proxy_http_url" \
+    ALL_PROXY="$proxy_socks_url" \
+    "$@"
+}
+
+noproxy() {
+  if [[ $# -eq 0 ]]; then
+    echo "usage: noproxy command [args ...]" >&2
+    return 2
+  fi
+
+  env \
+    -u http_proxy \
+    -u https_proxy \
+    -u all_proxy \
+    -u HTTP_PROXY \
+    -u HTTPS_PROXY \
+    -u ALL_PROXY \
+    "$@"
+}
+
+sshproxy() {
+  if [[ $# -eq 0 ]]; then
+    echo "usage: sshproxy [ssh options] user@host [command]" >&2
+    return 2
+  fi
+
+  local remote_http_port="${SSH_PROXY_REMOTE_HTTP_PORT:-7890}"
+  local remote_socks_port="${SSH_PROXY_REMOTE_SOCKS_PORT:-7891}"
+
+  command ssh \
+    -o ExitOnForwardFailure=yes \
+    -R "${remote_http_port}:${proxy_host}:${proxy_http_port}" \
+    -R "${remote_socks_port}:${proxy_host}:${proxy_socks_port}" \
+    "$@"
+}
+
+sshproxy-tunnel() {
+  if [[ $# -eq 0 ]]; then
+    echo "usage: sshproxy-tunnel [ssh options] user@host" >&2
+    return 2
+  fi
+
+  local remote_http_port="${SSH_PROXY_REMOTE_HTTP_PORT:-7890}"
+  local remote_socks_port="${SSH_PROXY_REMOTE_SOCKS_PORT:-7891}"
+
+  command ssh \
+    -N \
+    -o ExitOnForwardFailure=yes \
+    -R "${remote_http_port}:${proxy_host}:${proxy_http_port}" \
+    -R "${remote_socks_port}:${proxy_host}:${proxy_socks_port}" \
+    "$@"
+}
+
+if command -v chezmoi >/dev/null 2>&1; then
+  chezmoi() {
+    case "${DOTFILES_PROXY_MODE:-on}" in
+      off|none|direct)
+        noproxy chezmoi "$@"
+        ;;
+      on|proxy)
+        withproxy chezmoi "$@"
+        ;;
+      *)
+        echo "chezmoi: invalid DOTFILES_PROXY_MODE=${DOTFILES_PROXY_MODE}" >&2
+        echo "expected one of: on, proxy, off, none, direct" >&2
+        return 2
+        ;;
+    esac
+  }
+fi
+
+{{- if eq .chezmoi.os "darwin" }}
+if command -v brew >/dev/null 2>&1; then
+  brew() {
+    case "${DOTFILES_PROXY_MODE:-on}" in
+      off|none|direct)
+        noproxy brew "$@"
+        ;;
+      on|proxy)
+        withproxy brew "$@"
+        ;;
+      *)
+        echo "brew: invalid DOTFILES_PROXY_MODE=${DOTFILES_PROXY_MODE}" >&2
+        echo "expected one of: on, proxy, off, none, direct" >&2
+        return 2
+        ;;
+    esac
+  }
+fi
+{{- end }}
+{{- end }}
+{{- /* vim: set filetype=zsh: */}}
