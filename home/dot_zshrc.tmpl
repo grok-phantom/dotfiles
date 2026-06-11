@@ -63,9 +63,6 @@ HIST_STAMPS="yyyy-mm-dd"
 {{- if lookPath "rsync" }}
 {{-   $plugins = mustAppend $plugins "rsync" }}
 {{- end }}
-{{- if lookPath "uv" }}
-{{-   $plugins = mustAppend $plugins "uv" }}
-{{- end }}
 {{- if eq .chezmoi.os "linux" }}
 {{-   $plugins = mustAppend $plugins "systemd" }}
 {{- end }}
