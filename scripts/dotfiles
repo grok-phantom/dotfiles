@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+"""Explicit dotfiles updates. Python 3.9+, Git and chezmoi are required."""
+import argparse
+import hashlib
+import io
+import json
+import os
+from pathlib import Path
+import platform
+import signal
+import stat
+import subprocess
+import sys
+import tarfile
+import tempfile
+
+
+class Stop(RuntimeError):
+    pass
+
+
+def interrupt(signum, frame):
+    raise KeyboardInterrupt
+
+
+def run(args, *, env=None, input=None, timeout=None):
+    with subprocess.Popen([str(a) for a in args], stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, start_new_session=True) as process:
+        previous_term_handler = signal.signal(signal.SIGTERM, interrupt)
+        try:
+            stdout, _ = process.communicate(input, timeout=timeout)
+        except BaseException as error:
+            # Detached subprocesses must not continue installing/applying after cancellation.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.communicate()
+            if isinstance(error, subprocess.TimeoutExpired):
+                raise Stop(f'{Path(args[0]).name} timed out; no later step was run')
+            raise
+        finally:
+            signal.signal(signal.SIGTERM, previous_term_handler)
+    if process.returncode:
+        # Do not echo rendered configurations, credentials in URLs, or tool stderr.
+        raise Stop(f"{Path(args[0]).name} failed (exit {process.returncode}); no later step was run")
+    return stdout
+
+
+def digest(value):
+    return hashlib.sha256(value).hexdigest()
+
+
+def host():
+    value = (platform.system(), platform.machine())
+    if value[0] not in ('Darwin', 'Linux') or value[1] not in ('arm64', 'aarch64', 'x86_64'):
+        raise Stop('Unsupported OS/architecture; supported: macOS/Linux on arm64 or x86_64')
+    if value == ('Darwin', 'aarch64'):
+        raise Stop('Unsupported macOS architecture')
+    return list(value)
+
+
+class Updates:
+    def __init__(self, args):
+        self.args = args
+        self.repo = args.repo.resolve()
+        self.target = args.target.resolve()
+        self.config = args.config.resolve()
+        self.platform = host()
+        if not (self.repo / '.chezmoiroot').is_file() or (self.repo / '.chezmoiroot').read_text().strip() != 'home':
+            raise Stop('Expected a dotfiles repository with .chezmoiroot=home')
+        if not self.target.is_dir() or not self.config.is_file():
+            raise Stop('Target directory and explicit local chezmoi config must already exist; see README setup')
+        if self.git('rev-parse', '--show-toplevel').decode().strip() != str(self.repo):
+            raise Stop('--repo must name the working-tree root')
+
+    def git(self, *args, env=None, timeout=None):
+        return run(['git', '-C', self.repo, '-c', 'core.hooksPath=/dev/null',
+                    '-c', 'merge.autostash=false', *args], env=env, timeout=timeout)
+
+    def clean(self):
+        if self.git('status', '--porcelain=v1', '--untracked-files=all'):
+            raise Stop('Dirty source: commit or manually save/reconcile changes first; no autostash is performed')
+        self.git('symbolic-ref', '--quiet', 'HEAD')
+
+    def cm(self, source, command, *args):
+        overrides = json.dumps({'profile': self.args.profile, 'update_component': self.args.component})
+        cmd = ['chezmoi', '--source', source, '--destination', self.target, '--config', self.config,
+               '--override-data', overrides, '--no-tty', '--no-pager', '--color=false',
+               '--use-builtin-diff', '--refresh-externals=never']
+        if self.args.state:
+            cmd += ['--persistent-state', self.args.state.resolve()]
+        if self.args.cache:
+            cmd += ['--cache', self.args.cache.resolve()]
+        excluded = 'scripts' if self.args.component == 'externals' else 'scripts,externals'
+        return run(cmd + [command, '--exclude=' + excluded, *args])
+
+    def drift(self):
+        status = self.cm(self.repo, 'status').decode()
+        if any(line and line[0] != ' ' for line in status.splitlines()):
+            raise Stop('Target has local changes since the last apply; inspect chezmoi status/diff and reconcile manually')
+        return status
+
+    def permissions(self, names):
+        if os.geteuid() == 0:
+            raise Stop('Run user-environment updates as the target user, without sudo')
+        for name in names:
+            path = self.target / name
+            while not path.exists():
+                path = path.parent
+            if not os.access(path, os.W_OK):
+                raise Stop('A selected target is not writable; fix ownership manually, do not run this tool with sudo')
+
+    def snapshot(self, contents, status):
+        names = set(contents)
+        names.update(line[3:] for line in status.splitlines() if len(line) > 3)
+        entries = []
+        for name in sorted(names):
+            path = self.target / name
+            if Path(name).is_absolute() or '..' in Path(name).parts:
+                raise Stop('Invalid target path')
+            try:
+                mode = path.lstat().st_mode
+                if stat.S_ISLNK(mode):
+                    value = os.readlink(path)
+                elif stat.S_ISREG(mode):
+                    value = digest(path.read_bytes())
+                elif stat.S_ISDIR(mode):
+                    value = 'directory'
+                else:
+                    raise Stop('Unsupported special target file')
+                entries.append([name, mode, value])
+            except FileNotFoundError:
+                entries.append([name, 'missing'])
+        return digest(json.dumps(entries, sort_keys=True).encode())
+
+    def plan(self, ref, show=False):
+        self.clean()
+        self.drift()
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        candidate = self.git('rev-parse', '--verify', ref + '^{commit}').decode().strip()
+        self.git('merge-base', '--is-ancestor', base, candidate)
+        with tempfile.TemporaryDirectory(prefix='dotfiles-plan-') as directory:
+            archive = self.git('archive', '--format=tar', candidate)
+            with tarfile.open(fileobj=io.BytesIO(archive)) as source:
+                for member in source.getmembers():
+                    if member.issym() or member.islnk() or member.name.startswith('/') or '..' in Path(member.name).parts:
+                        raise Stop('Unsafe source archive entry')
+                source.extractall(directory)
+            # The version being previewed is trusted code; templates may execute commands.
+            rendered = self.cm(directory, 'dump', '--format=json')
+            contents = json.loads(rendered)
+            status = self.cm(directory, 'status').decode()
+            diff = self.cm(directory, 'diff')
+            self.permissions(contents)
+            plan = dict(version=1, repo=str(self.repo), target=str(self.target),
+                        config=str(self.config), config_hash=digest(self.config.read_bytes()),
+                        state=str(self.args.state.resolve()) if self.args.state else None,
+                        base=base, candidate=candidate, platform=self.platform,
+                        profile=self.args.profile, component=self.args.component,
+                        rendered_hash=digest(rendered), diff_hash=digest(diff),
+                        target_hash=self.snapshot(contents, status))
+            if show:
+                print(f"{base[:12]} -> {candidate[:12]} | {self.args.profile} / {self.args.component}")
+                print(status or 'Selected targets already match.', end='' if status else '\n')
+                print('Scripts and package upgrades are excluded. Review the Git changes before applying.')
+                if self.args.diff:
+                    sys.stdout.flush()
+                    sys.stdout.buffer.write(diff)
+            return plan
+
+    def apply(self):
+        if not self.args.yes or not self.args.plan:
+            raise Stop('apply requires --plan PATH --yes after review')
+        saved = json.loads(self.args.plan.read_text())
+        if self.plan(saved['candidate']) != saved:
+            raise Stop('Plan is stale or options differ; generate and review a new plan')
+        self.clean()
+        if saved['base'] != saved['candidate']:
+            self.git('merge', '--ff-only', '--no-edit', saved['candidate'])
+        try:
+            self.cm(self.repo, 'apply', '--error-on-conflict')
+            self.cm(self.repo, 'verify')
+        except Stop:
+            raise Stop('Apply/verify failed. Source may have advanced and targets may be partly written; inspect and re-plan. No automatic rollback.')
+        print('Selected targets applied and verified. Packages/system settings were not changed.')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('command', nargs='?', choices=['status', 'fetch', 'plan', 'apply', 'verify'], default='status')
+    parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parent.parent)
+    parser.add_argument('--target', type=Path, default=Path.home())
+    parser.add_argument('--config', type=Path, default=Path(os.environ.get('XDG_CONFIG_HOME', Path.home()/'.config'))/'chezmoi/chezmoi.toml')
+    parser.add_argument('--state', type=Path, help='Optional isolated chezmoi persistent-state file')
+    parser.add_argument('--cache', type=Path, help='Optional isolated chezmoi cache directory')
+    parser.add_argument('--profile', choices=['core', 'full'], default='core')
+    parser.add_argument('--component', choices=['config', 'externals'], default='config')
+    parser.add_argument('--remote', default='origin')
+    parser.add_argument('--branch', default='main')
+    parser.add_argument('--ref', default='HEAD', help='Commit to preview, e.g. FETCH_HEAD after fetch')
+    parser.add_argument('--plan', type=Path, help='Local plan JSON (outside the repository)')
+    parser.add_argument('--diff', action='store_true', help='Show rendered diff; may contain private local values')
+    parser.add_argument('--yes', action='store_true')
+    args = parser.parse_args()
+    try:
+        if args.component == 'externals' and args.profile != 'full':
+            raise Stop('The externals component requires --profile full')
+        update = Updates(args)
+        if args.command == 'status':
+            update.clean()
+            print(update.drift() or 'Source clean; no selected target changes.', end='\n')
+        elif args.command == 'fetch':
+            update.clean()
+            update.drift()
+            if args.remote.startswith('-') or args.branch.startswith('-'):
+                raise Stop('Invalid remote/branch')
+            update.git('check-ref-format', 'refs/heads/' + args.branch)
+            env = dict(os.environ, GIT_TERMINAL_PROMPT='0',
+                       GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15')
+            update.git('-c', 'http.lowSpeedLimit=1', '-c', 'http.lowSpeedTime=30', 'fetch',
+                       '--no-tags', '--no-recurse-submodules', args.remote, 'refs/heads/' + args.branch,
+                       env=env, timeout=120)
+            print('Fetched only; source and targets unchanged. Review Git diff HEAD..FETCH_HEAD, then plan --ref FETCH_HEAD.')
+        elif args.command == 'plan':
+            plan = update.plan(args.ref, show=True)
+            if args.plan:
+                destination = args.plan.resolve()
+                if destination == update.repo or update.repo in destination.parents:
+                    raise Stop('Store plans outside the source repository')
+                fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(fd, 'w') as stream:
+                    json.dump(plan, stream, indent=2)
+                    stream.write('\n')
+                print('Plan saved; apply requires the same options and --yes.')
+        elif args.command == 'apply':
+            update.apply()
+        else:
+            update.clean()
+            update.cm(update.repo, 'verify')
+            print('Selected targets verified; installer scripts have not been tested by this command.')
+    except KeyboardInterrupt:
+        print('Interrupted: active subprocesses stopped; completed changes are not rolled back.', file=sys.stderr)
+        return 130
+    except (Stop, OSError, ValueError, KeyError) as error:
+        print('Stopped: ' + str(error), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

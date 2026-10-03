@@ -1,6 +1,14 @@
+{{- $name := (get . "git_name") | default "" -}}
+{{- $email := (get . "email") | default "" -}}
+{{ if or $name $email -}}
 [user]
-	name = Lei Chen
-	email = {{ .email }}
+{{ if $name }}
+    name = {{ $name | quote }}
+{{ end }}
+{{ if $email }}
+    email = {{ $email | quote }}
+{{ end }}
+{{ end -}}
 [core]
 	autocrlf = input
 	pager = less -FX
@@ -14,8 +22,6 @@
 	prune = true
 [diff]
 	colorMoved = default
-{{- if not .ephemeral }}
-[url "git@github.com:grok-phantom/"]
-	insteadOf = https://github.com/grok-phantom/
-{{- end -}}
+[include]
+    path = ~/.config/git/local.conf
 {{/* vim: set filetype=gitconfig: */}}

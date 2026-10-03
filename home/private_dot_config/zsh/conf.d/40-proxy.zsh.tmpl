@@ -113,7 +113,7 @@ sshproxy-tunnel() {
 
 if command -v chezmoi >/dev/null 2>&1; then
   chezmoi() {
-    case "${DOTFILES_PROXY_MODE:-on}" in
+    case "${DOTFILES_PROXY_MODE:-off}" in
       off|none|direct)
         noproxy chezmoi "$@"
         ;;
@@ -132,7 +132,7 @@ fi
 {{- if eq .chezmoi.os "darwin" }}
 if command -v brew >/dev/null 2>&1; then
   brew() {
-    case "${DOTFILES_PROXY_MODE:-on}" in
+    case "${DOTFILES_PROXY_MODE:-off}" in
       off|none|direct)
         noproxy brew "$@"
         ;;
