@@ -63,9 +63,7 @@ HIST_STAMPS="yyyy-mm-dd"
 {{- if lookPath "rsync" }}
 {{-   $plugins = mustAppend $plugins "rsync" }}
 {{- end }}
-{{- if lookPath "uv" }}
-{{-   $plugins = mustAppend $plugins "uv" }}
-{{- end }}
+{{- /* Avoid the oh-my-zsh uv plugin because it executes uv during shell startup. */}}
 {{- if eq .chezmoi.os "linux" }}
 {{-   $plugins = mustAppend $plugins "systemd" }}
 {{- end }}
