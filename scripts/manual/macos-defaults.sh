@@ -1,7 +1,11 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
 set -euo pipefail
+
+if [[ $(uname -s) != Darwin || ${1:-} != --apply ]]; then
+  echo "Review this script first; run on macOS with --apply to change preferences." >&2
+  exit 1
+fi
 
 # Safari search provider.
 safari_defaults_ok=true
@@ -9,7 +13,7 @@ defaults write com.apple.Safari SearchProviderIdentifier -string "com.google.www
 defaults write com.apple.Safari SearchProviderShortName -string "Google" || safari_defaults_ok=false
 defaults write com.apple.Safari SearchProviderURL -string "https://www.google.com/search?q={searchTerms}" || safari_defaults_ok=false
 if [ "$safari_defaults_ok" = false ]; then
-  echo "Warning: could not update Safari search provider. Grant your terminal Full Disk Access and rerun chezmoi apply." >&2
+  echo "Warning: could not update Safari search provider. Review macOS permissions manually; no additional access is required for dotfiles updates." >&2
 fi
 
 # Trackpad: tap to click.
@@ -49,4 +53,3 @@ killall SystemUIServer >/dev/null 2>&1 || true
 killall ControlCenter  >/dev/null 2>&1 || true
 
 echo "Applied macOS defaults."
-{{ end -}}

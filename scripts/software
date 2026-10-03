@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Explicit software maintenance, separate from configuration updates (Python 3.9+)."""
+import argparse
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+
+
+sys.dont_write_bytecode = True
+loader = importlib.machinery.SourceFileLoader('dotfiles_update', str(Path(__file__).with_name('dotfiles')))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+common = importlib.util.module_from_spec(spec)
+loader.exec_module(common)
+Stop, run = common.Stop, common.run
+
+
+def download(url, destination, expected):
+    if not url.startswith('https://') or len(expected) != 64:
+        raise Stop('Invalid pinned HTTPS asset or SHA-256')
+    run(['curl', '--fail', '--show-error', '--silent', '--location', '--proto', '=https',
+         '--proto-redir', '=https', '--connect-timeout', '15', '--max-time', '600',
+         '--output', destination, url])
+    with open(destination, 'rb') as stream:
+        checksum = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            checksum.update(chunk)
+    if checksum.hexdigest() != expected:
+        raise Stop('SHA-256 mismatch; downloaded installer was not executed')
+
+
+def miniforge(args, machine):
+    lock = json.loads((args.repo / 'locks/miniforge.json').read_text())
+    system, arch = machine
+    key = ('MacOSX' if system == 'Darwin' else 'Linux') + '-' + ('aarch64' if system == 'Linux' and arch == 'arm64' else arch)
+    if key not in lock['platforms']:
+        raise Stop('No reviewed Miniforge installer for this platform')
+    asset = lock['platforms'][key]
+    prefix = args.target / 'opt/miniforge3'
+    if prefix.is_symlink() or prefix.parent.is_symlink():
+        raise Stop('Miniforge prefix must be a direct directory, not a symlink')
+    conda = prefix / 'bin/conda'
+    marker = prefix / '.dotfiles-installer-sha256'
+    installed = conda.is_file() and os.access(conda, os.X_OK)
+    matching = installed and marker.is_file() and marker.read_text().strip() == asset['sha256']
+    print(f"Miniforge {lock['version']} / {key}: {'already installed by this tool' if matching else 'update' if installed else 'install'}")
+    if args.action == 'plan':
+        print('Only the pinned base distribution is managed; environments and conda package upgrades are separate.')
+        return
+    if args.action == 'verify':
+        if not matching:
+            raise Stop('Installer marker missing/different; use plan. This is not an audit of every conda package')
+        run([conda, '--version'])
+        print('Installer marker and conda executable verified.')
+        return
+    if args.action != 'apply':
+        raise Stop('Miniforge supports plan, apply, verify')
+    if not args.yes:
+        raise Stop('Miniforge apply requires --yes')
+    if matching:
+        run([conda, '--version'])
+        return
+    if prefix.exists() and not installed:
+        raise Stop('Miniforge prefix exists but is not a supported installation; inspect it manually')
+    if installed and not args.update_existing:
+        raise Stop('Updating an existing base requires --update-existing; export environments/back up first')
+    with tempfile.TemporaryDirectory(prefix='miniforge-download-') as directory:
+        installer = Path(directory) / 'installer.sh'
+        download(asset['url'], installer, asset['sha256'])
+        prefix.parent.mkdir(parents=True, exist_ok=True)
+        run(['bash', installer, '-b', '-p', prefix] + (['-u'] if installed else []))
+        run([conda, '--version'])
+        marker.write_text(asset['sha256'] + '\n')
+    print('Pinned Miniforge base installed and executable checked; shell init was not modified.')
+
+
+def package_data(args):
+    data = run(['chezmoi', '--source', args.repo, '--destination', args.target,
+                '--config', args.config, '--no-tty', 'execute-template',
+                '{{ dict "packages" .packages "homebrew" .homebrew "sudo" .sudo "osid" .osid | toJson }}'])
+    return json.loads(data)
+
+
+def packages(args, machine):
+    if args.action not in ('plan', 'install', 'upgrade', 'verify'):
+        raise Stop('Packages support plan, install, upgrade, verify')
+    data = package_data(args)
+    key = 'darwin' if machine[0] == 'Darwin' else 'linux'
+    packages = data['packages'][key]
+    env = dict(os.environ, HOMEBREW_NO_AUTO_UPDATE='1', HOMEBREW_NO_INSTALL_CLEANUP='1',
+               HOMEBREW_BUNDLE_NO_UPGRADE='1')
+    if args.manager == 'brew':
+        if not data['homebrew']:
+            raise Stop('Homebrew disabled in local data; enable it explicitly to use this component')
+        brew = shutil.which('brew')
+        if not brew:
+            raise Stop('Homebrew is not installed; bootstrap manually from its official instructions')
+        content = ''.join('brew ' + json.dumps(x) + '\n' for x in packages['brews'])
+        if key == 'darwin':
+            content += ''.join('cask ' + json.dumps(x) + '\n' for x in packages['casks'])
+        print(content, end='')
+        if args.action == 'plan':
+            print('install: bundle --no-upgrade; upgrade: brew update then bundle --upgrade.')
+            print('This is an inventory plan, not a version lock. Dependencies may change during install.')
+            return
+        with tempfile.TemporaryDirectory(prefix='dotfiles-packages-') as directory:
+            brewfile = Path(directory) / 'Brewfile'
+            brewfile.write_text(content)
+            if args.action == 'verify':
+                run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env)
+            else:
+                if not args.yes:
+                    raise Stop('Package install/upgrade requires --yes')
+                if args.action == 'upgrade':
+                    run([brew, 'update'], env=env)
+                run([brew, 'bundle', 'install', '--upgrade' if args.action == 'upgrade' else '--no-upgrade',
+                     '--file=' + str(brewfile)], env=env)
+                run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env)
+    else:
+        if machine[0] != 'Linux' or data['osid'] not in ('linux-debian', 'linux-raspbian', 'linux-pop', 'linux-ubuntu'):
+            raise Stop('apt component requires a supported Debian-family Linux host')
+        names = packages['apt']
+        if not shutil.which('apt-get'):
+            raise Stop('apt-get is unavailable')
+        print('Managed apt packages: ' + ' '.join(names))
+        if args.action == 'plan':
+            print('Install simulation (using current local package metadata):')
+            sys.stdout.buffer.write(run(['apt-get', '--simulate', 'install', '--no-upgrade', *names]))
+            return
+        if args.action == 'verify':
+            for name in names:
+                if run(['dpkg-query', '-W', '-f=${db:Status-Status}', name]).strip() != b'installed':
+                    raise Stop('A managed apt package is not installed')
+            return
+        if not args.yes or not data['sudo']:
+            raise Stop('apt install/upgrade requires --yes and local data.sudo=true')
+        run(['sudo', '-n', 'true'])
+        run(['sudo', '-n', 'apt-get', 'update'])
+        run(['sudo', '-n', 'apt-get', 'install', '-y',
+             '--only-upgrade' if args.action == 'upgrade' else '--no-upgrade', *names])
+    print('Selected package operation completed. No OS-wide upgrade, cleanup, shell or group changes were requested.')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('component', choices=['packages', 'miniforge'])
+    parser.add_argument('action', nargs='?', default='plan', choices=['plan', 'apply', 'install', 'upgrade', 'verify'])
+    parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parent.parent)
+    parser.add_argument('--target', type=Path, default=Path.home())
+    parser.add_argument('--config', type=Path, default=Path(os.environ.get('XDG_CONFIG_HOME', Path.home()/'.config'))/'chezmoi/chezmoi.toml')
+    parser.add_argument('--profile', choices=['core', 'full'], default='core')
+    parser.add_argument('--manager', choices=['brew', 'apt'], default='brew')
+    parser.add_argument('--yes', action='store_true')
+    parser.add_argument('--update-existing', action='store_true')
+    args = parser.parse_args()
+    try:
+        args.repo = args.repo.resolve()
+        args.target = args.target.resolve()
+        args.config = args.config.resolve()
+        machine = common.host()
+        if args.profile != 'full':
+            raise Stop('Software components require --profile full; core never installs or upgrades software')
+        if os.geteuid() == 0:
+            raise Stop('Run as the target user; apt uses an explicit sudo step')
+        if not args.target.is_dir() or not os.access(args.target, os.W_OK):
+            raise Stop('Target home must exist and be writable')
+        if run(['git', '-C', args.repo, 'status', '--porcelain=v1', '--untracked-files=all']):
+            raise Stop('Dirty source: manually save/reconcile changes before software maintenance')
+        if args.component == 'miniforge':
+            miniforge(args, machine)
+        else:
+            if args.target != Path.home().resolve():
+                raise Stop('Package managers affect the current host; --target is not a package sandbox')
+            packages(args, machine)
+    except KeyboardInterrupt:
+        print('Interrupted: active subprocesses stopped; completed changes are not rolled back.', file=sys.stderr)
+        return 130
+    except (Stop, OSError, ValueError, KeyError) as error:
+        print('Stopped: ' + str(error), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
