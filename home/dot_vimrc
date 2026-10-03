@@ -1,0 +1,10 @@
+set runtimepath+=~/.vim_runtime
+for config in ['basic.vim', 'filetypes.vim', 'plugins_config.vim', 'extended.vim']
+  let config_path = expand('~/.vim_runtime/vimrcs/' . config)
+  if filereadable(config_path)
+    execute 'source' fnameescape(config_path)
+  endif
+endfor
+if filereadable(expand('~/.config/vim/my_configs.vim'))
+  source ~/.config/vim/my_configs.vim
+endif

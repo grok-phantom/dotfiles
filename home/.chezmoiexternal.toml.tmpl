@@ -1,109 +1,25 @@
-[".oh-my-zsh"]
-    type = "archive"
-    url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".oh-my-zsh/custom/plugins/fast-syntax-highlighting"]
-    type = "archive"
-    url = "https://github.com/zdharma-continuum/fast-syntax-highlighting/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-    
-[".oh-my-zsh/custom/plugins/zsh-vi-mode"]
-    type = "archive"
-    url = "https://github.com/jeffreytse/zsh-vi-mode/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".oh-my-zsh/custom/plugins/zsh-autosuggestions"]
-    type = "archive"
-    url = "https://github.com/zsh-users/zsh-autosuggestions/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".oh-my-zsh/custom/themes/powerlevel10k"]
-    type = "archive"
-    url = "https://github.com/romkatv/powerlevel10k/archive/v1.18.0.tar.gz"
-    exact = true
-    stripComponents = 1
-
-[".vim_runtime"]
-    type = "archive"
-    url = "https://github.com/amix/vimrc/archive/master.tar.gz"
-    refreshPeriod = "168h"
-    stripComponents = 1
-    exact = true
-
-[".vim/bundle/jedi-vim"]
-    type = "git-repo"
-    url = "https://github.com/davidhalter/jedi-vim.git"
-    refreshPeriod = "168h"
-    oneShot = true
-    [".vim/bundle/jedi-vim".clone]
-        args = ["--single-branch", "--depth", "1", "--recurse-submodules",  "--shallow-submodules"]
-
-[".vim/bundle/webapi-vim"]
-    type = "archive"
-    url = "https://github.com/mattn/webapi-vim/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".vim/bundle/supertab"]
-    type = "archive"
-    url = "https://github.com/ervandew/supertab/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".vim/bundle/vim-oscyank"]
-    type = "archive"
-    url = "https://github.com/ojroques/vim-oscyank/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".vim/bundle/fzf.vim"]
-    type = "archive"
-    url = "https://github.com/junegunn/fzf.vim/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".vim/bundle/tagbar"]
-    type = "archive"
-    url = "https://github.com/preservim/tagbar/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-[".tmux"]
-    type = "archive"
-    url = "https://github.com/gpakosz/.tmux/archive/master.tar.gz"
-    exact = true
-    stripComponents = 1
-    refreshPeriod = "168h"
-
-{{- if and (not .ephemeral) }}
-{{-   $fontDir := "" }}
-{{-   if eq .chezmoi.os "darwin" }}
-{{-     $fontDir = "Library/Fonts" }}
-{{-   else if eq .chezmoi.os "linux" }}
-{{-     $fontDir = ".local/share/fonts" }}
-{{-   end }}
-{{-   range (list
-        "MesloLGS NF Regular.ttf"
-        "MesloLGS NF Bold.ttf"
-        "MesloLGS NF Italic.ttf"
-        "MesloLGS NF Bold Italic.ttf") }}
-["{{ $fontDir }}/{{ . }}"]
+{{- if and (eq ((get . "profile") | default "core") "full") (eq ((get . "update_component") | default "config") "externals") -}}
+{{- range .external_lock }}
+{{- $target := .target }}
+{{- if eq .kind "font" }}
+{{- if and (not $.ephemeral) (has $.chezmoi.os (list "darwin" "linux")) }}
+{{- $fontDir := "Library/Fonts" }}
+{{- if eq $.chezmoi.os "linux" }}{{ $fontDir = ".local/share/fonts" }}{{ end }}
+[{{ joinPath $fontDir $target | quote }}]
     type = "file"
-    url = "https://github.com/romkatv/powerlevel10k-media/raw/master/{{ . }}"
-    refreshPeriod = "168h"
-{{-   end }}
+    url = {{ .url | quote }}
+    checksum.sha256 = {{ .sha256 | quote }}
+{{- end }}
+{{- else }}
+[{{ $target | quote }}]
+    type = "archive"
+    url = {{ .url | quote }}
+    checksum.sha256 = {{ .sha256 | quote }}
+    stripComponents = {{ (get . "strip") | default 1 }}
+    exact = true
+{{ if (get . "include") }}
+    include = {{ .include | toJson }}
+{{ end }}
+{{- end }}
+{{ end }}
 {{- end }}

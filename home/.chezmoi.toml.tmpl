@@ -5,8 +5,8 @@
 {{- "" -}}
 
 {{/* Default data values */}}
-{{- $email := "grok.phantom@gmail.com" -}}
-{{- $companyName := "" -}}
+{{- $email := "" -}}
+{{- $gitName := "" -}}
 {{- $hostname := .chezmoi.hostname -}}
 {{- $proxyHost := "127.0.0.1" -}}
 {{- $proxyHttpPort := "7890" -}}
@@ -20,12 +20,10 @@
 {{- $sudo = promptBoolOnce . "sudo" "Do you have sudo privileges on this machine?" -}}
 {{- "" -}}
 
-{{/* Setup for company */}}
-{{- if $company -}}
-{{-   $email = "chenlei@psibot.ai" -}}
-{{-   $companyName = "PsiBot" -}}
-{{- end -}}
-{{- "" -}}
+{{/* Identity is local data; never infer it from machine role. */}}
+{{- $email = promptStringOnce . "email" "Git email (blank to configure locally)" -}}
+{{- $gitName = promptStringOnce . "git_name" "Git name (blank to configure locally)" -}}
+{{- $profile := promptChoiceOnce . "profile" "Configuration profile" (list "core" "full") "core" -}}
 
 {{/* Setup for ephemeral */}}
 {{- if $ephemeral -}}
@@ -53,6 +51,8 @@
 
 
 [data]
+    profile = {{ $profile | quote }}
+    git_name = {{ $gitName | quote }}
     ephemeral = {{ $ephemeral }}
     email = {{ $email | quote }}
     company = {{ $company }}
