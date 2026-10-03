@@ -16,3 +16,23 @@ Library/**
 .chezmoiscripts/linux/**
 .local/share/fonts
 {{ end }}
+
+{{- $profile := (get . "profile") | default "core" }}
+{{- if not (has $profile (list "core" "full")) }}
+{{- fail "profile must be core or full" }}
+{{- end }}
+{{ if ne $profile "full" }}
+.oh-my-zsh/**
+.vim_runtime/**
+.vim/**
+.vimrc
+.config/vim/**
+.config/zsh/completions/**
+.tmux.conf
+.p10k.zsh
+.condarc
+.config/yazi/**
+.config/karabiner/**
+Library/**
+.local/share/fonts/**
+{{ end }}

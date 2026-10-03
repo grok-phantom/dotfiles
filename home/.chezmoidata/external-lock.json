@@ -1,0 +1,168 @@
+{
+  "external_lock": [
+    {
+      "target": ".oh-my-zsh",
+      "repo": "ohmyzsh/ohmyzsh",
+      "revision": "4d4cfc287e9d887b81242c0e431b5f49f9cec5c1",
+      "url": "https://codeload.github.com/ohmyzsh/ohmyzsh/tar.gz/4d4cfc287e9d887b81242c0e431b5f49f9cec5c1",
+      "sha256": "d3af1bf5f3c59e84f1f3051d3a994b557b8ffd3cbdf64b2811ac532c38f6b5ee",
+      "kind": "archive"
+    },
+    {
+      "target": ".oh-my-zsh/custom/plugins/fast-syntax-highlighting",
+      "repo": "zdharma-continuum/fast-syntax-highlighting",
+      "revision": "4672ad5dd9ad68a7effc1476d65afb7c584ce2b3",
+      "url": "https://codeload.github.com/zdharma-continuum/fast-syntax-highlighting/tar.gz/4672ad5dd9ad68a7effc1476d65afb7c584ce2b3",
+      "sha256": "b3cc42c674cb7fc84c225b8a36eb9c45a9f965348e235e7b3bc97c74e58c5299",
+      "kind": "archive"
+    },
+    {
+      "target": ".oh-my-zsh/custom/plugins/zsh-vi-mode",
+      "repo": "jeffreytse/zsh-vi-mode",
+      "revision": "91cafe4a09b6670cb8e761aa413e5f7b9e00816f",
+      "url": "https://codeload.github.com/jeffreytse/zsh-vi-mode/tar.gz/91cafe4a09b6670cb8e761aa413e5f7b9e00816f",
+      "sha256": "4c337148239de8a24e0acb01a2a13642886ee815357ee1ee67375c7250e560b8",
+      "kind": "archive"
+    },
+    {
+      "target": ".oh-my-zsh/custom/plugins/zsh-autosuggestions",
+      "repo": "zsh-users/zsh-autosuggestions",
+      "revision": "85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5",
+      "url": "https://codeload.github.com/zsh-users/zsh-autosuggestions/tar.gz/85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5",
+      "sha256": "20665e469e720e674964a66854d5534b9af78cdfd438512746ecd1ade8e819ce",
+      "kind": "archive"
+    },
+    {
+      "target": ".oh-my-zsh/custom/themes/powerlevel10k",
+      "repo": "romkatv/powerlevel10k",
+      "revision": "0af598cbed78660066f8a8f4465844501ba5695b",
+      "url": "https://codeload.github.com/romkatv/powerlevel10k/tar.gz/0af598cbed78660066f8a8f4465844501ba5695b",
+      "sha256": "fe766aca30c4ec7babe173c993c58d0cffb66daf645161d11bf61d62876ef77b",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim_runtime",
+      "repo": "amix/vimrc",
+      "revision": "46294d589d15d2e7308cf76c58f2df49bbec31e8",
+      "url": "https://codeload.github.com/amix/vimrc/tar.gz/46294d589d15d2e7308cf76c58f2df49bbec31e8",
+      "sha256": "b7f02493ae76e1272337d401dd976829b5bf189b512ae5d31e58fbdeefb05bf9",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/jedi-vim",
+      "repo": "davidhalter/jedi-vim",
+      "revision": "a13c7bf64dbb4abcf676b4e41c5fedc2d4e7f6dd",
+      "url": "https://codeload.github.com/davidhalter/jedi-vim/tar.gz/a13c7bf64dbb4abcf676b4e41c5fedc2d4e7f6dd",
+      "sha256": "29ab3d8b1f81f5ed85a1fb23171f0077bc291efc7b9af5d29ecbeb0e5ade33ad",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/webapi-vim",
+      "repo": "mattn/webapi-vim",
+      "revision": "c7eec04aad31e1665164d8292d0ec8b5c3cc5a57",
+      "url": "https://codeload.github.com/mattn/webapi-vim/tar.gz/c7eec04aad31e1665164d8292d0ec8b5c3cc5a57",
+      "sha256": "834f8ca379b2ba8c5789e423bbfd7d1909327908a0ef1a93e59a789615f8e2e4",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/supertab",
+      "repo": "ervandew/supertab",
+      "revision": "8705ae0e43b34339c06328fa6dab24ecaf21aab6",
+      "url": "https://codeload.github.com/ervandew/supertab/tar.gz/8705ae0e43b34339c06328fa6dab24ecaf21aab6",
+      "sha256": "060f02c428bf8a191a3fb7cbc9f37c45b858b0211e45ed1846317bd1ccdd1f3c",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/vim-oscyank",
+      "repo": "ojroques/vim-oscyank",
+      "revision": "d67d76b2f19b868b70a1cf33a779d71dc092cb30",
+      "url": "https://codeload.github.com/ojroques/vim-oscyank/tar.gz/d67d76b2f19b868b70a1cf33a779d71dc092cb30",
+      "sha256": "fc09b1ade7dc6ff6b49d1e19ad8c4cb7b0368e3685ebf9ce4524d7666abd72f3",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/fzf.vim",
+      "repo": "junegunn/fzf.vim",
+      "revision": "023de3c0e158ff9c2b0992175af10be97c2f2158",
+      "url": "https://codeload.github.com/junegunn/fzf.vim/tar.gz/023de3c0e158ff9c2b0992175af10be97c2f2158",
+      "sha256": "45d7a6fd294a717d399e711d6f61cf344b225b9a8270b6d000b5842b8cdb6ea5",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/tagbar",
+      "repo": "preservim/tagbar",
+      "revision": "07cb8247487208124978daff8e13624667635457",
+      "url": "https://codeload.github.com/preservim/tagbar/tar.gz/07cb8247487208124978daff8e13624667635457",
+      "sha256": "0974496e5985e6b095431a388acb1be4c0ebccf61fbfd113f7d0a063d2570117",
+      "kind": "archive"
+    },
+    {
+      "target": ".tmux",
+      "repo": "gpakosz/.tmux",
+      "revision": "58a3dcc0d718ec0fa1c0d5a2fddd640a1ad7a5b7",
+      "url": "https://codeload.github.com/gpakosz/.tmux/tar.gz/58a3dcc0d718ec0fa1c0d5a2fddd640a1ad7a5b7",
+      "sha256": "5189baec2b8ba2cea62008faf959b1ea20fd394b09a277e0c78d61a8d092390c",
+      "kind": "archive"
+    },
+    {
+      "target": ".config/yazi/plugins/smart-enter.yazi",
+      "repo": "yazi-rs/plugins",
+      "revision": "6229767f7fef39a2a78f5cee9122cc4dfb43f327",
+      "url": "https://codeload.github.com/yazi-rs/plugins/tar.gz/6229767f7fef39a2a78f5cee9122cc4dfb43f327",
+      "sha256": "b38e3c7a1b68ca9758cfd0da49f4d70186e73d1a6657569d69c35201952967ab",
+      "kind": "archive",
+      "strip": 2,
+      "include": [
+        "*/smart-enter.yazi/**"
+      ]
+    },
+    {
+      "target": ".vim/bundle/jedi-vim/pythonx/jedi",
+      "repo": "davidhalter/jedi",
+      "revision": "3102215478fe07b965dcd8221c17436d1dd7e8ac",
+      "url": "https://codeload.github.com/davidhalter/jedi/tar.gz/3102215478fe07b965dcd8221c17436d1dd7e8ac",
+      "sha256": "a376618d8d365e84d35169a42fea8b24eea8205182c776aba8f4810b7ccce3f0",
+      "kind": "archive"
+    },
+    {
+      "target": ".vim/bundle/jedi-vim/pythonx/parso",
+      "repo": "davidhalter/parso",
+      "revision": "bfe30584415cde2e5a686512c2b109e1d06da3b6",
+      "url": "https://codeload.github.com/davidhalter/parso/tar.gz/bfe30584415cde2e5a686512c2b109e1d06da3b6",
+      "sha256": "f00608aa59a0c0cbc29b11d1ff75ed50a8be66d9e643cb79eacf055431cebb6c",
+      "kind": "archive"
+    },
+    {
+      "target": "MesloLGS NF Regular.ttf",
+      "repo": "romkatv/powerlevel10k-media",
+      "revision": "145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d",
+      "url": "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d/MesloLGS%20NF%20Regular.ttf",
+      "sha256": "d97946186e97f8d7c0139e8983abf40a1d2d086924f2c5dbf1c29bd8f2c6e57d",
+      "kind": "font"
+    },
+    {
+      "target": "MesloLGS NF Bold.ttf",
+      "repo": "romkatv/powerlevel10k-media",
+      "revision": "145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d",
+      "url": "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d/MesloLGS%20NF%20Bold.ttf",
+      "sha256": "b6c0199cf7c7483c8343ea020658925e6de0aeb318b89908152fcb4d19226003",
+      "kind": "font"
+    },
+    {
+      "target": "MesloLGS NF Italic.ttf",
+      "repo": "romkatv/powerlevel10k-media",
+      "revision": "145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d",
+      "url": "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d/MesloLGS%20NF%20Italic.ttf",
+      "sha256": "6f357bcbe2597704e157a915625928bca38364a89c22a4ac36e7a116dcd392ef",
+      "kind": "font"
+    },
+    {
+      "target": "MesloLGS NF Bold Italic.ttf",
+      "repo": "romkatv/powerlevel10k-media",
+      "revision": "145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d",
+      "url": "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/145eb9fbc2f42ee408dacd9b22d8e6e0e553f83d/MesloLGS%20NF%20Bold%20Italic.ttf",
+      "sha256": "56b4131adecec052c4b324efb818dd326d586dbc316fc68f98f1cae2eb8d1220",
+      "kind": "font"
+    }
+  ]
+}
