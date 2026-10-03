@@ -147,6 +147,12 @@ chezmoi apply 不是全局事务；中途失败可能留下部分目标变化且
 
 ## 验证与边界
 
+统一入口为 `./scripts/test all`（或 `make test`），自动选择已有 Python 3.11+；
+可用 `PYTHON=/path/to/python3.13` 明确指定。入口隔离 HOME/XDG，并生成绑定提交、
+平台和依赖版本的 JSON 报告，不安装软件。单元/mock、缓存集成和 CI 的区别见
+[测试说明](docs/testing.md)；[macOS VM 验收计划](docs/macos-vm-acceptance.md) 已准备但尚未执行。
+下面保留的是原始底层命令，推荐日常使用上述统一入口。
+
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 # 可选：使用事先下载且与锁一致的归档/字体缓存做完整离线集成验证

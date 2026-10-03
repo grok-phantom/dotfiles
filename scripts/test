@@ -1,0 +1,18 @@
+#!/bin/sh
+# Test tooling needs Python 3.11+; the update CLI itself still supports 3.9+.
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+if [ -n "${PYTHON:-}" ]; then
+    "$PYTHON" -I -c 'import sys; sys.exit(sys.version_info < (3, 11))' || {
+        echo 'BLOCKED: PYTHON must name a working Python 3.11+ interpreter.' >&2
+        exit 2
+    }
+    exec "$PYTHON" -I -B "$root/tests/run_tests.py" "$@"
+fi
+for candidate in python3.13 python3.12 python3.11 python3; do
+    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -I -c 'import sys; sys.exit(sys.version_info < (3, 11))'; then
+        exec "$candidate" -I -B "$root/tests/run_tests.py" "$@"
+    fi
+done
+echo 'BLOCKED: Python 3.11+ is required; set PYTHON to an existing interpreter. Nothing was installed.' >&2
+exit 2

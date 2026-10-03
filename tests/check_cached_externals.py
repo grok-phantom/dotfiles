@@ -11,7 +11,7 @@ source_root=pathlib.Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directory:
     root=pathlib.Path(directory)
     repo=root/'repo'; target=root/'target'; target.mkdir()
-    shutil.copytree(source_root,repo,ignore=shutil.ignore_patterns('.git','__pycache__'))
+    shutil.copytree(source_root,repo,ignore=shutil.ignore_patterns('.git','__pycache__','.test-results'))
     lockfile=repo/'home/.chezmoidata/external-lock.json'
     lock=json.loads(lockfile.read_text())
     for item in lock['external_lock']:
@@ -36,7 +36,8 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directo
     update('plan','--plan',root/'plan.json')
     update('apply','--plan',root/'plan.json','--yes')
     update('verify')
-    for file in ['.oh-my-zsh/oh-my-zsh.sh','.vim_runtime/vimrcs/basic.vim','.vim/bundle/jedi-vim/pythonx/jedi/jedi/__init__.py','.vim/bundle/jedi-vim/pythonx/parso/parso/__init__.py','.config/yazi/plugins/smart-enter.yazi/main.lua','Library/Fonts/MesloLGS NF Regular.ttf']:
+    font_directory = 'Library/Fonts' if sys.platform == 'darwin' else '.local/share/fonts'
+    for file in ['.oh-my-zsh/oh-my-zsh.sh','.vim_runtime/vimrcs/basic.vim','.vim/bundle/jedi-vim/pythonx/jedi/jedi/__init__.py','.vim/bundle/jedi-vim/pythonx/parso/parso/__init__.py','.config/yazi/plugins/smart-enter.yazi/main.lua',font_directory+'/MesloLGS NF Regular.ttf']:
         assert (target/file).is_file(),file
     assert (target/'.tmux.conf').is_symlink()
     update('plan','--plan',root/'second.json')
