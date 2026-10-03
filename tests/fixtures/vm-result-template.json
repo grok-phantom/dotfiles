@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "kind": "manual-macos-vm-acceptance",
+  "commit": null,
+  "guest_os_build": null,
+  "guest_architecture": null,
+  "vm_tool_version": null,
+  "baseline_backup_id": null,
+  "python_version": null,
+  "chezmoi_version": null,
+  "cases": [
+    {"id": "V01", "name": "Clean prerequisites and init", "status": "not_run", "evidence": []},
+    {"id": "V02", "name": "Core first apply and shell session", "status": "not_run", "evidence": []},
+    {"id": "V03", "name": "Repeat with a new plan", "status": "not_run", "evidence": []},
+    {"id": "V04", "name": "Reviewed forward upgrade", "status": "not_run", "evidence": []},
+    {"id": "V05", "name": "Source and target conflicts", "status": "not_run", "evidence": []},
+    {"id": "V06", "name": "Failure and manual recovery", "status": "not_run", "evidence": []},
+    {"id": "V07", "name": "Forward revert and backup restore", "status": "not_run", "evidence": []},
+    {"id": "V08", "name": "Full config and 20 cached externals", "status": "not_run", "evidence": []},
+    {"id": "V09", "name": "Full to core leaves optional files", "status": "not_run", "evidence": []},
+    {"id": "V10", "name": "Real optional software operations", "status": "not_run", "evidence": []},
+    {"id": "V11", "name": "Guest preferences and login integration", "status": "not_run", "evidence": []}
+  ]
+}

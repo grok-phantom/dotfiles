@@ -1,0 +1,14 @@
+# Synthetic guest-only data. No identity, credentials, package installation or sudo.
+[data]
+profile = "core"
+git_name = "VM Test User"
+email = "vm-test@example.invalid"
+company = false
+ephemeral = false
+homebrew = false
+sudo = false
+osid = "darwin"
+hostname = "dotfiles-test-vm"
+proxy_host = "127.0.0.1"
+proxy_http_port = "6152"
+proxy_socks_port = "6153"
