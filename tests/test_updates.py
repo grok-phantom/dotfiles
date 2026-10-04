@@ -225,14 +225,23 @@ class UpdateTests(Fixture):
 
     def test_apply_failure_does_not_verify(self):
         args = types.SimpleNamespace(repo=self.repo, target=self.target, config=self.config, profile='core',
-                                     component='config', state=None, cache=None, yes=True, plan=self.root/'plan.json')
-        args.plan.write_text(json.dumps({'base':'a','candidate':'a'}))
+                                     component='config', state=self.root/'state.boltdb', cache=self.root/'cache',
+                                     yes=True, plan=self.root/'plan.json')
+        self.cli('plan', '--plan', args.plan)
         update = UPDATE.Updates(args)
-        with patch.object(update, 'plan', return_value={'base':'a','candidate':'a'}), \
-             patch.object(update, 'cm', side_effect=UPDATE.Stop('failed')) as mocked:
-            with self.assertRaises(UPDATE.Stop):
+        original = update.cm
+        writes = []
+        def fail_apply(source, command, *values):
+            if command in ('apply', 'verify'):
+                writes.append((Path(source), command))
+            if command == 'apply':
+                raise UPDATE.Stop('Injected failure')
+            return original(source, command, *values)
+        with patch.object(update, 'cm', side_effect=fail_apply):
+            with self.assertRaisesRegex(UPDATE.Stop, 'No automatic rollback'):
                 update.apply()
-            self.assertEqual(mocked.call_count, 1)
+        self.assertEqual([command for _, command in writes], ['apply'])
+        self.assertFalse(writes[0][0].exists(), 'Failed apply left its temporary source export')
 
 
 class SoftwareTests(Fixture):

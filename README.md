@@ -29,13 +29,19 @@ git diff HEAD..FETCH_HEAD
 | `status`（默认） | 检查平台、Git source 状态和选中目标的 chezmoi 状态，不升级软件 |
 | `fetch` | 检查后只 `git fetch` 指定 remote/branch，更新 Git 元数据，不 merge、不 apply |
 | `plan` | 将指定提交导出到临时 source，渲染并预览；检查权限，绑定 source/target/config/平台/渲染结果 |
-| `apply --yes` | 重做检查，拒绝过期计划，只允许 fast-forward，然后应用选中目标并 verify |
-| `verify` | 检查选中目标与期望内容一致；不是安装器或整机测试 |
+| `apply --yes` | 重做检查，拒绝过期计划，只允许 fast-forward，再使用这次验证保留的提交快照 apply 和 verify |
+| `verify` | 从当前 HEAD 的提交快照检查选中目标；不是安装器或整机测试 |
 
 source 有 staged、unstaged 或 untracked 改动会停止；没有 autostash、rebase、reset 或 clean。
 目标有上次 apply 后的本地修改也会停止。先手工检查 `chezmoi status`、`chezmoi diff`，
 用 `chezmoi merge` / `chezmoi add` 等保存需要的更改，再提交和重新规划；不要为了通过检查丢弃改动。
 分支分叉、回退提交或 detached HEAD 不由入口自动处理。
+
+配置入口的 status、plan、apply 和 verify 都只读取已提交的 source 快照。
+Git 忽略且未提交的文件不参与渲染或写入，现有的对应用户目标也不会因此被接管。
+匹配 ignore 规则但已明确提交的文件仍属于计划。普通未跟踪、staged、unstaged 改动继续使入口停止。
+apply 在重新核验计划后保留同一临时快照直到写入和验证完成，并检查 source HEAD 未发生意外变化；
+成功或失败后都会清理临时导出。直接运行 chezmoi 的 source 规则不受此入口约束。
 
 配置更新不执行 `.chezmoiscripts`，也不调用包管理器安装/升级。
 fetch 禁止交互认证，SSH 连接等待上限 15 秒，整体等待上限 120 秒；需要事先配置可用的凭据/agent。

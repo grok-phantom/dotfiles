@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Explicit dotfiles updates. Python 3.9+, Git and chezmoi are required."""
 import argparse
+from contextlib import contextmanager
 import hashlib
 import io
 import json
@@ -95,11 +96,29 @@ class Updates:
         excluded = 'scripts' if self.args.component == 'externals' else 'scripts,externals'
         return run(cmd + [command, '--exclude=' + excluded, *args])
 
+    @contextmanager
+    def exported_source(self, commit):
+        with tempfile.TemporaryDirectory(prefix='dotfiles-source-') as directory:
+            archive = self.git('archive', '--format=tar', commit)
+            with tarfile.open(fileobj=io.BytesIO(archive)) as source:
+                for member in source.getmembers():
+                    if member.issym() or member.islnk() or member.name.startswith('/') or '..' in Path(member.name).parts:
+                        raise Stop('Unsafe source archive entry')
+                source.extractall(directory)
+            yield Path(directory)
+
     def drift(self):
-        status = self.cm(self.repo, 'status').decode()
+        commit = self.git('rev-parse', 'HEAD').decode().strip()
+        with self.exported_source(commit) as source:
+            status = self.cm(source, 'status').decode()
         if any(line and line[0] != ' ' for line in status.splitlines()):
             raise Stop('Target has local changes since the last apply; inspect chezmoi status/diff and reconcile manually')
         return status
+
+    def verify(self):
+        commit = self.git('rev-parse', 'HEAD').decode().strip()
+        with self.exported_source(commit) as source:
+            self.cm(source, 'verify')
 
     def permissions(self, names):
         if os.geteuid() == 0:
@@ -135,18 +154,17 @@ class Updates:
         return digest(json.dumps(entries, sort_keys=True).encode())
 
     def plan(self, ref, show=False):
+        with self._planned_source(ref, show) as (plan, _):
+            return plan
+
+    @contextmanager
+    def _planned_source(self, ref, show=False):
         self.clean()
         self.drift()
         base = self.git('rev-parse', 'HEAD').decode().strip()
         candidate = self.git('rev-parse', '--verify', ref + '^{commit}').decode().strip()
         self.git('merge-base', '--is-ancestor', base, candidate)
-        with tempfile.TemporaryDirectory(prefix='dotfiles-plan-') as directory:
-            archive = self.git('archive', '--format=tar', candidate)
-            with tarfile.open(fileobj=io.BytesIO(archive)) as source:
-                for member in source.getmembers():
-                    if member.issym() or member.islnk() or member.name.startswith('/') or '..' in Path(member.name).parts:
-                        raise Stop('Unsafe source archive entry')
-                source.extractall(directory)
+        with self.exported_source(candidate) as directory:
             # The version being previewed is trusted code; templates may execute commands.
             rendered = self.cm(directory, 'dump', '--format=json')
             contents = json.loads(rendered)
@@ -167,22 +185,29 @@ class Updates:
                 if self.args.diff:
                     sys.stdout.flush()
                     sys.stdout.buffer.write(diff)
-            return plan
+            # Keep this validated export alive through apply and verification.
+            yield plan, directory
 
     def apply(self):
         if not self.args.yes or not self.args.plan:
             raise Stop('apply requires --plan PATH --yes after review')
         saved = json.loads(self.args.plan.read_text())
-        if self.plan(saved['candidate']) != saved:
-            raise Stop('Plan is stale or options differ; generate and review a new plan')
-        self.clean()
-        if saved['base'] != saved['candidate']:
-            self.git('merge', '--ff-only', '--no-edit', saved['candidate'])
-        try:
-            self.cm(self.repo, 'apply', '--error-on-conflict')
-            self.cm(self.repo, 'verify')
-        except Stop:
-            raise Stop('Apply/verify failed. Source may have advanced and targets may be partly written; inspect and re-plan. No automatic rollback.')
+        with self._planned_source(saved['candidate']) as (current, source):
+            if current != saved:
+                raise Stop('Plan is stale or options differ; generate and review a new plan')
+            self.clean()
+            if self.git('rev-parse', 'HEAD').decode().strip() != saved['base']:
+                raise Stop('Source changed after plan validation; no targets were written')
+            if saved['base'] != saved['candidate']:
+                self.git('merge', '--ff-only', '--no-edit', saved['candidate'])
+            self.clean()
+            if self.git('rev-parse', 'HEAD').decode().strip() != saved['candidate']:
+                raise Stop('Source changed before apply; no targets were written')
+            try:
+                self.cm(source, 'apply', '--error-on-conflict')
+                self.cm(source, 'verify')
+            except Stop:
+                raise Stop('Apply/verify failed. Source may have advanced and targets may be partly written; inspect and re-plan. No automatic rollback.')
         print('Selected targets applied and verified. Packages/system settings were not changed.')
 
 
@@ -237,7 +262,7 @@ def main():
             update.apply()
         else:
             update.clean()
-            update.cm(update.repo, 'verify')
+            update.verify()
             print('Selected targets verified; installer scripts have not been tested by this command.')
     except KeyboardInterrupt:
         print('Interrupted: active subprocesses stopped; completed changes are not rolled back.', file=sys.stderr)
