@@ -19,7 +19,7 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 
 | Suite | Real execution | Limit |
 | --- | --- | --- |
-| `unit` | Original 33 tests plus 3 recovery cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer are mocks; no host software or settings changed |
+| `unit` | Original 33 tests plus 3 recovery and 10 source-snapshot cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer are mocks; no host software or settings changed |
 | `static` | Python/JSON/TOML parsing, shell syntax, whitespace and lock format | No template apply, download, external checksum verification or system validation |
 | `cached-externals` | Verifies actual bytes of 20 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
 | `all` | `unit` + `static` | Does not include cache integration, VM or live software installation |
@@ -43,6 +43,16 @@ restoration permits replanning, and switching full to core preserves optional fi
 The partial failure is injected, not a real disk-full or OS permission failure.
 VM recovery, backups of real software and installed package versions need separate
 acceptance in [the VM plan](macos-vm-acceptance.md).
+
+Source-snapshot regressions cover ignored files before/after planning, preservation
+of unmanaged targets, intentionally committed files matching ignore rules, and
+rejection/preservation of ordinary untracked, staged and unstaged source changes.
+They also verify pinned candidate commits when a branch moves, refusal when HEAD
+changes during validation, and that late working-tree edits cannot change the
+validated apply source. Real chezmoi performs the target writes; the late-edit
+injection controls timing only. Apply and its verification use the same disposable
+export, which is also cleaned on failure. This does not make target writes atomic
+or protect against concurrent edits to the target/config or untrusted templates.
 
 ## CI scope and dependency provenance
 
