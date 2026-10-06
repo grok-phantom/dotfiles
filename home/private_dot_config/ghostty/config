@@ -1,0 +1,4 @@
+# Keep shell, integration, TERM and keybindings at Ghostty defaults.
+font-family = MesloLGS NF
+font-size = 11
+theme = Gruvbox Dark

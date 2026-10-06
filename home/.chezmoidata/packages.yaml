@@ -30,6 +30,7 @@ packages:
       - betterdisplay
       - discord
       - chatgpt
+      - ghostty
       - google-chrome
       - hazel
       - iina
