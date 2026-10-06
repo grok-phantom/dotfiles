@@ -179,3 +179,5 @@ macOS VM 可作为后续完整安装/系统偏好的隔离验证；Linux apt 和
 - [Global flags](https://www.chezmoi.io/reference/command-line-flags/global/)：dry-run 保护 destination；`refresh-externals=never` 仍会下载未缓存资源，不是离线保证。
 - [External checksums](https://www.chezmoi.io/reference/special-files/chezmoiexternal-format/) 与 [Homebrew bundle](https://docs.brew.sh/Manpage#bundle-subcommand)。
 - [Miniforge](https://github.com/conda-forge/miniforge)：固定版本支持范围和现有安装 `-u` 行为。
+
+终端配置与 Ghostty 试用、验证和回退见 [terminals](docs/terminals.md)。

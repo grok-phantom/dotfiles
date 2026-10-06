@@ -1,0 +1,30 @@
+#!/bin/sh
+# Read-only check; no shell/profile/terminfo installation.
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+python3 - "$root" <<'PY'
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+p = json.loads((root / 'home/Library/private_Application Support/iTerm2/DynamicProfiles/Profiles.json.tmpl').read_text())['Profiles']
+assert len(p) == 1 and p[0]['Name'] and p[0]['Guid']
+assert p[0]['Guid'] != '61E79BDE-E080-48AE-852D-F8637450C29B', 'GUID collides with the original regular profile'
+assert 'Command' not in p[0] and 'Working Directory' not in p[0]
+print('iTerm2 dynamic profile: valid JSON and independent identity')
+PY
+if [ "$(uname -s)" != Darwin ]; then
+    echo 'Ghostty macOS runtime checks: skipped on this platform'
+    exit 0
+fi
+ghostty=/Applications/Ghostty.app/Contents/MacOS/ghostty
+if [ ! -x "$ghostty" ]; then
+    echo 'BLOCKED: Ghostty is not installed in /Applications' >&2
+    exit 2
+fi
+"$ghostty" +version
+# Validate source and effective local config separately (macOS config can override XDG).
+"$ghostty" +validate-config --config-file="$root/home/private_dot_config/ghostty/config"
+"$ghostty" +validate-config
+"$ghostty" +list-fonts | grep -q '^MesloLGS NF$'
+"$ghostty" +list-themes | grep -q '^Gruvbox Dark '
+"$ghostty" +list-keybinds --default | grep -q '=start_search$'
+echo 'Ghostty config, font, theme and native search capability: passed'
