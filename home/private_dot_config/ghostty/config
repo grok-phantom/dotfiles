@@ -1,4 +1,22 @@
-# Keep shell, integration, TERM and keybindings at Ghostty defaults.
+# Familiar font and palette; no transparency or decorative effects.
 font-family = MesloLGS NF
 font-size = 11
 theme = Gruvbox Dark
+window-padding-x = 8
+window-padding-y = 6
+
+# Preserve macOS Option-character input; do not force Option into terminal Alt.
+macos-option-as-alt = false
+
+# Leave Ctrl+Tab to the app switcher. Use Cmd+Shift+[ / ] for terminal tabs.
+keybind = ctrl+tab=unbind
+keybind = ctrl+shift+tab=unbind
+
+# Ask before terminal applications (including SSH) access the clipboard.
+# Ordinary Cmd+C / Cmd+V still use native behavior.
+clipboard-read = ask
+clipboard-write = ask
+clipboard-paste-protection = true
+
+# Keep native defaults for shell integration, directory inheritance,
+# running-command close confirmation, Cmd shortcuts and TERM.

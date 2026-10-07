@@ -24,7 +24,12 @@ wins. See [iTerm2 documentation](https://iterm2.com/documentation-dynamic-profil
 
 ## Ghostty
 
-Start with only `font-family = MesloLGS NF`, size 11, and `Gruvbox Dark`.
+Use `MesloLGS NF`, size 11, and `Gruvbox Dark`, with 8pt horizontal / 6pt
+vertical padding. Keep macOS Option-character input (`macos-option-as-alt = false`);
+terminal Alt-letter sequences are intentionally not enabled. Clipboard OSC 52 reads
+and writes ask first, including requests from SSH; native Cmd+C/V remain unchanged.
+Unsafe paste protection stays enabled. Directory inheritance and running-command
+close confirmation use the verified 1.3.1 defaults. No extra shell/TERM setup is needed.
 The existing full-profile font provision supplies MesloLGS NF. `config` remains
 supported by 1.3.1 and older releases; `config.ghostty` is also supported since
 1.2.3. A macOS config under `~/Library/Application Support/com.mitchellh.ghostty/`
@@ -35,11 +40,12 @@ after upgrades; it validates both source and effective config, font/theme presen
 and native search binding, failing when a required capability disappears.
 This does not establish compatibility with every older release or GUI behavior.
 
-Default macOS shortcuts from that binary:
+Daily macOS shortcuts (Ctrl+Tab / Ctrl+Shift+Tab are unbound to avoid competing
+with the app switcher):
 
 | Action | Shortcut |
 | --- | --- |
-| Tab | Cmd+T; Ctrl+Tab / Ctrl+Shift+Tab |
+| Tab | Cmd+T; Cmd+Shift+[ / Cmd+Shift+] |
 | Split right / down | Cmd+D / Cmd+Shift+D |
 | Focus split | Cmd+[ / Cmd+] |
 | Search | Cmd+F; Cmd+G / Cmd+Shift+G |
@@ -59,6 +65,10 @@ promise to restore running shell jobs. Before making Ghostty primary, test Chine
 IME composition/candidates, mixed-width text, paste safety, Yazi previews, tmux,
 search in long output, tabs/splits, and quit/relaunch with disposable sessions.
 Automated text injection cannot verify IME feel. Keep iTerm2 available meanwhile.
+
+Reload changes with **Cmd+Shift+,**; no restart of active jobs is needed.
+To undo only this personalization, restore the previous Ghostty config in both
+the source and target, then reload. Keep the private backup outside the repository.
 
 ## Apply and rollback
 
