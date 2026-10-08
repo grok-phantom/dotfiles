@@ -54,6 +54,25 @@
 跳板账号与管理账号分别命名：仅允许转发的账号不能用于 shell/SFTP。
 新设备只迁移批准的个人主机配置，分别核实密钥来源与主机信任后再测试连接。
 
+### 可选的 1Password 后端
+
+chezmoi 支持通过 `onepasswordRead`、`onepassword` 等模板函数读取 1Password，
+因此敏感主机配置也可以保存在获准的 vault 中，按本机权限渲染。本仓库当前不调用
+这些函数，也不要求安装 `op`；本机 Include 结构可以在后续单独迁移时保留。
+
+建议分开处理两类数据：主机地址、用户名等配置由可选模板读取，SSH 私钥由
+1Password SSH agent 提供签名。不要为了实现模板化而把私钥渲染到磁盘。真实 vault、
+item、field 引用及后端选择留在本机数据中；公开模板只引用泛化的数据字段。
+公司与个人凭据分别授权，未启用后端的机器继续使用现有本地配置和认证方式。
+
+启用前需要另行审查：本机 `op` 与账户访问、准确字段映射、渲染文件权限、diff 和
+计划日志中的秘密处理、agent 提供的密钥范围，以及锁定/解锁时的授权体验。
+CLI 读取与 SSH agent 签名是两个授权流程；不能把接入模板等同于免验证登录。
+本机 Keychain 与现有 agent 设置不会因选择 full 或同步仓库而改变。
+
+参考：[chezmoi 的 1Password 集成](https://www.chezmoi.io/user-guide/password-managers/1password/)、
+[1Password SSH agent 配置](https://developer.1password.com/docs/ssh/agent/config/)。
+
 ## 容器与代理迁移
 
 容器、Compose、订阅转换、LaunchAgent 和代理服务属于本机 infra。先查明当前消费链、
