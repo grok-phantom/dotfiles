@@ -1,7 +1,10 @@
 set encoding=UTF-8
 set clipboard=unnamed
-colorscheme gruvbox
-
+call pathogen#infect()
+" Keep the current theme when externals have not been installed yet.
+if !empty(globpath(&runtimepath, 'colors/gruvbox.vim'))
+  colorscheme gruvbox
+endif
 
 let g:SuperTabDefaultCompletionType = "<c-n>"
 
@@ -22,7 +25,6 @@ map <F8> :TagbarToggle<CR>
 
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
 
-call pathogen#infect()
 {{ if lookPath "brew" -}}
 {{ $brew_prefix := (output "brew" "--prefix" | trim) }}
 set rtp+={{ $brew_prefix }}/opt/fzf

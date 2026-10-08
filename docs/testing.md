@@ -21,7 +21,7 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 | --- | --- | --- |
 | `unit` | Original 33 tests plus 3 recovery and 10 source-snapshot cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer are mocks; no host software or settings changed |
 | `static` | Python/JSON/TOML parsing, shell syntax, whitespace and lock format | No template apply, download, external checksum verification or system validation |
-| `cached-externals` | Verifies actual bytes of 20 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
+| `cached-externals` | Verifies actual bytes of 21 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
 | `all` | `unit` + `static` | Does not include cache integration, VM or live software installation |
 
 The launcher isolates HOME, XDG paths, Git global/system configuration, temporary

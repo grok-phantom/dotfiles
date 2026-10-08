@@ -43,4 +43,4 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directo
     update('plan','--plan',root/'second.json')
     update('apply','--plan',root/'second.json','--yes')
     update('verify')
-    print('PASS: all 20 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')
+    print('PASS: all 21 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')

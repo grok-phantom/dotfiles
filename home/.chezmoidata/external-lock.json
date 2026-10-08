@@ -49,6 +49,14 @@
       "kind": "archive"
     },
     {
+      "target": ".vim/bundle/gruvbox",
+      "repo": "morhetz/gruvbox",
+      "revision": "ef8864bb42bf244f0295d1c5a403b27e3d139695",
+      "url": "https://codeload.github.com/morhetz/gruvbox/tar.gz/ef8864bb42bf244f0295d1c5a403b27e3d139695",
+      "sha256": "43a65372b04cdfdef0b61a5fa52c1a9977882adf05a32d900c6036490e5c5d13",
+      "kind": "archive"
+    },
+    {
       "target": ".vim/bundle/jedi-vim",
       "repo": "davidhalter/jedi-vim",
       "revision": "a13c7bf64dbb4abcf676b4e41c5fedc2d4e7f6dd",

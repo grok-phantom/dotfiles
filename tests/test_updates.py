@@ -415,7 +415,7 @@ class TemplateTests(Fixture):
             output = self.chezmoi(profile, component, 'execute-template', '--file', path).stdout
             self.assertEqual(output.strip(), '')
         output = self.chezmoi('full','externals','execute-template','--file',path).stdout
-        self.assertEqual(output.count('checksum.sha256'),20)
+        self.assertEqual(output.count('checksum.sha256'),21)
         self.assertNotIn('master', output)
         self.assertNotIn('latest', output)
         self.assertNotIn('168h', output)

@@ -21,3 +21,8 @@ hash from a moving `latest` URL as a permanent lock.
 
 Checksums bind reviewed bytes; they do not establish that all upstream code is safe.
 Homebrew/apt package names are intentionally not described as reproducible version locks.
+
+Gruvbox was added on 2026-10-08 at upstream commit
+`ef8864bb42bf244f0295d1c5a403b27e3d139695`, using the same fixed-URL download and
+SHA-256 procedure. It is managed separately at `.vim/bundle/gruvbox` so the Vim
+theme does not depend on plugins bundled by the upstream Vim configuration.
