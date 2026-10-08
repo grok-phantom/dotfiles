@@ -100,6 +100,13 @@ class UpdateTests(Fixture):
         self.assertEqual(list(self.target.iterdir()), [])
         self.assertFalse((self.root/'unexpected').exists())
 
+    def test_default_plan_selects_full_without_writing_targets(self):
+        plan = self.root/'default.json'
+        self.cli('plan', '--plan', plan)
+        self.assertEqual(json.loads(plan.read_text())['profile'], 'full')
+        self.assertEqual(list(self.target.iterdir()), [])
+        self.assertFalse((self.root/'unexpected').exists())
+
     def test_plan_apply_verify_repeat(self):
         plan = self.root/'plan.json'
         self.cli('plan', '--plan', plan)
@@ -181,7 +188,7 @@ class UpdateTests(Fixture):
         self.assertFalse((self.target/'.probe').exists())
 
     def test_core_rejects_externals(self):
-        self.cli('plan', '--component', 'externals', okay=False)
+        self.cli('plan', '--profile', 'core', '--component', 'externals', okay=False)
         self.assertFalse((self.root/'unexpected').exists())
 
     def test_unsupported_os_arch(self):
@@ -224,7 +231,7 @@ class UpdateTests(Fixture):
                 update.permissions(['.probe'])
 
     def test_apply_failure_does_not_verify(self):
-        args = types.SimpleNamespace(repo=self.repo, target=self.target, config=self.config, profile='core',
+        args = types.SimpleNamespace(repo=self.repo, target=self.target, config=self.config, profile='full',
                                      component='config', state=self.root/'state.boltdb', cache=self.root/'cache',
                                      yes=True, plan=self.root/'plan.json')
         self.cli('plan', '--plan', args.plan)
@@ -271,9 +278,14 @@ echo installed >> "$TEST_ROOT/install-log"
     def fake_download(self):
         self.mock('curl', 'while [ "$#" -gt 0 ]; do\n if [ "$1" = --output ]; then cp "$TEST_ROOT/fake-installer.sh" "$2"; exit 0; fi\n shift\ndone\nexit 1\n')
 
+    def test_default_software_profile_plans_without_installing(self):
+        self.software('miniforge')
+        self.assertFalse((self.target/'opt/miniforge3').exists())
+        self.assertFalse((self.root/'unexpected').exists())
+
     def test_software_core_profile_no_actions(self):
-        self.software('packages', 'install', '--yes', okay=False)
-        self.software('miniforge', 'apply', '--yes', okay=False)
+        self.software('packages', 'install', '--profile', 'core', '--yes', okay=False)
+        self.software('miniforge', 'apply', '--profile', 'core', '--yes', okay=False)
         self.assertFalse((self.root/'unexpected').exists())
 
     def test_default_python_does_not_write_source_bytecode(self):
@@ -378,6 +390,24 @@ class TemplateTests(Fixture):
             '--config', self.config, '--persistent-state', self.root/'state.boltdb',
             '--cache', self.root/'cache', '--override-data', json.dumps(data),
             command, *args], okay=okay)
+
+    def test_missing_profile_defaults_full_without_managing_credentials(self):
+        for company in (False, True):
+            self.config.write_text(json.dumps({'data': {'ephemeral': False,
+                'company': company, 'homebrew': True, 'sudo': False,
+                'osid': 'darwin', 'email': ''}}))
+            result = self.cmd(['chezmoi', '--source', self.repo,
+                '--destination', self.target, '--config', self.config,
+                '--persistent-state', self.root/'state.boltdb',
+                '--cache', self.root/'cache', 'dump', '--format=json'])
+            contents = json.loads(result.stdout)
+            self.assertIn('.vimrc', contents)
+            self.assertIn('.tmux.conf', contents)
+            for name in contents:
+                self.assertFalse(name == '.ssh' or name.startswith('.ssh/'))
+                self.assertFalse(name == '.aws' or name.startswith('.aws/'))
+            self.assertNotIn('.oh-my-zsh', contents)
+            self.assertFalse((self.root/'unexpected').exists())
 
     def test_core_and_full_isolation_and_shell_syntax(self):
         for profile in ('core','full'):

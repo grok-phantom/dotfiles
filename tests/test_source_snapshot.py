@@ -110,7 +110,7 @@ class SourceSnapshotTests(Fixture):
         plan = self.root/'plan.json'
         self.cli('plan', '--plan', plan)
         args = types.SimpleNamespace(repo=self.repo, target=self.target, config=self.config,
-                                     profile='core', component='config', state=self.root/'state.boltdb',
+                                     profile='full', component='config', state=self.root/'state.boltdb',
                                      cache=self.root/'cache', yes=True, plan=plan)
         update = UPDATE.Updates(args)
         original = update.cm
@@ -132,7 +132,7 @@ class SourceSnapshotTests(Fixture):
         plan = self.root/'plan.json'
         self.cli('plan', '--plan', plan)
         args = types.SimpleNamespace(repo=self.repo, target=self.target, config=self.config,
-                                     profile='core', component='config', state=self.root/'state.boltdb',
+                                     profile='full', component='config', state=self.root/'state.boltdb',
                                      cache=self.root/'cache', yes=True, plan=plan)
         update = UPDATE.Updates(args)
         original = update.cm

@@ -23,7 +23,7 @@
 {{/* Identity is local data; never infer it from machine role. */}}
 {{- $email = promptStringOnce . "email" "Git email (blank to configure locally)" -}}
 {{- $gitName = promptStringOnce . "git_name" "Git name (blank to configure locally)" -}}
-{{- $profile := promptChoiceOnce . "profile" "Configuration profile" (list "core" "full") "core" -}}
+{{- $profile := promptChoiceOnce . "profile" "Configuration profile" (list "core" "full") "full" -}}
 
 {{/* Setup for ephemeral */}}
 {{- if $ephemeral -}}

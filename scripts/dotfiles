@@ -219,7 +219,7 @@ def main():
     parser.add_argument('--config', type=Path, default=Path(os.environ.get('XDG_CONFIG_HOME', Path.home()/'.config'))/'chezmoi/chezmoi.toml')
     parser.add_argument('--state', type=Path, help='Optional isolated chezmoi persistent-state file')
     parser.add_argument('--cache', type=Path, help='Optional isolated chezmoi cache directory')
-    parser.add_argument('--profile', choices=['core', 'full'], default='core')
+    parser.add_argument('--profile', choices=['core', 'full'], default='full')
     parser.add_argument('--component', choices=['config', 'externals'], default='config')
     parser.add_argument('--remote', default='origin')
     parser.add_argument('--branch', default='main')

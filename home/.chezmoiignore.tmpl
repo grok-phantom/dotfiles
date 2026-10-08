@@ -18,7 +18,7 @@ Library/**
 .local/share/fonts
 {{ end }}
 
-{{- $profile := (get . "profile") | default "core" }}
+{{- $profile := (get . "profile") | default "full" }}
 {{- if not (has $profile (list "core" "full")) }}
 {{- fail "profile must be core or full" }}
 {{- end }}

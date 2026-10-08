@@ -1,4 +1,4 @@
-{{- if and (eq ((get . "profile") | default "core") "full") (eq ((get . "update_component") | default "config") "externals") -}}
+{{- if and (eq ((get . "profile") | default "full") "full") (eq ((get . "update_component") | default "config") "externals") -}}
 {{- range .external_lock }}
 {{- $target := .target }}
 {{- if eq .kind "font" }}

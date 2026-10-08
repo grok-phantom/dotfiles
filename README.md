@@ -54,15 +54,16 @@ fetch 禁止交互认证，SSH 连接等待上限 15 秒，整体等待上限 12
 
 | 选择 | 范围 |
 | --- | --- |
-| `core`（CLI 和新初始化默认） | Git、基础 Zsh 配置、开发小工具、pip/uv 配置；不管理 OMZ/Vim/Tmux/Yazi/字体/桌面配置，不初始化 Conda |
-| `full` | 保留原来的软件与完整用户环境选择；配置里启用 OMZ、Vim、Tmux、Yazi、终端和 Conda 初始化 |
+| `core`（显式选择） | Git、基础 Zsh 配置、开发小工具、pip/uv 配置；不管理 OMZ/Vim/Tmux/Yazi/字体/桌面配置，不初始化 Conda |
+| `full`（CLI 和新初始化默认） | 保留原来的软件与完整用户环境选择；配置里启用 OMZ、Vim、Tmux、Yazi、终端和 Conda 初始化 |
 | `--component config`（默认） | 所选 profile 的仓库自有文件；不下载/更新外部资源，不运行安装脚本 |
 | `--profile full --component externals` | 完整配置及锁定的外部资源一起预览/应用；首次预览可能下载到 chezmoi cache 并校验 SHA-256 |
 
-CLI 的 profile 默认固定为 core；要保持完整环境，每次使用 `--profile full`。
-直接使用 chezmoi 时由本机 `data.profile` 决定，未设置也为 core。
+CLI 的 profile 默认固定为 full；精简环境请显式使用 `--profile core`。
+直接使用 chezmoi 时由本机 `data.profile` 决定，未设置回落为 full；已有显式 core 不会被初始化覆盖。
+full 只选择功能，不复制身份、SSH 密钥、公司连接或其他机器的本地数据。
 从 full 切回 core 会忽略对应目标，不卸载已有工具、不删除之前已生成的文件。
-这只是两个固定 profile，没有任意组合的组件框架，也没有多设备清单或主机调度。
+这只是两个固定 profile，没有任意组合的组件框架或主机调度。迁移步骤见 [多 Mac 迁移](docs/multi-mac.md)。
 
 外部资源更新示例：
 
@@ -81,7 +82,7 @@ Vim 的 `.vimrc` 和 Tmux 的 `.tmux.conf` 现在是可 diff 的目标；不再�
 
 ## 软件安装和升级：单独执行
 
-软件命令也默认只 plan，要求 clean source 和 `--profile full`，从原 `packages.yaml` 读取同一份清单。
+软件命令也默认只 plan，要求 clean source；profile 默认 full，从原 `packages.yaml` 读取同一份清单。
 它不更新 dotfiles Git 分支，也不会接着应用配置。
 包管理器操作针对当前主机，不是 `--target` 下的沙箱；软件入口对 package 组件拒绝其他 target。
 

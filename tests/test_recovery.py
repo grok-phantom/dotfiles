@@ -34,7 +34,7 @@ class RecoveryTests(Fixture):
         plan = self.root/'upgrade.json'
         self.cli('plan', '--ref', candidate, '--plan', plan)
         args = types.SimpleNamespace(repo=self.repo, target=self.target, config=self.config,
-                                     profile='core', component='config', state=self.root/'state.boltdb',
+                                     profile='full', component='config', state=self.root/'state.boltdb',
                                      cache=self.root/'cache', yes=True, plan=plan)
         update = UPDATE.Updates(args)
         original = update.cm
@@ -66,6 +66,6 @@ class ProfileRecoveryTests(Fixture):
         self.commit()
         self.plan_apply('full.json', '--profile', 'full')
         self.assertTrue((self.target/'.optional').exists())
-        self.plan_apply('core.json')
-        self.cli('verify')
+        self.plan_apply('core.json', '--profile', 'core')
+        self.cli('verify', '--profile', 'core')
         self.assertEqual((self.target/'.optional').read_text(), 'optional fixture\n')
