@@ -76,7 +76,7 @@ full 只选择功能，不复制身份、SSH 密钥、公司连接或其他机�
 此组件包括外部目录的 `exact` 管理：归档之外的额外文件可能被删除，必须检查计划。
 自有 Vim 配置与 Zsh completion 移到 `~/.config/vim/`、`~/.config/zsh/completions/`，
 不再与 exact 外部目录重叠，因此 config-only 不会清除外部内容。
-Jedi 的 Jedi/Parso 子模块也分别固定到父项目所引用的 commit；Yazi smart-enter 由锁定归档提供。
+Jedi 的 Jedi/Parso 子模块及 Jedi 的 typeshed、django-stubs 递归依赖，分别固定到父项目所引用的 commit；Yazi smart-enter 由锁定归档提供。
 Vim 的 `.vimrc` 和 Tmux 的 `.tmux.conf` 现在是可 diff 的目标；不再运行上游安装器或 `ln -sf`。
 `~/.tmux.conf.local` 保持用户自管。full 配置建议先应用 externals，避免缺少插件或产生临时悬空链接。
 

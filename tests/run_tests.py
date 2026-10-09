@@ -64,11 +64,11 @@ def static_checks(env):
                     ['git', 'diff', '--check']):
         subprocess.run(command, cwd=ROOT, env=env, check=True, capture_output=True)
     lock = json.loads((ROOT/'home/.chezmoidata/external-lock.json').read_text())
-    assert len(lock['external_lock']) == 21, 'Review the expected resource count when changing the lock'
+    assert len(lock['external_lock']) == 23, 'Review the expected resource count when changing the lock'
     for entry in lock['external_lock']:
         assert re.fullmatch(r'[0-9a-f]{64}', entry['sha256'])
         assert entry['url'].startswith('https://')
-    return f'PASS: parsed {count} Python/JSON/TOML files; shell syntax, diff whitespace and 21 lock entries checked.\n'
+    return f'PASS: parsed {count} Python/JSON/TOML files; shell syntax, diff whitespace and 23 lock entries checked.\n'
 
 
 def main():
@@ -135,7 +135,7 @@ def main():
                 suite['scope'] = 'Temporary targets with real chezmoi; network/package installers mocked; includes recovery scenarios'
             else:
                 if not args.cache or not args.cache.is_dir():
-                    suite.update(status='blocked', reason='Provide --cache with the 21 previously downloaded locked resources; no download was attempted')
+                    suite.update(status='blocked', reason='Provide --cache with the 23 previously downloaded locked resources; no download was attempted')
                     log.write_text(suite['reason']+'\n')
                     continue
                 locked = json.loads((ROOT/'home/.chezmoidata/external-lock.json').read_text())['external_lock']

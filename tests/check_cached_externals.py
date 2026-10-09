@@ -39,8 +39,11 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directo
     font_directory = 'Library/Fonts' if sys.platform == 'darwin' else '.local/share/fonts'
     for file in ['.oh-my-zsh/oh-my-zsh.sh','.vim_runtime/vimrcs/basic.vim','.vim/bundle/jedi-vim/pythonx/jedi/jedi/__init__.py','.vim/bundle/jedi-vim/pythonx/parso/parso/__init__.py','.config/yazi/plugins/smart-enter.yazi/main.lua',font_directory+'/MesloLGS NF Regular.ttf']:
         assert (target/file).is_file(),file
+    for file in ['typeshed/stdlib/builtins.pyi', 'django-stubs/django-stubs/__init__.pyi']:
+        path = target/'.vim/bundle/jedi-vim/pythonx/jedi/jedi/third_party'/file
+        assert path.is_file(), path
     assert (target/'.tmux.conf').is_symlink()
     update('plan','--plan',root/'second.json')
     update('apply','--plan',root/'second.json','--yes')
     update('verify')
-    print('PASS: all 21 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')
+    print('PASS: all 23 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')

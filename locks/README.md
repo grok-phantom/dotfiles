@@ -26,3 +26,17 @@ Gruvbox was added on 2026-10-08 at upstream commit
 `ef8864bb42bf244f0295d1c5a403b27e3d139695`, using the same fixed-URL download and
 SHA-256 procedure. It is managed separately at `.vim/bundle/gruvbox` so the Vim
 theme does not depend on plugins bundled by the upstream Vim configuration.
+
+Jedi's recursive dependencies were completed on 2026-10-08 for Python 3.14
+compatibility. The existing Jedi and Parso locks resolve to the v0.20.0 and
+v0.8.7 release commits, respectively; Jedi 0.20.0 requires Python 3.10+ and
+Parso >=0.8.6,<0.9.0. No change to those pins or the jedi-vim pin was needed.
+The two added archives use the gitlinks in the selected Jedi tree:
+
+- typeshed: `4bb9d8351d0795fbc7dee3da069013a48641689d`
+- django-stubs: `fd057010f6cbf176f57d1099e82be46d39b99cb9`
+
+GitHub source archives omit nested submodule contents. Both stub directories
+must therefore be locked and applied separately; otherwise an exact apply
+removes the stubs required for completion. The fixed commit archives were
+downloaded and SHA-256 hashed using the procedure above.
