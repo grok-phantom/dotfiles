@@ -49,6 +49,18 @@
       "kind": "archive"
     },
     {
+      "target": ".vim/bundle/ale",
+      "repo": "amix/vimrc",
+      "revision": "46294d589d15d2e7308cf76c58f2df49bbec31e8",
+      "url": "https://codeload.github.com/amix/vimrc/tar.gz/46294d589d15d2e7308cf76c58f2df49bbec31e8",
+      "sha256": "b7f02493ae76e1272337d401dd976829b5bf189b512ae5d31e58fbdeefb05bf9",
+      "kind": "archive",
+      "strip": 3,
+      "include": [
+        "*/sources_non_forked/ale/**"
+      ]
+    },
+    {
       "target": ".vim/bundle/gruvbox",
       "repo": "morhetz/gruvbox",
       "revision": "ef8864bb42bf244f0295d1c5a403b27e3d139695",

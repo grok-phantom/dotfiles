@@ -6,7 +6,9 @@ Never downloads, executes installers, or applies to the real home.
 import argparse, hashlib, json, os, pathlib, shutil, subprocess, sys, tempfile
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--cache',required=True,type=pathlib.Path)
-upstream=parser.parse_args().cache.resolve()
+parser.add_argument('--runtime', action='store_true', help='Run actual Zsh/Vim/Tmux in the locked temporary home')
+args=parser.parse_args()
+upstream=args.cache.resolve()
 source_root=pathlib.Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directory:
     root=pathlib.Path(directory)
@@ -46,4 +48,13 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directo
     update('plan','--plan',root/'second.json')
     update('apply','--plan',root/'second.json','--yes')
     update('verify')
-    print('PASS: all 23 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')
+    print('PASS: all 24 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')
+
+    if args.runtime:
+        from check_runtime import check, Blocked
+        try:
+            check(target, env)
+        except Blocked as error:
+            print('BLOCKED: '+str(error)); raise SystemExit(2)
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            print('FAIL: '+str(error)); raise SystemExit(1)

@@ -16,7 +16,7 @@ import tempfile
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
-SUITES = ('unit', 'static', 'cached-externals')
+SUITES = ('unit', 'static', 'cached-externals', 'runtime')
 
 
 def git(*args):
@@ -32,8 +32,12 @@ def run(command, env, log, timeout=300):
             try:
                 output, _ = process.communicate(timeout=timeout)
             except (subprocess.TimeoutExpired, KeyboardInterrupt):
-                os.killpg(process.pid, signal.SIGKILL)
-                output, _ = process.communicate()
+                os.killpg(process.pid, signal.SIGTERM)
+                try:
+                    output, _ = process.communicate(timeout=5)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    output, _ = process.communicate()
                 log.write_text(output + '\nFAIL: suite interrupted or timed out.\n')
                 return 1, log.read_text()
             log.write_text(output)
@@ -64,11 +68,11 @@ def static_checks(env):
                     ['git', 'diff', '--check']):
         subprocess.run(command, cwd=ROOT, env=env, check=True, capture_output=True)
     lock = json.loads((ROOT/'home/.chezmoidata/external-lock.json').read_text())
-    assert len(lock['external_lock']) == 23, 'Review the expected resource count when changing the lock'
+    assert len(lock['external_lock']) == 24, 'Review the expected resource count when changing the lock'
     for entry in lock['external_lock']:
         assert re.fullmatch(r'[0-9a-f]{64}', entry['sha256'])
         assert entry['url'].startswith('https://')
-    return f'PASS: parsed {count} Python/JSON/TOML files; shell syntax, diff whitespace and 23 lock entries checked.\n'
+    return f'PASS: parsed {count} Python/JSON/TOML files; shell syntax, diff whitespace and 24 lock entries checked.\n'
 
 
 def main():
@@ -135,7 +139,7 @@ def main():
                 suite['scope'] = 'Temporary targets with real chezmoi; network/package installers mocked; includes recovery scenarios'
             else:
                 if not args.cache or not args.cache.is_dir():
-                    suite.update(status='blocked', reason='Provide --cache with the 23 previously downloaded locked resources; no download was attempted')
+                    suite.update(status='blocked', reason='Provide --cache with the 24 previously downloaded locked resources; no download was attempted')
                     log.write_text(suite['reason']+'\n')
                     continue
                 locked = json.loads((ROOT/'home/.chezmoidata/external-lock.json').read_text())['external_lock']
@@ -145,9 +149,14 @@ def main():
                     suite.update(status='blocked', reason='Cache is incomplete: '+', '.join(missing))
                     log.write_text(suite['reason']+'\n')
                     continue
-                code, _ = run([sys.executable, '-B', 'tests/check_cached_externals.py', '--cache', str(args.cache.resolve())], env, log)
-                suite['status'] = 'passed' if code == 0 else 'failed'
-                suite['scope'] = 'Offline full-profile temporary plan/apply/verify and repeat; no installers'
+                command = [sys.executable, '-B', 'tests/check_cached_externals.py', '--cache', str(args.cache.resolve())]
+                if name == 'runtime':
+                    command.append('--runtime')
+                code, _ = run(command, env, log)
+                suite['status'] = 'passed' if code == 0 else 'blocked' if code == 2 else 'failed'
+                suite['scope'] = 'Offline locked full target, plan/apply/verify/repeat; no installers'
+                if name == 'runtime':
+                    suite['scope'] += '; actual Zsh/Vim/Tmux in synthetic HOME'
         for suite in report['suites']:
             if 'log' in suite:
                 path = destination/suite['log']

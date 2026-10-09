@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import tempfile
@@ -25,7 +26,7 @@ def download(url, destination, expected):
         raise Stop('Invalid pinned HTTPS asset or SHA-256')
     run(['curl', '--fail', '--show-error', '--silent', '--location', '--proto', '=https',
          '--proto-redir', '=https', '--connect-timeout', '15', '--max-time', '600',
-         '--output', destination, url])
+         '--output', destination, url], stage='Miniforge download', diagnostic_output=True)
     with open(destination, 'rb') as stream:
         checksum = hashlib.sha256()
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
@@ -55,7 +56,7 @@ def miniforge(args, machine):
     if args.action == 'verify':
         if not matching:
             raise Stop('Installer marker missing/different; use plan. This is not an audit of every conda package')
-        run([conda, '--version'])
+        run([conda, '--version'], stage='Miniforge verify', diagnostic_output=True)
         print('Installer marker and conda executable verified.')
         return
     if args.action != 'apply':
@@ -63,7 +64,7 @@ def miniforge(args, machine):
     if not args.yes:
         raise Stop('Miniforge apply requires --yes')
     if matching:
-        run([conda, '--version'])
+        run([conda, '--version'], stage='Miniforge verify', diagnostic_output=True)
         return
     if prefix.exists() and not installed:
         raise Stop('Miniforge prefix exists but is not a supported installation; inspect it manually')
@@ -73,8 +74,9 @@ def miniforge(args, machine):
         installer = Path(directory) / 'installer.sh'
         download(asset['url'], installer, asset['sha256'])
         prefix.parent.mkdir(parents=True, exist_ok=True)
-        run(['bash', installer, '-b', '-p', prefix] + (['-u'] if installed else []))
-        run([conda, '--version'])
+        print('Running Miniforge installer...', flush=True)
+        run(['bash', installer, '-b', '-p', prefix] + (['-u'] if installed else []), stage='Miniforge install', diagnostic_output=True)
+        run([conda, '--version'], stage='Miniforge verify', diagnostic_output=True)
         marker.write_text(asset['sha256'] + '\n')
     print('Pinned Miniforge base installed and executable checked; shell init was not modified.')
 
@@ -82,8 +84,24 @@ def miniforge(args, machine):
 def package_data(args):
     data = run(['chezmoi', '--source', args.repo, '--destination', args.target,
                 '--config', args.config, '--no-tty', 'execute-template',
-                '{{ dict "packages" .packages "homebrew" .homebrew "sudo" .sudo "osid" .osid | toJson }}'])
+                '{{ dict "packages" .packages "homebrew" .homebrew "sudo" .sudo "osid" .osid "company" (get . "company") "groups" (get . "package_cask_groups") "exclude" (get . "package_cask_exclude") | toJson }}'], stage='software configuration')
     return json.loads(data)
+
+
+def selected_casks(packages, data):
+    groups = {'personal': [], 'company': [], **packages.get('cask_groups', {})}
+    groups['desktop'] = packages.get('casks', [])
+    selected = data.get('groups', '')
+    if selected == '':
+        selected = ['desktop', 'company' if data.get('company') else 'personal']
+    excluded = data.get('exclude', '')
+    if excluded == '':
+        excluded = []
+    if not isinstance(selected, list) or any(not isinstance(x, str) or x not in groups for x in selected):
+        raise Stop('package_cask_groups must be a list of known cask groups')
+    if not isinstance(excluded, list) or any(not isinstance(x, str) or not re.fullmatch(r'[a-z0-9][a-z0-9@+._/-]*', x) for x in excluded):
+        raise Stop('package_cask_exclude must be a list of cask names')
+    return list(dict.fromkeys(name for group in selected for name in groups[group] if name not in excluded))
 
 
 def packages(args, machine):
@@ -102,7 +120,7 @@ def packages(args, machine):
             raise Stop('Homebrew is not installed; bootstrap manually from its official instructions')
         content = ''.join('brew ' + json.dumps(x) + '\n' for x in packages['brews'])
         if key == 'darwin':
-            content += ''.join('cask ' + json.dumps(x) + '\n' for x in packages['casks'])
+            content += ''.join('cask ' + json.dumps(x) + '\n' for x in selected_casks(packages, data))
         print(content, end='')
         if args.action == 'plan':
             print('install: bundle --no-upgrade; upgrade: brew update then bundle --upgrade.')
@@ -112,15 +130,17 @@ def packages(args, machine):
             brewfile = Path(directory) / 'Brewfile'
             brewfile.write_text(content)
             if args.action == 'verify':
-                run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env)
+                run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env, stage='Homebrew verify', diagnostic_output=True)
             else:
                 if not args.yes:
                     raise Stop('Package install/upgrade requires --yes')
                 if args.action == 'upgrade':
-                    run([brew, 'update'], env=env)
+                    print('Running Homebrew index update...', flush=True)
+                    run([brew, 'update'], env=env, stage='Homebrew update', diagnostic_output=True)
+                print('Running Homebrew '+args.action+'...', flush=True)
                 run([brew, 'bundle', 'install', '--upgrade' if args.action == 'upgrade' else '--no-upgrade',
-                     '--file=' + str(brewfile)], env=env)
-                run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env)
+                     '--file=' + str(brewfile)], env=env, stage='Homebrew '+args.action, diagnostic_output=True)
+                run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env, stage='Homebrew verify', diagnostic_output=True)
     else:
         if machine[0] != 'Linux' or data['osid'] not in ('linux-debian', 'linux-raspbian', 'linux-pop', 'linux-ubuntu'):
             raise Stop('apt component requires a supported Debian-family Linux host')
@@ -130,19 +150,21 @@ def packages(args, machine):
         print('Managed apt packages: ' + ' '.join(names))
         if args.action == 'plan':
             print('Install simulation (using current local package metadata):')
-            sys.stdout.buffer.write(run(['apt-get', '--simulate', 'install', '--no-upgrade', *names]))
+            sys.stdout.buffer.write(run(['apt-get', '--simulate', 'install', '--no-upgrade', *names], stage='apt plan', diagnostic_output=True))
             return
         if args.action == 'verify':
             for name in names:
-                if run(['dpkg-query', '-W', '-f=${db:Status-Status}', name]).strip() != b'installed':
+                if run(['dpkg-query', '-W', '-f=${db:Status-Status}', name], stage='apt verify', diagnostic_output=True).strip() != b'installed':
                     raise Stop('A managed apt package is not installed')
             return
         if not args.yes or not data['sudo']:
             raise Stop('apt install/upgrade requires --yes and local data.sudo=true')
-        run(['sudo', '-n', 'true'])
-        run(['sudo', '-n', 'apt-get', 'update'])
+        run(['sudo', '-n', 'true'], stage='apt permission check')
+        print('Running apt index update...', flush=True)
+        run(['sudo', '-n', 'apt-get', 'update'], stage='apt update', diagnostic_output=True)
+        print('Running apt '+args.action+'...', flush=True)
         run(['sudo', '-n', 'apt-get', 'install', '-y',
-             '--only-upgrade' if args.action == 'upgrade' else '--no-upgrade', *names])
+             '--only-upgrade' if args.action == 'upgrade' else '--no-upgrade', *names], stage='apt '+args.action, diagnostic_output=True)
     print('Selected package operation completed. No OS-wide upgrade, cleanup, shell or group changes were requested.')
 
 
@@ -157,6 +179,7 @@ def main():
     parser.add_argument('--manager', choices=['brew', 'apt'], default='brew')
     parser.add_argument('--yes', action='store_true')
     parser.add_argument('--update-existing', action='store_true')
+    parser.add_argument('--diagnostic-dir', type=Path, help='New private directory outside repo; may contain raw installer/package output')
     args = parser.parse_args()
     try:
         args.repo = args.repo.resolve()
@@ -171,12 +194,13 @@ def main():
             raise Stop('Target home must exist and be writable')
         if run(['git', '-C', args.repo, 'status', '--porcelain=v1', '--untracked-files=all']):
             raise Stop('Dirty source: manually save/reconcile changes before software maintenance')
-        if args.component == 'miniforge':
-            miniforge(args, machine)
-        else:
-            if args.target != Path.home().resolve():
-                raise Stop('Package managers affect the current host; --target is not a package sandbox')
-            packages(args, machine)
+        with common.diagnostic_session(args.diagnostic_dir, args.repo):
+            if args.component == 'miniforge':
+                miniforge(args, machine)
+            else:
+                if args.target != Path.home().resolve():
+                    raise Stop('Package managers affect the current host; --target is not a package sandbox')
+                packages(args, machine)
     except KeyboardInterrupt:
         print('Interrupted: active subprocesses stopped; completed changes are not rolled back.', file=sys.stderr)
         return 130

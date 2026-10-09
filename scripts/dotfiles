@@ -14,37 +14,76 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 
 
 class Stop(RuntimeError):
     pass
 
 
+_diagnostics = None
+
+
+@contextmanager
+def diagnostic_session(directory, repo):
+    """Opt-in local evidence. Rendered configuration is never logged."""
+    global _diagnostics
+    if directory is None:
+        yield
+        return
+    directory = directory.resolve()
+    repo = repo.resolve()
+    if directory == repo or repo in directory.parents:
+        raise Stop('Store diagnostics outside the source repository')
+    directory.mkdir(mode=0o700, exist_ok=False)
+    fd = os.open(directory/'commands.log', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    previous = _diagnostics
+    try:
+        with os.fdopen(fd, 'wb') as stream:
+            _diagnostics = stream
+            yield
+    finally:
+        _diagnostics = previous
+
+
+def record_diagnostic(stage, code, elapsed, stdout, stderr, include_output):
+    if _diagnostics is None:
+        return
+    _diagnostics.write(f'{stage}: exit={code}, seconds={elapsed:.3f}\n'.encode())
+    if include_output:
+        _diagnostics.write(b'stdout:\n' + stdout + b'\nstderr:\n' + stderr + b'\n')
+    _diagnostics.flush()
+
+
 def interrupt(signum, frame):
     raise KeyboardInterrupt
 
 
-def run(args, *, env=None, input=None, timeout=None):
+def run(args, *, env=None, input=None, timeout=None, stage=None, diagnostic_output=False):
+    stage = stage or Path(args[0]).name
+    started = time.monotonic()
     with subprocess.Popen([str(a) for a in args], stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, start_new_session=True) as process:
         previous_term_handler = signal.signal(signal.SIGTERM, interrupt)
         try:
-            stdout, _ = process.communicate(input, timeout=timeout)
+            stdout, stderr = process.communicate(input, timeout=timeout)
         except BaseException as error:
             # Detached subprocesses must not continue installing/applying after cancellation.
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-            process.communicate()
+            stdout, stderr = process.communicate()
+            record_diagnostic(stage, 'interrupted', time.monotonic()-started, stdout, stderr, diagnostic_output)
             if isinstance(error, subprocess.TimeoutExpired):
-                raise Stop(f'{Path(args[0]).name} timed out; no later step was run')
+                raise Stop(f'{stage} timed out; no later step was run')
             raise
         finally:
             signal.signal(signal.SIGTERM, previous_term_handler)
+    record_diagnostic(stage, process.returncode, time.monotonic()-started, stdout, stderr, diagnostic_output)
     if process.returncode:
         # Do not echo rendered configurations, credentials in URLs, or tool stderr.
-        raise Stop(f"{Path(args[0]).name} failed (exit {process.returncode}); no later step was run")
+        raise Stop(f"{stage} failed (exit {process.returncode}); no later step was run")
     return stdout
 
 
@@ -77,7 +116,7 @@ class Updates:
 
     def git(self, *args, env=None, timeout=None):
         return run(['git', '-C', self.repo, '-c', 'core.hooksPath=/dev/null',
-                    '-c', 'merge.autostash=false', *args], env=env, timeout=timeout)
+                    '-c', 'merge.autostash=false', *args], env=env, timeout=timeout, stage='source Git')
 
     def clean(self):
         if self.git('status', '--porcelain=v1', '--untracked-files=all'):
@@ -94,7 +133,7 @@ class Updates:
         if self.args.cache:
             cmd += ['--cache', self.args.cache.resolve()]
         excluded = 'scripts' if self.args.component == 'externals' else 'scripts,externals'
-        return run(cmd + [command, '--exclude=' + excluded, *args])
+        return run(cmd + [command, '--exclude=' + excluded, *args], stage='configuration '+command)
 
     @contextmanager
     def exported_source(self, commit):
@@ -206,8 +245,8 @@ class Updates:
             try:
                 self.cm(source, 'apply', '--error-on-conflict')
                 self.cm(source, 'verify')
-            except Stop:
-                raise Stop('Apply/verify failed. Source may have advanced and targets may be partly written; inspect and re-plan. No automatic rollback.')
+            except Stop as error:
+                raise Stop(str(error) + '. Source may have advanced and targets may be partly written; inspect and re-plan. No automatic rollback.') from error
         print('Selected targets applied and verified. Packages/system settings were not changed.')
 
 
@@ -227,49 +266,55 @@ def main():
     parser.add_argument('--plan', type=Path, help='Local plan JSON (outside the repository)')
     parser.add_argument('--diff', action='store_true', help='Show rendered diff; may contain private local values')
     parser.add_argument('--yes', action='store_true')
+    parser.add_argument('--diagnostic-dir', type=Path, help='New private directory outside repo; configuration output is never logged')
     args = parser.parse_args()
     try:
-        if args.component == 'externals' and args.profile != 'full':
-            raise Stop('The externals component requires --profile full')
-        update = Updates(args)
-        if args.command == 'status':
-            update.clean()
-            print(update.drift() or 'Source clean; no selected target changes.', end='\n')
-        elif args.command == 'fetch':
-            update.clean()
-            update.drift()
-            if args.remote.startswith('-') or args.branch.startswith('-'):
-                raise Stop('Invalid remote/branch')
-            update.git('check-ref-format', 'refs/heads/' + args.branch)
-            env = dict(os.environ, GIT_TERMINAL_PROMPT='0',
-                       GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15')
-            update.git('-c', 'http.lowSpeedLimit=1', '-c', 'http.lowSpeedTime=30', 'fetch',
-                       '--no-tags', '--no-recurse-submodules', args.remote, 'refs/heads/' + args.branch,
-                       env=env, timeout=120)
-            print('Fetched only; source and targets unchanged. Review Git diff HEAD..FETCH_HEAD, then plan --ref FETCH_HEAD.')
-        elif args.command == 'plan':
-            plan = update.plan(args.ref, show=True)
-            if args.plan:
-                destination = args.plan.resolve()
-                if destination == update.repo or update.repo in destination.parents:
-                    raise Stop('Store plans outside the source repository')
-                fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-                with os.fdopen(fd, 'w') as stream:
-                    json.dump(plan, stream, indent=2)
-                    stream.write('\n')
-                print('Plan saved; apply requires the same options and --yes.')
-        elif args.command == 'apply':
-            update.apply()
-        else:
-            update.clean()
-            update.verify()
-            print('Selected targets verified; installer scripts have not been tested by this command.')
+        with diagnostic_session(args.diagnostic_dir, args.repo):
+            return dispatch(args)
     except KeyboardInterrupt:
         print('Interrupted: active subprocesses stopped; completed changes are not rolled back.', file=sys.stderr)
         return 130
     except (Stop, OSError, ValueError, KeyError) as error:
         print('Stopped: ' + str(error), file=sys.stderr)
         return 1
+
+
+def dispatch(args):
+    if args.component == 'externals' and args.profile != 'full':
+        raise Stop('The externals component requires --profile full')
+    update = Updates(args)
+    if args.command == 'status':
+        update.clean()
+        print(update.drift() or 'Source clean; no selected target changes.', end='\n')
+    elif args.command == 'fetch':
+        update.clean()
+        update.drift()
+        if args.remote.startswith('-') or args.branch.startswith('-'):
+            raise Stop('Invalid remote/branch')
+        update.git('check-ref-format', 'refs/heads/' + args.branch)
+        env = dict(os.environ, GIT_TERMINAL_PROMPT='0',
+                   GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15')
+        update.git('-c', 'http.lowSpeedLimit=1', '-c', 'http.lowSpeedTime=30', 'fetch',
+                   '--no-tags', '--no-recurse-submodules', args.remote, 'refs/heads/' + args.branch,
+                   env=env, timeout=120)
+        print('Fetched only; source and targets unchanged. Review Git diff HEAD..FETCH_HEAD, then plan --ref FETCH_HEAD.')
+    elif args.command == 'plan':
+        plan = update.plan(args.ref, show=True)
+        if args.plan:
+            destination = args.plan.resolve()
+            if destination == update.repo or update.repo in destination.parents:
+                raise Stop('Store plans outside the source repository')
+            fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w') as stream:
+                json.dump(plan, stream, indent=2)
+                stream.write('\n')
+            print('Plan saved; apply requires the same options and --yes.')
+    elif args.command == 'apply':
+        update.apply()
+    else:
+        update.clean()
+        update.verify()
+        print('Selected targets verified; installer scripts have not been tested by this command.')
     return 0
 
 

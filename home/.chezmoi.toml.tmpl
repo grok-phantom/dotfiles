@@ -25,6 +25,10 @@
 {{- $gitName = promptStringOnce . "git_name" "Git name (blank to configure locally)" -}}
 {{- $profile := promptChoiceOnce . "profile" "Configuration profile" (list "core" "full") "full" -}}
 
+{{/* Preserve explicit local choices before applying capability guards. */}}
+{{- if hasKey . "homebrew" -}}{{- $homebrew = .homebrew -}}{{- end -}}
+{{- if hasKey . "hostname" -}}{{- $hostname = .hostname -}}{{- end -}}
+
 {{/* Setup for ephemeral */}}
 {{- if $ephemeral -}}
 {{-   $homebrew = false -}}
@@ -43,6 +47,10 @@
 {{-   $proxySocksPort = "6153" -}}
 {{- end -}}
 {{- "" -}}
+
+{{- if hasKey . "proxy_host" -}}{{- $proxyHost = .proxy_host -}}{{- end -}}
+{{- if hasKey . "proxy_http_port" -}}{{- $proxyHttpPort = .proxy_http_port -}}{{- end -}}
+{{- if hasKey . "proxy_socks_port" -}}{{- $proxySocksPort = .proxy_socks_port -}}{{- end -}}
 
 {{- $osID := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
@@ -63,3 +71,9 @@
     proxy_host = {{ $proxyHost | quote }}
     proxy_http_port = {{ $proxyHttpPort | quote }}
     proxy_socks_port = {{ $proxySocksPort | quote }}
+{{ if hasKey . "package_cask_groups" }}
+    package_cask_groups = {{ .package_cask_groups | toJson }}
+{{ end }}
+{{ if hasKey . "package_cask_exclude" }}
+    package_cask_exclude = {{ .package_cask_exclude | toJson }}
+{{ end }}

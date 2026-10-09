@@ -25,7 +25,8 @@ source tree，而不是通用软件项目。
 - `home/.chezmoiexternal.toml.tmpl` 声明外部获取的 archives、repositories、
   fonts 和 plugins。
 - `home/.chezmoiignore.tmpl` 控制不同平台下哪些目标文件会被忽略。
-- `home/.chezmoiscripts/` 包含由 chezmoi 运行的安装和配置脚本。
+- `scripts/dotfiles` 管理配置更新；`scripts/software` 管理显式软件操作。
+- `scripts/manual/` 保存单独审查执行的系统偏好；不恢复自动安装脚本。
 - `home/dot_zshrc.tmpl`、`home/dot_zprofile.tmpl` 及相关 shell 文件定义交互式
   shell 行为。
 - `home/private_dot_config/` 映射到 `~/.config/` 下的 private files。

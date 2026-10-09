@@ -29,8 +29,8 @@ Use `tests/fixtures/vm-result-template.json` for a future run; all cases begin
 
 | ID | Scenario | Required evidence / pass criterion |
 | --- | --- | --- |
-| V01 | Blank user and explicit prerequisites; `chezmoi init` without apply | Prompts are understandable; blank identity allowed; core default; no implicit system install. Synthetic `tests/fixtures/vm-core.toml` is reusable for subsequent noninteractive checks, but does not replace testing init prompts. |
-| V02 | First core plan/apply/verify in the guest user account | Review plan before apply; expected owned files only; a new guest shell opens; Git identity/local include correct; no unwanted package or system changes. |
+| V01 | Blank user and explicit prerequisites; `chezmoi init` without apply | Prompts are understandable; blank identity allowed; full default; no implicit system install. Use full data for the default path; `tests/fixtures/vm-core.toml` is only for explicit core checks and does not replace testing init prompts. |
+| V02 | First full plan/apply/verify in the guest user account | Review plan before apply; expected owned files only; a new guest shell opens; Git identity/local include correct; no unwanted package or system changes. |
 | V03 | Repeat with a new plan after V02 | Verify clean; second plan has no target diff; repeat apply/verify preserves content. Reusing the old plan is not required to succeed. |
 | V04 | Upgrade from recorded old commit A to reviewed descendant B | Plan leaves source/target unchanged, apply fast-forwards and verifies; record A and B. A and B must be compatible with the controlled updater; do not pretend legacy pre-updater main provides it. |
 | V05 | Dirty source, target edit, stale config/plan, divergent/backward ref | Each applicable operation stops; hash and manually compare the synthetic edits to confirm preservation; no forced reset/autostash. |

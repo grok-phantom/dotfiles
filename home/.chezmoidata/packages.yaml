@@ -9,6 +9,7 @@ packages:
       - eza
       - fd
       - ffmpeg
+      - fzf
       - gh
       - git
       - git-lfs
@@ -16,11 +17,14 @@ packages:
       - jq
       - lazygit
       - node
+      - python@3.14
       - ripgrep
       - tokei
       - tmux
       - tldr
       - uv
+      - universal-ctags
+      - vim
       - wget
       - yazi
       - zoxide
@@ -45,10 +49,15 @@ packages:
       - wechat
       - zotero
       - raycast
+    # Existing casks remain the desktop group; role groups are explicit additions.
+    cask_groups:
+      personal: []
+      company: []
   linux:
     brews:
       - gh
       - node
+      - python@3.14
       - uv
       - yazi
       - btop
@@ -56,12 +65,16 @@ packages:
       - lazygit
       - tokei
       - zoxide
+      - fzf
+      - universal-ctags
+      - vim
     apt:
       - ack
       - bat
       - curl
       - direnv
       - fd-find
+      - fzf
       - git
       - git-lfs
       - htop
@@ -70,4 +83,6 @@ packages:
       - tmux
       - tldr
       - wget
+      - universal-ctags
+      - vim-nox
       - zsh

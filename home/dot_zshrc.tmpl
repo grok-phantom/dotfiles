@@ -8,18 +8,14 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 {{ end -}}
-# If you come from bash you might have to change your $PATH.
-{{- $paths := list (joinPath .chezmoi.homeDir "bin") }}
-{{- $homeDir := .chezmoi.homeDir }}
-{{- range $_, $relPath := list "go/bin" ".cargo/bin" ".local/bin" }}
-{{    $path := joinPath $homeDir $relPath }}
-{{-   if stat $path }}
-{{-     $paths = mustAppend $paths $path }}
-{{-   end }}
-{{- end }}
-{{- if $paths }}
-export PATH={{ toStrings $paths | join ":" }}:$PATH
-{{- end }}
+# Discover user-installed tools when the shell starts, including after first apply.
+typeset -U path PATH
+dotfiles_paths=("$HOME/bin")
+for dotfiles_path in "$HOME/go/bin" "$HOME/.cargo/bin" "$HOME/.local/bin"; do
+  [[ ! -d "$dotfiles_path" ]] || dotfiles_paths+=("$dotfiles_path")
+done
+path=("${dotfiles_paths[@]}" "${path[@]}")
+unset dotfiles_path dotfiles_paths
 
 {{ if $full -}}
 # Path to your oh-my-zsh installation.
@@ -94,15 +90,20 @@ unset zsh_file
 {{ if $full -}}
 miniforge_dir="$HOME/opt/miniforge3"
 if [[ -x "$miniforge_dir/bin/conda" ]]; then
-  __conda_setup="$("$miniforge_dir/bin/conda" shell.zsh hook 2>/dev/null)"
-  if [[ $? -eq 0 ]]; then
-    eval "$__conda_setup"
-  elif [[ -f "$miniforge_dir/etc/profile.d/conda.sh" ]]; then
+  # Base auto-activation is disabled in .condarc; defer the Python process until use.
+  if [[ "${DOTFILES_CONDA_INIT:-source}" != hook && -r "$miniforge_dir/etc/profile.d/conda.sh" ]]; then
     source "$miniforge_dir/etc/profile.d/conda.sh"
   else
-    export PATH="$miniforge_dir/bin:$PATH"
+    __conda_setup="$("$miniforge_dir/bin/conda" shell.zsh hook 2>/dev/null)"
+    if [[ $? -eq 0 ]]; then
+      eval "$__conda_setup"
+    elif [[ -r "$miniforge_dir/etc/profile.d/conda.sh" ]]; then
+      source "$miniforge_dir/etc/profile.d/conda.sh"
+    else
+      path=("$miniforge_dir/bin" "${path[@]}")
+    fi
+    unset __conda_setup
   fi
-  unset __conda_setup
 fi
 unset miniforge_dir
 

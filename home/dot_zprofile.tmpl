@@ -1,8 +1,9 @@
-{{ if stat "/opt/homebrew/bin/brew" -}}
-eval "$(/opt/homebrew/bin/brew shellenv)"
-{{ else if stat "/usr/local/bin/brew" -}}
-eval "$(/usr/local/bin/brew shellenv)"
-{{ end -}}
-{{ if stat "/home/linuxbrew/.linuxbrew/bin/brew" -}}
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-{{ end -}}
+typeset -U path PATH
+for dotfiles_brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+  if [[ -x "$dotfiles_brew" ]]; then
+    eval "$("$dotfiles_brew" shellenv)"
+    break
+  fi
+done
+unset dotfiles_brew
+{{/* vim: set filetype=zsh: */}}

@@ -40,3 +40,8 @@ GitHub source archives omit nested submodule contents. Both stub directories
 must therefore be locked and applied separately; otherwise an exact apply
 removes the stubs required for completion. The fixed commit archives were
 downloaded and SHA-256 hashed using the procedure above.
+
+The ALE entry extracts `sources_non_forked/ale` from the same reviewed amix
+archive and checksum as `.vim_runtime`. Its explicit target is `.vim/bundle/ale`
+because `.vim_runtime/sources_non_forked` remains locally managed and ignored.
+This adds no upstream version change and does not take over the local directory.

@@ -50,6 +50,11 @@ fetch 禁止交互认证，SSH 连接等待上限 15 秒，整体等待上限 12
 读取本地配置及执行模板仍需信任所选 source：模板中的 `output` 等函数本来就能执行命令，
 本入口不是运行不可信 dotfiles 的沙箱。不要在另一个更新进程或编辑器同时修改目标时 apply。
 
+错误会显示失败阶段。默认不记录命令输出；需要排查时显式传 `--diagnostic-dir /path/to/new-dir`。
+目录须新建且位于仓库外，权限 0700，日志 0600。配置/Git 命令只记录阶段、退出码与耗时，
+不记录参数或渲染内容；软件入口会记录包管理器/安装器原始输出，可能含本机信息，
+只在本机查看。日志不自动上传，不提交到 Git。
+
 ## Profile 和组件
 
 | 选择 | 范围 |
@@ -77,6 +82,7 @@ full 只选择功能，不复制身份、SSH 密钥、公司连接或其他机�
 自有 Vim 配置与 Zsh completion 移到 `~/.config/vim/`、`~/.config/zsh/completions/`，
 不再与 exact 外部目录重叠，因此 config-only 不会清除外部内容。
 Jedi 的 Jedi/Parso 子模块及 Jedi 的 typeshed、django-stubs 递归依赖，分别固定到父项目所引用的 commit；Yazi smart-enter 由锁定归档提供。
+ALE 从同一锁定 amix 归档单独提取到 `.vim/bundle/ale`，避免依赖旧机自管目录。
 Vim 的 `.vimrc` 和 Tmux 的 `.tmux.conf` 现在是可 diff 的目标；不再运行上游安装器或 `ln -sf`。
 `~/.tmux.conf.local` 保持用户自管。full 配置建议先应用 externals，避免缺少插件或产生临时悬空链接。
 
@@ -101,6 +107,8 @@ Homebrew 必须预先安装且本机 `data.homebrew=true`；本仓库不再执�
 install 使用 `bundle --no-upgrade` 并关闭自动 update/cleanup；upgrade 才显式执行 `brew update`
 和 `bundle --upgrade`。`--no-upgrade` 不保证依赖绝不升级：为安装缺失包，Homebrew 仍可能调整依赖。
 包清单不是版本锁，也不能保证重建完全相同的系统；Brew plan 只列清单与操作类型。
+macOS 现有 casks 保留为 desktop 组，角色附加组默认空；本机可显式选择组或排除条目，
+不会卸载现有应用。编辑器依赖与软件选择方法见 [多 Mac 迁移](docs/multi-mac.md)。
 apt plan 使用当前本地索引做安装模拟，执行阶段才更新索引；需要本机 `data.sudo=true` 和可用的
 非交互 `sudo -n`。apt 升级仅针对清单中的已安装包，不执行全系统 upgrade/full-upgrade。
 操作非事务性：失败时停止后续步骤，但不声称撤销已经安装的包。

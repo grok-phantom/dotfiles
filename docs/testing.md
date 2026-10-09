@@ -19,10 +19,11 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 
 | Suite | Real execution | Limit |
 | --- | --- | --- |
-| `unit` | Original 33 tests plus 3 recovery and 10 source-snapshot cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer are mocks; no host software or settings changed |
+| `unit` | Update, migration, diagnostics, recovery and source-snapshot cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer are mocks; no host software or settings changed |
 | `static` | Python/JSON/TOML parsing, shell syntax, whitespace and lock format | No template apply, download, external checksum verification or system validation |
-| `cached-externals` | Verifies actual bytes of 23 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
-| `all` | `unit` + `static` | Does not include cache integration, VM or live software installation |
+| `cached-externals` | Verifies actual bytes of 24 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
+| `runtime` | Full Zsh load/completion init, Vim Python/Jedi/fzf/Tagbar/ALE, dedicated Tmux session/config | Requires the locked cache and existing tools; synthetic config/HOME; no installers |
+| `all` | `unit` + `static` | Does not include cache integration, runtime, VM or live software installation |
 
 The launcher isolates HOME, XDG paths, Git global/system configuration, temporary
 files and proxy/agent inheritance. Tests create synthetic identities and repositories;
@@ -76,3 +77,19 @@ the YAML; its first execution requires a separately authorized push.
 The artifact contains only synthetic test reports/logs, is retained for seven days,
 and is uploaded even on test failure. No home directory, cache, credentials or rendered
 user configuration is included.
+
+## Optional locked-runtime check
+
+```sh
+./scripts/test runtime --cache /path/to/upstream-cache --report-dir /tmp/dotfiles-runtime-report
+```
+
+This reuses cached integration to check hashes and construct a temporary full HOME
+from the committed dependency locks and synthetic config. No installed plugin tree,
+local config, SSH files, Conda or Git identity is copied. Network and installers are
+not used. Zsh gitstatus background work and Vim's MRU GUI menus are disabled for
+this non-TTY check. Tmux uses and cleans up a dedicated socket, including controlled
+cancellation. Missing tools/unsupported dependencies are blocked, not passed.
+`runtime` is separate from `all`: CI need not download plugins or install runtimes.
+This is a smoke test, not GUI/IME or full startup performance acceptance. Run it
+after software or external lock changes; cached asset naming is unchanged.
