@@ -1,4 +1,6 @@
 """Migration and diagnostics regressions, using synthetic local data only."""
+from contextlib import redirect_stdout
+import io
 import json
 import os
 from pathlib import Path
@@ -6,6 +8,7 @@ import shutil
 import stat
 import sys
 import tomllib
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -39,6 +42,12 @@ class LocalChoicesTests(base.Fixture):
         rendered = self.render_init({})
         expected = ('6152','6153') if sys.platform == 'darwin' else ('7890','7890')
         self.assertEqual((rendered['proxy_http_port'],rendered['proxy_socks_port']), expected)
+
+    def test_full_shell_does_not_load_removed_tldr_plugin(self):
+        rendered = self.cmd(['chezmoi', '--source', self.repo, '--destination', self.target,
+                    '--config', self.config, '--override-data', '{"profile":"full"}',
+                    'execute-template', '--file', self.repo/'home/dot_zshrc.tmpl']).stdout
+        self.assertNotIn('tldr', rendered)
 
     def test_false_homebrew_preserved_and_guards_retained(self):
         # Avoid keyword override ambiguity when composing fixture dictionaries.
@@ -145,6 +154,37 @@ class SoftwareIntegrationTests(base.Fixture):
         (self.repo/'home/.chezmoidata').mkdir()
         shutil.copy(base.ROOT/'home/.chezmoidata/packages.yaml', self.repo/'home/.chezmoidata/packages.yaml')
         self.commit()
+
+    def test_generated_package_plans_omit_removed_software_on_all_managers(self):
+        args = SimpleNamespace(repo=self.repo, target=self.target, config=self.config,
+                               action='plan', manager='brew')
+        with patch.dict(os.environ, self.env):
+            data = base.SOFTWARE.package_data(args)
+        for system, manager, company in [('Darwin', 'brew', False), ('Darwin', 'brew', True),
+                                         ('Linux', 'brew', False), ('Linux', 'apt', False)]:
+            with self.subTest(system=system, manager=manager, company=company):
+                args.manager = manager
+                selected = dict(data, company=company, osid='linux-ubuntu' if system == 'Linux' else 'darwin')
+                output = io.TextIOWrapper(io.BytesIO(), encoding='utf-8')
+                with patch.object(base.SOFTWARE, 'package_data', return_value=selected), \
+                     patch.object(base.SOFTWARE.shutil, 'which', side_effect=lambda name: '/mock/'+name), \
+                     patch.object(base.SOFTWARE, 'run', return_value=b'') as run, redirect_stdout(output):
+                    base.SOFTWARE.packages(args, [system, 'arm64'])
+                output.flush()
+                plan = output.buffer.getvalue().decode()
+                for removed in ('tldr', 'discord', 'qbittorrent'):
+                    self.assertNotIn(removed, plan)
+                if manager == 'apt':
+                    command = run.call_args.args[0]
+                    self.assertEqual(command[:4], ['apt-get', '--simulate', 'install', '--no-upgrade'])
+                    self.assertNotIn('tldr', command)
+                    self.assertIn('vim-nox', command)
+                else:
+                    run.assert_not_called()
+                    self.assertIn('brew "vim"', plan)
+                    if system == 'Darwin':
+                        self.assertIn('cask "ghostty"', plan)
+                output.close()
 
     def test_explicit_empty_cask_groups_through_cli(self):
         self.config.write_text(json.dumps({'data':dict(company=True, homebrew=True, sudo=False,

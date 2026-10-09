@@ -40,8 +40,9 @@ Debian 系用 vim-nox 提供 Python 能力。Python/C++ 的 flake8、black、cla
 clang-tidy 由项目环境提供，打开 Vim 前进入对应环境；`:ALEInfo` 可检查可用性。
 本仓库不会为所有项目全局安装这些语言工具。
 
-macOS 默认选 `desktop` 加本机角色组（company 或 personal）。desktop 完整保留历史
-cask 列表；两个角色组初始为空，没有自动给现有应用定性或删选。可在本机 chezmoi
+macOS 默认选 `desktop` 加本机角色组（company 或 personal）。desktop 使用当前托管
+cask 列表；两个角色组初始为空。tldr、Discord、qBittorrent 已从软件声明和生成计划
+移除，shell 不再加载 tldr 插件；现有安装保留，不执行卸载或 cleanup。可在本机 chezmoi
 `[data]` 显式设置 `package_cask_groups = ["desktop", "personal"]`，覆盖角色默认，
 并用 `package_cask_exclude = ["example-app"]` 排除个别条目；`package_cask_groups = []` 表示不选择任何
 cask（`package_cask_exclude = []` 则不排除条目）。这些选择只影响以后计划/安装/升级，永远不执行卸载。company 标志不是公司批准清单。

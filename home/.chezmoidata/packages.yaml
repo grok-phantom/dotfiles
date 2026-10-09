@@ -21,7 +21,6 @@ packages:
       - ripgrep
       - tokei
       - tmux
-      - tldr
       - uv
       - universal-ctags
       - vim
@@ -32,7 +31,6 @@ packages:
       - appcleaner
       - alt-tab
       - betterdisplay
-      - discord
       - chatgpt
       - ghostty
       - google-chrome
@@ -43,7 +41,6 @@ packages:
       - keka
       - neteasemusic
       - obsidian
-      - qbittorrent
       - typora
       - visual-studio-code
       - wechat
@@ -81,7 +78,6 @@ packages:
       - jq
       - ripgrep
       - tmux
-      - tldr
       - wget
       - universal-ctags
       - vim-nox
