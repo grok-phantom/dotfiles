@@ -22,11 +22,11 @@ packages:
       - tokei
       - tmux
       - uv
-      - universal-ctags
       - vim
       - wget
       - yazi
       - zoxide
+      - atuin
     casks:
       - appcleaner
       - alt-tab
@@ -63,8 +63,8 @@ packages:
       - tokei
       - zoxide
       - fzf
-      - universal-ctags
       - vim
+      - atuin
     apt:
       - ack
       - bat
