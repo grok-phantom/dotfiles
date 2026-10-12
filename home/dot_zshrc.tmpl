@@ -36,6 +36,8 @@ zstyle ':omz:update' mode disabled  # disable automatic updates
 # much, much faster.
 # DISABLE_UNTRACKED_FILES_DIRTY="true"
 HIST_STAMPS="yyyy-mm-dd"
+# Skip compaudit's permission scan on every start (~20ms); fine on a single-user machine.
+ZSH_DISABLE_COMPFIX="true"
 
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
