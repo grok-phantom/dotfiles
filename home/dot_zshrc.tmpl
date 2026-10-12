@@ -110,8 +110,15 @@ unset miniforge_dir
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 {{ end -}}
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
+{{ $locale := "en_US.UTF-8" -}}
+{{ if and (eq .chezmoi.os "linux") (lookPath "locale") -}}
+{{   if not (regexMatch "(?im)^en_US\\.utf-?8$" (output "locale" "-a")) -}}
+{{- /* Minimal Linux images often ship only C.UTF-8; avoid setlocale warnings. */ -}}
+{{     $locale = "C.UTF-8" -}}
+{{   end -}}
+{{ end -}}
+export LC_ALL={{ $locale }}
+export LANG={{ $locale }}
 export EDITOR='vim'
 export VISUAL=$EDITOR
 
@@ -131,5 +138,3 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   unset iterm2_integration
 fi
 {{- /* vim: set filetype=zsh: */}}
-# Atuin - Shell History
-eval "$(atuin init zsh)"

@@ -1,0 +1,12 @@
+{{- /* Local proxy endpoint as JSON. Defaults mirror .chezmoi.toml.tmpl for configs not yet re-initialized. */ -}}
+{{- $host := "127.0.0.1" -}}
+{{- $httpPort := "7890" -}}
+{{- $socksPort := "7890" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $httpPort = "6152" -}}
+{{-   $socksPort = "6153" -}}
+{{- end -}}
+{{- if hasKey . "proxy_host" -}}{{- $host = .proxy_host -}}{{- end -}}
+{{- if hasKey . "proxy_http_port" -}}{{- $httpPort = .proxy_http_port -}}{{- end -}}
+{{- if hasKey . "proxy_socks_port" -}}{{- $socksPort = .proxy_socks_port -}}{{- end -}}
+{{- dict "host" $host "http_port" (toString $httpPort) "socks_port" (toString $socksPort) | toJson -}}

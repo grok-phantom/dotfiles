@@ -107,6 +107,8 @@ Homebrew 必须预先安装且本机 `data.homebrew=true`；本仓库不再执�
 install 使用 `bundle --no-upgrade` 并关闭自动 update/cleanup；upgrade 才显式执行 `brew update`
 和 `bundle --upgrade`。`--no-upgrade` 不保证依赖绝不升级：为安装缺失包，Homebrew 仍可能调整依赖。
 包清单不是版本锁，也不能保证重建完全相同的系统；Brew plan 只列清单与操作类型。
+默认运行不连接终端、不回显工具输出；需要管理员密码的 cask 会因此失败，此时加 `--interactive`
+让 Homebrew install/upgrade 直接使用当前终端（输出显示在终端，不记录到 diagnostics）。
 macOS 现有 casks 保留为 desktop 组，角色附加组默认空；本机可显式选择组或排除条目，
 不会卸载现有应用。编辑器依赖与软件选择方法见 [多 Mac 迁移](docs/multi-mac.md)。
 apt plan 使用当前本地索引做安装模拟，执行阶段才更新索引；需要本机 `data.sudo=true` 和可用的
@@ -147,6 +149,10 @@ HTTP/HTTPS 和 NO_PROXY 环境变量，保留其他设置和环境变量；登�
 只应用 Claude 配置可运行 `chezmoi diff ~/.claude`，确认后运行
 `chezmoi apply ~/.claude`（首次也会创建目录）。重启 Claude 后用 `/status` 检查代理地址，
 并在代理客户端确认请求命中的出口策略。此配置独立于 shell 的 `proxyoff` / `noproxy`。
+该托管由本机 `data.claude_proxy` 控制：默认只在非 ephemeral 的 macOS 上开启，Linux 和
+ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中显式设为 `true` 或 `false`。
+关闭后已有的 env 值不会被自动删除。代理值已正确时原样保留文件内容；`scripts/dotfiles`
+不把应用对 `modify_` 目标的改写视为漂移，因为 apply 会基于当前内容合并。
 
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
 `bash scripts/manual/macos-defaults.sh --apply`。它会改系统偏好并重启相关桌面进程，

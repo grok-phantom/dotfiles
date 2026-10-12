@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-{{- $proxyHost := "127.0.0.1" }}
-{{- $proxyHttpPort := "7890" }}
-{{- if eq .chezmoi.os "darwin" }}
-{{-   $proxyHttpPort = "6152" }}
-{{- end }}
-{{- if hasKey . "proxy_host" }}
-{{-   $proxyHost = .proxy_host }}
-{{- end }}
-{{- if hasKey . "proxy_http_port" }}
-{{-   $proxyHttpPort = .proxy_http_port }}
-{{- end }}
+{{- $proxy := includeTemplate "proxy.json.tmpl" . | fromJson }}
+{{- $proxyHost := $proxy.host }}
+{{- $proxyHttpPort := $proxy.http_port }}
 
 usage() {
   cat <<'EOF'

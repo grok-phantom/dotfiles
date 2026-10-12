@@ -35,6 +35,11 @@
 {{- end -}}
 {{- "" -}}
 
+{{/* Route Claude Code through the local proxy; defaults on only for persistent Macs. */}}
+{{- $claudeProxy := and (eq .chezmoi.os "darwin") (not $ephemeral) -}}
+{{- if hasKey . "claude_proxy" -}}{{- $claudeProxy = .claude_proxy -}}{{- end -}}
+{{- "" -}}
+
 {{/* Homebrew requires sudo and non-ephemeral */}}
 {{- if not $sudo -}}
 {{-   $homebrew = false -}}
@@ -71,6 +76,7 @@
     proxy_host = {{ $proxyHost | quote }}
     proxy_http_port = {{ $proxyHttpPort | quote }}
     proxy_socks_port = {{ $proxySocksPort | quote }}
+    claude_proxy = {{ $claudeProxy }}
 {{ if hasKey . "package_cask_groups" }}
     package_cask_groups = {{ .package_cask_groups | toJson }}
 {{ end }}

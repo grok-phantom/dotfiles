@@ -59,9 +59,16 @@ def interrupt(signum, frame):
     raise KeyboardInterrupt
 
 
-def run(args, *, env=None, input=None, timeout=None, stage=None, diagnostic_output=False):
+def run(args, *, env=None, input=None, timeout=None, stage=None, diagnostic_output=False, interactive=False):
     stage = stage or Path(args[0]).name
     started = time.monotonic()
+    if interactive:
+        # Attached to the terminal so tools such as sudo can prompt; output is neither captured nor logged.
+        code = subprocess.run([str(a) for a in args], env=env, timeout=timeout).returncode
+        record_diagnostic(stage, code, time.monotonic()-started, b'', b'', False)
+        if code:
+            raise Stop(f"{stage} failed (exit {code}); no later step was run")
+        return b''
     with subprocess.Popen([str(a) for a in args], stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, start_new_session=True) as process:
         previous_term_handler = signal.signal(signal.SIGTERM, interrupt)
@@ -150,9 +157,16 @@ class Updates:
         commit = self.git('rev-parse', 'HEAD').decode().strip()
         with self.exported_source(commit) as source:
             status = self.cm(source, 'status').decode()
-        if any(line and line[0] != ' ' for line in status.splitlines()):
+            shared = self.co_owned(source)
+        # modify_ targets are rewritten by their apps and merged from current contents on apply.
+        if any(line and line[0] != ' ' and line[3:] not in shared for line in status.splitlines()):
             raise Stop('Target has local changes since the last apply; inspect chezmoi status/diff and reconcile manually')
         return status
+
+    def co_owned(self, source):
+        managed = json.loads(self.cm(source, 'managed', '--path-style=all', '--format=json'))
+        return {name for name, entry in managed.items()
+                if Path(entry['sourceRelative']).name.startswith('modify_')}
 
     def verify(self):
         commit = self.git('rev-parse', 'HEAD').decode().strip()

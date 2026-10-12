@@ -138,8 +138,15 @@ def packages(args, machine):
                     print('Running Homebrew index update...', flush=True)
                     run([brew, 'update'], env=env, stage='Homebrew update', diagnostic_output=True)
                 print('Running Homebrew '+args.action+'...', flush=True)
-                run([brew, 'bundle', 'install', '--upgrade' if args.action == 'upgrade' else '--no-upgrade',
-                     '--file=' + str(brewfile)], env=env, stage='Homebrew '+args.action, diagnostic_output=True)
+                try:
+                    run([brew, 'bundle', 'install', '--upgrade' if args.action == 'upgrade' else '--no-upgrade',
+                         '--file=' + str(brewfile)], env=env, stage='Homebrew '+args.action,
+                        diagnostic_output=True, interactive=args.interactive)
+                except Stop as error:
+                    if args.interactive:
+                        raise
+                    # Detached runs have no terminal, so casks that ask for an admin password fail here.
+                    raise Stop(str(error) + '. If a cask needs an admin password, rerun with --interactive') from error
                 run([brew, 'bundle', 'check', '--no-upgrade', '--file=' + str(brewfile)], env=env, stage='Homebrew verify', diagnostic_output=True)
     else:
         if machine[0] != 'Linux' or data['osid'] not in ('linux-debian', 'linux-raspbian', 'linux-pop', 'linux-ubuntu'):
@@ -179,6 +186,8 @@ def main():
     parser.add_argument('--manager', choices=['brew', 'apt'], default='brew')
     parser.add_argument('--yes', action='store_true')
     parser.add_argument('--update-existing', action='store_true')
+    parser.add_argument('--interactive', action='store_true',
+                        help='Attach Homebrew install/upgrade to this terminal so casks can prompt for sudo; output is shown, not captured')
     parser.add_argument('--diagnostic-dir', type=Path, help='New private directory outside repo; may contain raw installer/package output')
     args = parser.parse_args()
     try:

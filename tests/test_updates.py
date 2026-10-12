@@ -132,6 +132,17 @@ class UpdateTests(Fixture):
         self.assertIn('Target has local changes', result.stderr)
         self.assertEqual((self.target/'.probe').read_text(), 'user target\n')
 
+    def test_app_edits_to_modify_targets_are_not_drift(self):
+        (self.repo/'home/modify_dot_shared').write_text(
+            '{{- /* chezmoi:modify-template */ -}}\n{{ .chezmoi.stdin | default "managed\\n" }}')
+        self.commit()
+        self.plan_apply()
+        (self.target/'.shared').write_text('app edit\n')
+        self.plan_apply('second.json')
+        self.assertEqual((self.target/'.shared').read_text(), 'app edit\n')
+        (self.target/'.probe').write_text('user target\n')
+        self.assertIn('Target has local changes', self.cli('plan', okay=False).stderr)
+
     def test_stale_target_and_config_plans_stop(self):
         plan = self.root/'plan.json'
         self.cli('plan', '--plan', plan)

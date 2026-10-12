@@ -6,16 +6,21 @@
 .vim_runtime/temp_dirs/**
 
 {{ if ne .chezmoi.os "darwin" }}
-.chezmoiscripts/darwin/**
 .config/karabiner/**
 .config/ghostty/**
-.hammerspoon
 Library/**
 {{ end }}
 
 {{ if ne .chezmoi.os "linux" }}
-.chezmoiscripts/linux/**
 .local/share/fonts
+{{ end }}
+
+{{- $claudeProxy := get . "claude_proxy" }}
+{{- if not (kindIs "bool" $claudeProxy) }}
+{{-   $claudeProxy = and (eq .chezmoi.os "darwin") (not (get . "ephemeral")) }}
+{{- end }}
+{{ if not $claudeProxy }}
+.claude/settings.json
 {{ end }}
 
 {{- $profile := (get . "profile") | default "full" }}

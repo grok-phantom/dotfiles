@@ -24,8 +24,9 @@ class LocalChoicesTests(base.Fixture):
         self.commit()
 
     def render_init(self, data):
-        self.config.write_text(json.dumps({'data':dict(company=False, ephemeral=False, sudo=True,
-                               homebrew=True, email='person@example.invalid', git_name='Example', profile='full', **data)}))
+        values = dict(company=False, ephemeral=False, sudo=True, homebrew=True,
+                      email='person@example.invalid', git_name='Example', profile='full')
+        self.config.write_text(json.dumps({'data':dict(values, **data)}))
         return tomllib.loads(self.cmd(['chezmoi', '--source', self.repo, '--destination', self.target,
                    '--config', self.config, '--persistent-state', self.root/'state', '--cache', self.root/'cache',
                    'execute-template', '--init', '--file', self.repo/'home/.chezmoi.toml.tmpl']).stdout)['data']
@@ -42,6 +43,37 @@ class LocalChoicesTests(base.Fixture):
         rendered = self.render_init({})
         expected = ('6152','6153') if sys.platform == 'darwin' else ('7890','7890')
         self.assertEqual((rendered['proxy_http_port'],rendered['proxy_socks_port']), expected)
+
+    def test_claude_proxy_defaults_to_persistent_macs_only(self):
+        expected = sys.platform == 'darwin'
+        self.assertIs(self.render_init({})['claude_proxy'], expected)
+        self.assertIs(self.render_init({'ephemeral': True})['claude_proxy'], False)
+        self.assertIs(self.render_init({'claude_proxy': not expected})['claude_proxy'], not expected)
+
+    def render_claude(self, data, settings):
+        self.config.write_text(json.dumps({'data': dict(profile='full', ephemeral=False, **data)}))
+        (self.target/'.claude').mkdir(exist_ok=True)
+        if settings is not None:
+            (self.target/'.claude/settings.json').write_text(settings)
+        chezmoi = ['chezmoi', '--source', self.repo, '--destination', self.target, '--config', self.config,
+                   '--persistent-state', self.root/'state', '--cache', self.root/'cache']
+        managed = self.cmd(chezmoi + ['managed', '--include=files', self.target/'.claude']).stdout.split()
+        if '.claude/settings.json' not in managed:
+            return None
+        return self.cmd(chezmoi + ['cat', self.target/'.claude/settings.json']).stdout
+
+    def test_claude_settings_merge_and_toggle(self):
+        self.assertIsNone(self.render_claude({'claude_proxy': False}, None))
+        merged = json.loads(self.render_claude({'claude_proxy': True, 'proxy_host': '127.0.0.1',
+            'proxy_http_port': '18080'}, '{"theme":"dark","env":{"KEEP":"1"}}'))
+        self.assertEqual(merged['theme'], 'dark')
+        self.assertEqual(merged['env']['KEEP'], '1')
+        self.assertEqual(merged['env']['HTTPS_PROXY'], 'http://127.0.0.1:18080')
+        # Already-correct files pass through byte for byte so app formatting is kept.
+        current = json.dumps({'z': 1, 'env': merged['env']})
+        entry = self.render_claude({'claude_proxy': True, 'proxy_host': '127.0.0.1',
+            'proxy_http_port': '18080'}, current)
+        self.assertEqual(entry, current)
 
     def test_full_shell_does_not_load_removed_tldr_plugin(self):
         rendered = self.cmd(['chezmoi', '--source', self.repo, '--destination', self.target,
