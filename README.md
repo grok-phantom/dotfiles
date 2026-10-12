@@ -139,6 +139,15 @@ company flag 不再代表某个固定身份。已有 `data.email` 保留，姓�
 现有 localhost 代理辅助函数保留，但包装函数默认直连；需要时显式设置 `DOTFILES_PROXY_MODE=on`
 或调用 `withproxy`。Python 更新入口使用进程环境中的代理变量，不继承交互 Zsh 的函数包装。
 
+Claude Code 的 `~/.claude/settings.json` 单独托管代理设置，复用本机 chezmoi data 中的
+`proxy_host` 和 `proxy_http_port`（macOS 默认 `127.0.0.1:6152`，Linux 默认
+`127.0.0.1:7890`），不依赖先运行 `proxyon`。采用 chezmoi modify template 合并六个
+HTTP/HTTPS 和 NO_PROXY 环境变量，保留其他设置和环境变量；登录凭据、会话历史不纳入仓库。
+源文件是 `home/private_dot_claude/modify_private_settings.json`，按 chezmoi 要求不加 `.tmpl`。
+只应用 Claude 配置可运行 `chezmoi diff ~/.claude`，确认后运行
+`chezmoi apply ~/.claude`（首次也会创建目录）。重启 Claude 后用 `/status` 检查代理地址，
+并在代理客户端确认请求命中的出口策略。此配置独立于 shell 的 `proxyoff` / `noproxy`。
+
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
 `bash scripts/manual/macos-defaults.sh --apply`。它会改系统偏好并重启相关桌面进程，
 不在任一更新组件中自动调用。dotfiles 更新不要求授予 Full Disk Access。

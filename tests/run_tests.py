@@ -57,7 +57,7 @@ def static_checks(env):
         if path.suffix == '.py' or name in ('scripts/dotfiles', 'scripts/software'):
             ast.parse(path.read_text(), filename=name)
             count += 1
-        elif path.suffix == '.json':
+        elif path.suffix == '.json' and not path.name.startswith('modify_'):
             json.loads(path.read_text())
             count += 1
         elif path.suffix == '.toml':

@@ -1,0 +1,29 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $proxyHost := "127.0.0.1" -}}
+{{- $proxyHttpPort := "7890" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $proxyHttpPort = "6152" -}}
+{{- end -}}
+{{- if hasKey . "proxy_host" -}}
+{{-   $proxyHost = .proxy_host -}}
+{{- end -}}
+{{- if hasKey . "proxy_http_port" -}}
+{{-   $proxyHttpPort = .proxy_http_port -}}
+{{- end -}}
+{{- $proxyURL := printf "http://%s:%s" $proxyHost $proxyHttpPort -}}
+{{- $settings := .chezmoi.stdin | trim | default "{}" | fromJson -}}
+{{- if not (kindIs "map" $settings) -}}
+{{-   fail "Claude settings.json must contain a JSON object" -}}
+{{- end -}}
+{{- if and (hasKey $settings "env") (not (kindIs "map" (get $settings "env"))) -}}
+{{-   fail "Claude settings.json env must contain a JSON object" -}}
+{{- end -}}
+{{- $settings
+    | setValueAtPath "env.HTTP_PROXY" $proxyURL
+    | setValueAtPath "env.HTTPS_PROXY" $proxyURL
+    | setValueAtPath "env.http_proxy" $proxyURL
+    | setValueAtPath "env.https_proxy" $proxyURL
+    | setValueAtPath "env.NO_PROXY" "localhost,127.0.0.1,::1"
+    | setValueAtPath "env.no_proxy" "localhost,127.0.0.1,::1"
+    | toPrettyJson }}
+{{- /* vim: set filetype=gotmpl: */}}
