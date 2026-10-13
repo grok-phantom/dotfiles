@@ -83,6 +83,16 @@
 {{ if hasKey . "personal_git_dir" }}
     personal_git_dir = {{ .personal_git_dir | quote }}
 {{ end }}
+{{ range $key := list "ssh_managed" "ssh_1password_agent" }}
+{{   if hasKey $ $key }}
+    {{ $key }} = {{ get $ $key }}
+{{   end }}
+{{ end }}
+{{ range $key := list "ssh_personal_document" "ssh_personal_vault" }}
+{{   if hasKey $ $key }}
+    {{ $key }} = {{ get $ $key | quote }}
+{{   end }}
+{{ end }}
 {{ if hasKey . "package_cask_groups" }}
     package_cask_groups = {{ .package_cask_groups | toJson }}
 {{ end }}

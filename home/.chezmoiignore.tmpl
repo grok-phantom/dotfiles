@@ -43,3 +43,10 @@ Library/**
 Library/**
 .local/share/fonts/**
 {{ end }}
+
+{{- /* SSH is opt-in per machine (data.ssh_managed); personal hosts render only from 1Password. */}}
+{{ if not (get . "ssh_managed") }}
+.ssh/**
+{{ else if not (get . "ssh_personal_document") }}
+.ssh/config.d/personal.conf
+{{ end }}

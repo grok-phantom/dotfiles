@@ -1,0 +1,9 @@
+{{- /* Personal hosts live in a 1Password document so the public repo never sees them. Only rendered when
+       data.ssh_personal_document names that document (optionally with data.ssh_personal_vault); otherwise
+       .chezmoiignore leaves any local ~/.ssh/config.d/personal.conf alone. */ -}}
+# Managed by chezmoi from the 1Password document {{ .ssh_personal_document | quote }}. Edit it there.
+{{ if get . "ssh_personal_vault" -}}
+{{ onepasswordDocument .ssh_personal_document .ssh_personal_vault }}
+{{- else -}}
+{{ onepasswordDocument .ssh_personal_document }}
+{{- end }}

@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Keep short-lived SSH hosts in ~/.ssh/config.d/temp.conf, each with an expiry date.
+
+usage: sshtmp add ALIAS [USER@]HOST[:PORT] [--days N] [--jump HOST] [--identity FILE]
+       sshtmp list
+       sshtmp extend ALIAS [--days N]
+       sshtmp rm ALIAS
+       sshtmp prune
+
+add, list and extend drop expired entries first. Temporary hosts keep their host keys in
+~/.ssh/known_hosts.temp (accept-new), so they never mix with verified long-term keys.
+"""
+import argparse
+from datetime import date, timedelta
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+
+MARKER = re.compile(r'^# sshtmp alias=(\S+) expires=(\d{4}-\d{2}-\d{2})$')
+ALIAS = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*$')
+HEADER = '# Managed by sshtmp: temporary hosts with expiry dates. Use `sshtmp --help`.\n'
+
+
+def path():
+    return Path(os.environ.get('SSHTMP_FILE', Path.home() / '.ssh/config.d/temp.conf'))
+
+
+def today():
+    return date.fromisoformat(os.environ['SSHTMP_TODAY']) if 'SSHTMP_TODAY' in os.environ else date.today()
+
+
+def load():
+    """Return [(alias, expires, text)] for each sshtmp block; anything outside blocks is dropped."""
+    blocks, current = [], None
+    file = path()
+    for line in (file.read_text().splitlines(keepends=True) if file.exists() else []):
+        match = MARKER.match(line.rstrip('\n'))
+        if match:
+            current = [match.group(1), date.fromisoformat(match.group(2)), line]
+            blocks.append(current)
+        elif current is not None:
+            current[2] += line
+    return [tuple(block) for block in blocks]
+
+
+def save(blocks):
+    file = path()
+    file.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    text = HEADER + ''.join('\n' + block.rstrip('\n') + '\n' for _, _, block in blocks)
+    fd, tmp = tempfile.mkstemp(dir=file.parent, prefix='.temp.conf.')
+    with os.fdopen(fd, 'w') as out:
+        out.write(text)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, file)
+
+
+def prune(blocks, quiet=False):
+    kept = [b for b in blocks if b[1] >= today()]
+    for alias, expires, _ in blocks:
+        if expires < today() and not quiet:
+            print(f'expired: {alias} ({expires})', file=sys.stderr)
+    return kept
+
+
+def block(alias, target, expires, jump=None, identity=None):
+    match = re.fullmatch(r'(?:([^@\s]+)@)?(\[[0-9A-Fa-f:]+\]|[^:@\s]+)(?::(\d{1,5}))?', target)
+    if not match:
+        raise SystemExit(f'sshtmp: cannot parse target: {target}')
+    user, host, port = match.groups()
+    lines = [f'# sshtmp alias={alias} expires={expires}', f'Host {alias}', f'    HostName {host.strip("[]")}']
+    if user:
+        lines.append(f'    User {user}')
+    if port:
+        lines.append(f'    Port {port}')
+    if jump:
+        lines.append(f'    ProxyJump {jump}')
+    if identity:
+        lines += [f'    IdentityFile {identity}', '    IdentitiesOnly yes']
+    lines += ['    UserKnownHostsFile ~/.ssh/known_hosts.temp', '    StrictHostKeyChecking accept-new']
+    return '\n'.join(lines) + '\n'
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog='sshtmp', description=__doc__.split('\n\n')[0])
+    sub = parser.add_subparsers(dest='command', required=True)
+    add = sub.add_parser('add', help='add or replace a temporary host')
+    add.add_argument('alias')
+    add.add_argument('target', help='[user@]host[:port]')
+    add.add_argument('--days', type=int, default=7)
+    add.add_argument('--jump', help='ProxyJump host')
+    add.add_argument('--identity', help='IdentityFile to use')
+    sub.add_parser('list', help='show temporary hosts and their expiry')
+    extend = sub.add_parser('extend', help='push an expiry date out')
+    extend.add_argument('alias')
+    extend.add_argument('--days', type=int, default=7)
+    remove = sub.add_parser('rm', help='remove a temporary host')
+    remove.add_argument('alias')
+    sub.add_parser('prune', help='remove expired hosts')
+    args = parser.parse_args(argv)
+
+    blocks = load()
+    if args.command == 'prune':
+        kept = prune(blocks)
+        save(kept)
+        print(f'{len(blocks) - len(kept)} expired host(s) removed')
+        return 0
+    blocks = prune(blocks)
+    if args.command == 'add':
+        if not ALIAS.match(args.alias):
+            raise SystemExit(f'sshtmp: invalid alias: {args.alias}')
+        if args.days < 1:
+            raise SystemExit('sshtmp: --days must be at least 1')
+        expires = today() + timedelta(days=args.days)
+        blocks = [b for b in blocks if b[0] != args.alias]
+        blocks.append((args.alias, expires, block(args.alias, args.target, expires, args.jump, args.identity)))
+        save(blocks)
+        print(f'{args.alias} added; expires {expires}')
+    elif args.command == 'extend':
+        found = [b for b in blocks if b[0] == args.alias]
+        if not found:
+            raise SystemExit(f'sshtmp: no temporary host named {args.alias}')
+        expires = today() + timedelta(days=args.days)
+        blocks = [(a, expires, MARKER.sub(f'# sshtmp alias={a} expires={expires}', t.split('\n', 1)[0]) + '\n' +
+                   t.split('\n', 1)[1]) if a == args.alias else (a, e, t) for a, e, t in blocks]
+        save(blocks)
+        print(f'{args.alias} now expires {expires}')
+    elif args.command == 'rm':
+        if not any(b[0] == args.alias for b in blocks):
+            raise SystemExit(f'sshtmp: no temporary host named {args.alias}')
+        save([b for b in blocks if b[0] != args.alias])
+        print(f'{args.alias} removed')
+    else:
+        save(blocks)
+        for alias, expires, text in blocks:
+            target = re.search(r'^\s+HostName (\S+)', text, re.M).group(1)
+            print(f'{alias:<20} {target:<30} expires {expires} ({(expires - today()).days} days)')
+        if not blocks:
+            print('no temporary hosts')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -523,6 +523,37 @@ class TemplateTests(Fixture):
         self.assertIn('email = "person@example.invalid"',output)
         self.assertNotIn('includeIf',output)
 
+    def test_ssh_is_opt_in_and_personal_hosts_need_a_document(self):
+        def managed(extra):
+            out = self.chezmoi('core','config','managed','--include','files',extra=extra).stdout.split()
+            return [name for name in out if name.startswith('.ssh')]
+        self.assertEqual(managed({}), [])
+        self.assertEqual(sorted(managed({'ssh_managed':True})), ['.ssh/config', '.ssh/controlmasters/.keep'])
+        self.assertIn('.ssh/config.d/personal.conf',
+            managed({'ssh_managed':True,'ssh_personal_document':'SSH hosts'}))
+
+    def test_ssh_config_orders_categories_before_defaults_and_parses(self):
+        agent = 'IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'
+        path = self.repo/'home/private_dot_ssh/private_config.tmpl'
+        plain = self.chezmoi('core','config','execute-template','--file',path,extra={'ssh_managed':True}).stdout
+        self.assertNotIn('IdentityAgent', plain)
+        includes = [line.split()[1] for line in plain.splitlines() if line.startswith('Include ')]
+        self.assertEqual(includes[1:], ['~/.ssh/config.d/personal.conf', '~/.ssh/config.d/work.conf',
+                                        '~/.ssh/config.d/temp.conf', '~/.ssh/config.d/*.local.conf'])
+        self.assertLess(plain.index('work.conf'), plain.index('Host *'))
+        with_agent = self.chezmoi('core','config','execute-template','--file',path,
+            extra={'ssh_managed':True,'ssh_1password_agent':True,'chezmoi':{'os':'darwin'}}).stdout
+        self.assertIn(agent, with_agent)
+        # Rendered config parses, and a category file wins over the defaults.
+        ssh = self.target/'.ssh'
+        (ssh/'config.d').mkdir(parents=True)
+        (ssh/'config').write_text(plain)
+        (ssh/'config.d/work.conf').write_text('Host box\n    HostName 192.0.2.10\n    ForwardAgent yes\n')
+        resolved = self.cmd(['ssh', '-G', '-F', ssh/'config', 'box']).stdout
+        self.assertIn('hostname 192.0.2.10', resolved)
+        self.assertIn('forwardagent yes', resolved)
+        self.assertIn('serveraliveinterval 30', resolved)
+
     def test_personal_email_applies_only_under_personal_directory(self):
         extra={'email':'work@example.invalid','personal_email':'me@example.invalid'}
         config = self.chezmoi('core','config','execute-template','--file',

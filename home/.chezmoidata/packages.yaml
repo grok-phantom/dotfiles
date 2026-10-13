@@ -47,6 +47,7 @@ packages:
       - wechat
       - zotero
       - raycast
+      - 1password-cli
     # Existing casks remain the desktop group; role groups are explicit additions.
     cask_groups:
       personal: []
