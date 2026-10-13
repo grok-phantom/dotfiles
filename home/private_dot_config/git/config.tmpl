@@ -1,5 +1,7 @@
 {{- $name := (get . "git_name") | default "" -}}
 {{- $email := (get . "email") | default "" -}}
+{{- $personalEmail := (get . "personal_email") | default "" -}}
+{{- $personalDir := (get . "personal_git_dir") | default "~/workspace/personal/" -}}
 {{ if or $name $email -}}
 [user]
 {{ if $name }}
@@ -25,4 +27,8 @@
 	colorMoved = default
 [include]
     path = ~/.config/git/local.conf
+{{ if $personalEmail -}}
+[includeIf "gitdir:{{ $personalDir }}"]
+    path = ~/.config/git/personal.conf
+{{ end -}}
 {{/* vim: set filetype=gitconfig: */}}

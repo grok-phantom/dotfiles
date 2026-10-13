@@ -77,6 +77,12 @@
     proxy_http_port = {{ $proxyHttpPort | quote }}
     proxy_socks_port = {{ $proxySocksPort | quote }}
     claude_proxy = {{ $claudeProxy }}
+{{ if hasKey . "personal_email" }}
+    personal_email = {{ .personal_email | quote }}
+{{ end }}
+{{ if hasKey . "personal_git_dir" }}
+    personal_git_dir = {{ .personal_git_dir | quote }}
+{{ end }}
 {{ if hasKey . "package_cask_groups" }}
     package_cask_groups = {{ .package_cask_groups | toJson }}
 {{ end }}

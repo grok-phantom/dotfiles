@@ -136,6 +136,10 @@ Miniforge 固定为 `locks/miniforge.json` 的版本，下载后必须通过锁�
 company flag 不再代表某个固定身份。已有 `data.email` 保留，姓名需显式设置 `data.git_name`。
 如原来依赖仓库硬编码姓名，迁移时先在本机补充姓名，避免中断 Git 提交。
 
+公司电脑上全局邮箱是公司邮箱时，在本机 chezmoi data 里设置 `personal_email`（可选 `personal_git_dir`，默认
+`~/workspace/personal/`），该目录下的仓库会通过 `includeIf` 使用个人邮箱，避免个人仓库提交带上公司邮箱。
+这两个值只存在本机配置里，重新 `chezmoi init` 时会保留。
+
 `~/.config/git/local.conf` 是可选的本机 Git include，适合身份、组织 URL rewrite 等；
 它不属于本仓库托管范围。不要把凭据、主机专属地址、私钥、token 或渲染后的私有配置提交到公开仓库。
 现有 localhost 代理辅助函数保留，但包装函数默认直连；需要时显式设置 `DOTFILES_PROXY_MODE=on`
