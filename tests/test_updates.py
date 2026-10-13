@@ -521,6 +521,20 @@ class TemplateTests(Fixture):
             extra={'git_name':'Example User','email':'person@example.invalid'}).stdout
         self.assertIn('name = "Example User"',output)
         self.assertIn('email = "person@example.invalid"',output)
+        self.assertNotIn('includeIf',output)
+
+    def test_personal_email_applies_only_under_personal_directory(self):
+        extra={'email':'work@example.invalid','personal_email':'me@example.invalid'}
+        config = self.chezmoi('core','config','execute-template','--file',
+            self.repo/'home/private_dot_config/git/config.tmpl',extra=extra).stdout
+        self.assertIn('[includeIf "gitdir:~/workspace/personal/"]',config)
+        self.assertIn('path = ~/.config/git/personal.conf',config)
+        personal = self.chezmoi('core','config','execute-template','--file',
+            self.repo/'home/private_dot_config/git/personal.conf.tmpl',extra=extra).stdout
+        self.assertIn('email = "me@example.invalid"',personal)
+        empty = self.chezmoi('core','config','execute-template','--file',
+            self.repo/'home/private_dot_config/git/personal.conf.tmpl',extra={'email':'work@example.invalid'}).stdout
+        self.assertEqual(empty.strip(),'')
 
 
 if __name__ == '__main__':

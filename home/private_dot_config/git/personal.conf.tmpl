@@ -1,0 +1,7 @@
+{{- /* Identity for repositories under data.personal_git_dir; empty (not written) when personal_email is unset. */ -}}
+{{- $personalEmail := (get . "personal_email") | default "" -}}
+{{- if $personalEmail -}}
+[user]
+    email = {{ $personalEmail | quote }}
+{{ end -}}
+{{/* vim: set filetype=gitconfig: */}}
