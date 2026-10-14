@@ -21,6 +21,7 @@ Library/**
 {{- end }}
 {{ if not $claudeProxy }}
 .claude/settings.json
+Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 {{ end }}
 
 {{- $profile := (get . "profile") | default "full" }}
@@ -42,4 +43,28 @@ Library/**
 .config/ghostty/**
 Library/**
 .local/share/fonts/**
+{{ end }}
+
+{{- /* SSH is opt-in per machine (data.ssh_managed); personal hosts render only from 1Password. */}}
+{{ if not (get . "ssh_managed") }}
+.ssh/**
+{{ else }}
+{{   if not (get . "ssh_personal_document") }}
+.ssh/config.d/personal.conf
+{{   end }}
+{{   if not (get . "ssh_personal_pubkey") }}
+.ssh/personal-1password.pub
+{{   end }}
+{{ end }}
+
+{{- /* nori config from 1Password, opt-in per Mac: data.nori_config_dir names the folder its
+       deployment reads (nori or nori-mba) and data.nori_machine_json holds that Mac's own fields. */}}
+{{- $noriDir := get . "nori_config_dir" | default "" }}
+{{ if or (ne $noriDir "nori") (not (get . "nori_machine_json")) }}
+.config/nori/nori.yaml
+.config/nori/subscription.env
+{{ end }}
+{{ if or (ne $noriDir "nori-mba") (not (get . "nori_machine_json")) }}
+.config/nori-mba/nori.yaml
+.config/nori-mba/subscription.env
 {{ end }}

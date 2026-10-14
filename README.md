@@ -145,6 +145,12 @@ company flag 不再代表某个固定身份。已有 `data.email` 保留，姓�
 现有 localhost 代理辅助函数保留，但包装函数默认直连；需要时显式设置 `DOTFILES_PROXY_MODE=on`
 或调用 `withproxy`。Python 更新入口使用进程环境中的代理变量，不继承交互 Zsh 的函数包装。
 
+SSH 配置按机器启用（`ssh_managed`），主机分自己的 / 公司 / 临时三类文件，私钥和个人主机清单可放 1Password，见 [多 Mac 迁移](docs/multi-mac.md#ssh-配置)。
+
+GUI 应用（Codex、Claude 桌面版等）不读 shell 配置；同一个开关下 `~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist` 在登录时用 `launchctl setenv` 设置同一组代理变量，取代手工的 `com.openai.codex.proxy-env`。修改后 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist` 立即生效。
+
+Karabiner 把 Caps Lock 变成 Hyper（按住 = ⌃⌥⇧⌘，单按 = Esc），Raycast / Keyboard Maestro 的全局快捷键统一用 Hyper+字母，避免和应用快捷键冲突。
+
 Claude Code 的 `~/.claude/settings.json` 单独托管代理设置，复用本机 chezmoi data 中的
 `proxy_host` 和 `proxy_http_port`（macOS 默认 `127.0.0.1:6152`，Linux 默认
 `127.0.0.1:7890`），不依赖先运行 `proxyon`。采用 chezmoi modify template 合并六个

@@ -523,6 +523,89 @@ class TemplateTests(Fixture):
         self.assertIn('email = "person@example.invalid"',output)
         self.assertNotIn('includeIf',output)
 
+    def test_nori_config_is_opt_in_per_folder(self):
+        def managed(extra):
+            out = self.chezmoi('core','config','managed','--include','files',extra=extra).stdout.split()
+            return sorted(n for n in out if n.startswith('.config/nori'))
+        self.assertEqual(managed({}), [])
+        machine = '{"deployment": "mba"}'
+        self.assertEqual(managed({'nori_config_dir':'nori-mba','nori_machine_json':machine}),
+                         ['.config/nori-mba/nori.yaml', '.config/nori-mba/subscription.env'])
+        self.assertEqual(managed({'nori_config_dir':'nori','nori_machine_json':machine}),
+                         ['.config/nori/nori.yaml', '.config/nori/subscription.env'])
+
+    def test_nori_template_merges_machine_fields_over_the_shared_policy(self):
+        shared = '{"schema_version": 1, "policy": {"groups": []}, "source": {"format": "json", "max_nodes": 5}}'
+        # The template reads the shared part from 1Password; check the same deep merge it uses.
+        merged = self.chezmoi('core','config','execute-template',
+            '{{ mergeOverwrite (`%s` | fromJson) (`{"deployment": "mba", "source": {"secret_file": "s.env"}}` | fromJson) | toJson }}' % shared).stdout
+        import json
+        data = json.loads(merged)
+        self.assertEqual(data['source'], {'format': 'json', 'max_nodes': 5, 'secret_file': 's.env'})
+        self.assertEqual(data['deployment'], 'mba')
+        self.assertEqual(data['policy'], {'groups': []})
+
+    def test_gui_proxy_agent_uses_the_shared_proxy_ports(self):
+        path = self.repo/'home/Library/LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
+        out = self.chezmoi('core','config','execute-template','--file',path,
+            extra={'chezmoi':{'os':'darwin'},'proxy_host':'127.0.0.1','proxy_http_port':'6152','proxy_socks_port':'6153'}).stdout
+        import plistlib
+        data = plistlib.loads(out.encode())
+        script = data['ProgramArguments'][2]
+        self.assertIn('launchctl setenv HTTPS_PROXY http://127.0.0.1:6152', script)
+        self.assertIn('launchctl setenv ALL_PROXY socks5://127.0.0.1:6153', script)
+        self.assertEqual(data['Label'], 'local.dotfiles.gui-proxy')
+
+    def test_personal_signing_uses_the_1password_key(self):
+        key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest lei-personal'
+        extra = {'personal_email':'me@example.invalid','personal_git_signing':True,'ssh_personal_pubkey':key,
+                 'chezmoi':{'os':'darwin'}}
+        git = self.repo/'home/private_dot_config/git'
+        conf = self.chezmoi('core','config','execute-template','--file',git/'personal.conf.tmpl',extra=extra).stdout
+        for line in ('signingkey = ~/.ssh/personal-1password.pub','format = ssh','gpgsign = true','op-ssh-sign'):
+            self.assertIn(line, conf)
+        signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
+        self.assertEqual(signers.strip(), 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest')
+        extra['ssh_personal_pubkey'] = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest'
+        signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
+        self.assertEqual(signers.strip(), 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest')
+        plain = self.chezmoi('core','config','execute-template','--file',git/'personal.conf.tmpl',
+            extra={'personal_email':'me@example.invalid'}).stdout
+        self.assertNotIn('gpgsign', plain)
+
+    def test_ssh_is_opt_in_and_personal_hosts_need_a_document(self):
+        def managed(extra):
+            out = self.chezmoi('core','config','managed','--include','files',extra=extra).stdout.split()
+            return [name for name in out if name.startswith('.ssh')]
+        self.assertEqual(managed({}), [])
+        self.assertEqual(sorted(managed({'ssh_managed':True})), ['.ssh/config', '.ssh/controlmasters/.keep'])
+        self.assertIn('.ssh/personal-1password.pub', managed({'ssh_managed':True,'ssh_personal_pubkey':'ssh-ed25519 AAAA test'}))
+        self.assertIn('.ssh/config.d/personal.conf',
+            managed({'ssh_managed':True,'ssh_personal_document':'SSH hosts'}))
+
+    def test_ssh_config_orders_categories_before_defaults_and_parses(self):
+        agent = 'IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'
+        path = self.repo/'home/private_dot_ssh/private_config.tmpl'
+        plain = self.chezmoi('core','config','execute-template','--file',path,extra={'ssh_managed':True}).stdout
+        self.assertNotIn('IdentityAgent', plain)
+        includes = [line.split()[1] for line in plain.splitlines() if line.startswith('Include ')]
+        self.assertEqual(includes[1:], ['~/.ssh/config.d/personal.conf', '~/.ssh/config.d/work.conf',
+                                        '~/.ssh/config.d/temp.conf', '~/.ssh/config.d/*.local.conf'])
+        self.assertLess(plain.index('work.conf'), plain.index('Host *'))
+        with_agent = self.chezmoi('core','config','execute-template','--file',path,
+            extra={'ssh_managed':True,'ssh_1password_agent':True,'chezmoi':{'os':'darwin'}}).stdout
+        self.assertIn(agent, with_agent)
+        self.assertIn('IdentitiesOnly yes', with_agent)
+        # Rendered config parses, and a category file wins over the defaults.
+        ssh = self.target/'.ssh'
+        (ssh/'config.d').mkdir(parents=True)
+        (ssh/'config').write_text(plain)
+        (ssh/'config.d/work.conf').write_text('Host box\n    HostName 192.0.2.10\n    ForwardAgent yes\n')
+        resolved = self.cmd(['ssh', '-G', '-F', ssh/'config', 'box']).stdout
+        self.assertIn('hostname 192.0.2.10', resolved)
+        self.assertIn('forwardagent yes', resolved)
+        self.assertIn('serveraliveinterval 30', resolved)
+
     def test_personal_email_applies_only_under_personal_directory(self):
         extra={'email':'work@example.invalid','personal_email':'me@example.invalid'}
         config = self.chezmoi('core','config','execute-template','--file',

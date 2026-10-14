@@ -55,55 +55,43 @@ Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关
 脚本缺失时回退到 `conda shell.zsh hook`。需要自定义 hook/自动激活语义时，可在本机
 启动环境设置 `DOTFILES_CONDA_INIT=hook`；不会改 Conda 安装或已有环境。
 
-## SSH 分层方案（尚未自动安装）
+## SSH 配置
 
-机器的 company 角色与 SSH 主机组分别选择，不根据主机名称或本机角色推断归属。
-后续约定由本机显式选择 `personal`、`work` 主机组，并允许个别主机覆盖；同一台机器
-可以同时选择经批准的两组，也可以不选。真实分组清单、地址、用户名和保险库引用只留
-本机或获准的 1Password 资料中，公开仓库仅记录字段约定。当前不增加生效中的 SSH
-模板/Include，不移除现有连接，不改变 agent；后续先确认归属、允许设备及提示策略。
+按机器选择启用：本机 chezmoi data 设 `ssh_managed = true` 后，`~/.ssh/config` 由本仓库生成；未设置的机器完全不碰 `~/.ssh`。生成的配置只有 Include 和默认项，主机按类别放在 `~/.ssh/config.d/`：
 
-建议保留 `~/.ssh/config` 为本机入口：先放精确主机配置，再放 `Host *` 默认项。
-可由用户审查后 Include 本机 `config.d/personal.conf`、获准的
-`config.d/work.conf`，以及工具自己维护的 Include。OpenSSH 多数选项采用首个匹配值，
-不要把会遮蔽主机例外的全局值放在最前面。
+| 文件 | 类别 | 来源 |
+| --- | --- | --- |
+| `personal.conf` | 自己的机器和服务器 | 设了 `ssh_personal_document` 时从 1Password 文档渲染（可选 `ssh_personal_vault`）；否则本机手写，chezmoi 不动 |
+| `work.conf` | 公司主机 | 只在获准的机器上本机手写，永远不进 Git、不进个人 1Password |
+| `temp.conf` | 临时主机 | `sshtmp` 维护，每条带到期日 |
+| `*.local.conf` | 本机其他 | 本机手写 |
 
-- 公开仓库只保存这份流程与占位说明，不托管真实主机清单或 SSH 文件。
-- 个人清单单独记录 alias、用途、HostName、User、Port、公钥指纹、凭据来源和允许设备。
-- 公司清单留在批准的设备/凭据系统；个人 Mac 不自动引入 work Include。
-- 私钥不放 Git、不进迁移包。公钥分发与 authorized_keys 修改单独授权。
-- 每设备密钥配合 Keychain，或经批准使用密码管理器 agent；切换之前先逐主机核实
-  IdentityFile/IdentityAgent/IdentitiesOnly，不全局扩大 agent forwarding。
-- 不关闭主机校验、不移除口令以减少提示；known_hosts 应由已核实的主机指纹建立。
+OpenSSH 取第一个匹配的值，所以类别文件都在 `Host *` 默认项之前；某台主机需要例外（如 `ForwardAgent yes`、旧的 `ssh-rsa`）就写在它自己的块里。不存在的文件会被跳过。
 
-按别名先静态运行 `ssh -G <alias>`，核对 hostname/user/port/proxyjump/identityfile。
-输出仍是别名本身通常意味着映射缺失；`ssh -G` 成功不是网络、凭据或登录成功。
-如存在 `Match exec`，静态解析也可执行本机命令，需先审查配置。
-跳板账号与管理账号分别命名：仅允许转发的账号不能用于 shell/SFTP。
-新设备只迁移该设备获准的主机组配置，分别核实密钥来源与主机信任后再测试连接。
+`Host *` 默认项：保活、`ControlMaster auto`（套接字在 `~/.ssh/controlmasters/`）、`ForwardAgent no`；macOS 上设 `ssh_1password_agent = true` 再加 1Password SSH agent 的 `IdentityAgent`。
 
-### 可选的 1Password 后端
+临时主机：
 
-chezmoi 支持通过 `onepasswordRead`、`onepassword` 等模板函数读取 1Password，
-因此敏感主机配置也可以保存在获准的 vault 中，按本机权限渲染。本仓库当前不调用
-这些函数，也不要求安装 `op`；本机 Include 结构可以在后续单独迁移时保留。
+```sh
+sshtmp add lab root@192.0.2.5:2222 --days 3 [--jump bastion] [--identity ~/.ssh/key]
+sshtmp list            # 顺带清掉已过期的
+sshtmp extend lab --days 7
+sshtmp rm lab
+sshtmp prune
+```
 
-建议分开处理两类数据：主机地址、用户名等配置由可选模板读取，SSH 私钥由
-1Password SSH agent 提供签名。不要为了实现模板化而把私钥渲染到磁盘。真实 vault、
-item、field 引用及后端选择留在本机数据中；公开模板只引用泛化的数据字段。
-公司与个人凭据分别授权，未启用后端的机器继续使用现有本地配置和认证方式。
+临时主机的主机密钥写到 `~/.ssh/known_hosts.temp`（`accept-new`），不和长期主机的已核实指纹混在一起。
 
-后续模板只读取显式选中的主机组，个别覆盖优先；普通 config/status/plan 不调用
-秘密 provider。先用无真实地址的 fixture 验证角色变更不影响 SSH 选择、两组合并、
-重复 alias 冲突及覆盖规则，再接入获准资料。认证资料读取和 agent 接入另行确认。
+### 1Password
 
-启用前需要另行审查：本机 `op` 与账户访问、准确字段映射、渲染文件权限、diff 和
-计划日志中的秘密处理、agent 提供的密钥范围，以及锁定/解锁时的授权体验。
-CLI 读取与 SSH agent 签名是两个授权流程；不能把接入模板等同于免验证登录。
-本机 Keychain 与现有 agent 设置不会因选择 full 或同步仓库而改变。
+- **私钥**：放在 1Password，由 SSH agent 签名，不渲染到磁盘。把它的公钥写进本机 data `ssh_personal_pubkey`，chezmoi 生成 `~/.ssh/personal-1password.pub`；个人主机写 `IdentityFile ~/.ssh/personal-1password.pub`，开了 agent 后默认 `IdentitiesOnly yes`，只出示主机指定的那把钥。1Password → Settings → Developer → Use the SSH agent；导入或新建密钥后，删除磁盘上的旧私钥，并把对应公钥更新到各服务器的 `authorized_keys`。公司密钥不放个人 vault。
+- **个人主机清单**：在 1Password 建一个 Document（例如名为 `SSH hosts`），内容就是 `personal.conf`。本机设 `ssh_personal_document = "SSH hosts"`，需要 `op` 命令行（`1password-cli`，已在软件清单）并在 1Password 设置里打开 Integrate with 1Password CLI。只有渲染 `personal.conf` 时才读 1Password，`status`/`plan` 也会触发一次读取授权。
+- **提交签名**：再设 `personal_git_signing = true`（需要 `personal_email` 和 `ssh_personal_pubkey`），个人目录下的提交和 tag 由 1Password 签名（`op-ssh-sign`），并生成 `~/.config/git/allowed_signers` 供本地验证。把同一把公钥作为 Signing key 加到 GitHub，提交会显示 Verified。
+- 主机清单很少变，改完 1Password 里的文档后再 `chezmoi apply ~/.ssh/config.d/personal.conf` 即可。
 
-参考：[chezmoi 的 1Password 集成](https://www.chezmoi.io/user-guide/password-managers/1password/)、
-[1Password SSH agent 配置](https://developer.1password.com/docs/ssh/agent/config/)。
+切换前后用 `ssh -G <alias>` 逐个核对 hostname/user/port/proxyjump/identityfile；`ssh -G` 成功不代表能登录。
+
+参考：[chezmoi 的 1Password 集成](https://www.chezmoi.io/user-guide/password-managers/1password/)、[1Password SSH agent 配置](https://developer.1password.com/docs/ssh/agent/config/)。
 
 ## 容器与代理迁移
 

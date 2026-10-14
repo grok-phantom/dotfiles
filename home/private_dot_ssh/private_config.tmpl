@@ -1,0 +1,29 @@
+# Managed by chezmoi (dotfiles). Do not add hosts here; each category has its own file:
+#   config.d/personal.conf   own machines and servers (from 1Password when ssh_personal_document is set)
+#   config.d/work.conf       company hosts; only on machines approved for them, never in Git
+#   config.d/temp.conf       short-lived hosts; edit with `sshtmp`, expired entries are pruned
+#   config.d/*.local.conf    anything else specific to this machine
+# OpenSSH uses the first value it finds, so these come before the defaults below.
+# Missing files are skipped.
+
+# OrbStack's 'orb' host must come before any Host block.
+Include ~/.orbstack/ssh/config
+
+Include ~/.ssh/config.d/personal.conf
+Include ~/.ssh/config.d/work.conf
+Include ~/.ssh/config.d/temp.conf
+Include ~/.ssh/config.d/*.local.conf
+
+Host *
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    ControlMaster auto
+    ControlPersist 8h
+    ControlPath ~/.ssh/controlmasters/%C
+    ForwardAgent no
+{{- if and (eq .chezmoi.os "darwin") (get . "ssh_1password_agent") }}
+    # Offer only the key a host names (personal hosts name ~/.ssh/personal-1password.pub), not every agent key.
+    IdentitiesOnly yes
+    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+{{- end }}
+{{/* vim: set filetype=sshconfig: */}}

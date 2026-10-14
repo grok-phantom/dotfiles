@@ -1,7 +1,21 @@
-{{- /* Identity for repositories under data.personal_git_dir; empty (not written) when personal_email is unset. */ -}}
+{{- /* Identity for repositories under data.personal_git_dir; empty (not written) when personal_email is unset.
+       With personal_git_signing and ssh_personal_pubkey, commits and tags there are signed by the 1Password SSH agent. */ -}}
 {{- $personalEmail := (get . "personal_email") | default "" -}}
+{{- $signing := and (get . "personal_git_signing") (get . "ssh_personal_pubkey") (eq .chezmoi.os "darwin") -}}
 {{- if $personalEmail -}}
 [user]
     email = {{ $personalEmail | quote }}
+{{- if $signing }}
+    signingkey = ~/.ssh/personal-1password.pub
+[gpg]
+    format = ssh
+[gpg "ssh"]
+    program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+    allowedSignersFile = ~/.config/git/allowed_signers
+[commit]
+    gpgsign = true
+[tag]
+    gpgsign = true
+{{- end }}
 {{ end -}}
 {{/* vim: set filetype=gitconfig: */}}
