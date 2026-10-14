@@ -523,6 +523,17 @@ class TemplateTests(Fixture):
         self.assertIn('email = "person@example.invalid"',output)
         self.assertNotIn('includeIf',output)
 
+    def test_gui_proxy_agent_uses_the_shared_proxy_ports(self):
+        path = self.repo/'home/Library/LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
+        out = self.chezmoi('core','config','execute-template','--file',path,
+            extra={'chezmoi':{'os':'darwin'},'proxy_host':'127.0.0.1','proxy_http_port':'6152','proxy_socks_port':'6153'}).stdout
+        import plistlib
+        data = plistlib.loads(out.encode())
+        script = data['ProgramArguments'][2]
+        self.assertIn('launchctl setenv HTTPS_PROXY http://127.0.0.1:6152', script)
+        self.assertIn('launchctl setenv ALL_PROXY socks5://127.0.0.1:6153', script)
+        self.assertEqual(data['Label'], 'local.dotfiles.gui-proxy')
+
     def test_personal_signing_uses_the_1password_key(self):
         key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest lei-personal'
         extra = {'personal_email':'me@example.invalid','personal_git_signing':True,'ssh_personal_pubkey':key,
