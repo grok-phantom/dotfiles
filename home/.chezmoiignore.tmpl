@@ -56,3 +56,15 @@ Library/**
 .ssh/personal-1password.pub
 {{   end }}
 {{ end }}
+
+{{- /* nori config from 1Password, opt-in per Mac: data.nori_config_dir names the folder its
+       deployment reads (nori or nori-mba) and data.nori_machine_json holds that Mac's own fields. */}}
+{{- $noriDir := get . "nori_config_dir" | default "" }}
+{{ if or (ne $noriDir "nori") (not (get . "nori_machine_json")) }}
+.config/nori/nori.yaml
+.config/nori/subscription.env
+{{ end }}
+{{ if or (ne $noriDir "nori-mba") (not (get . "nori_machine_json")) }}
+.config/nori-mba/nori.yaml
+.config/nori-mba/subscription.env
+{{ end }}

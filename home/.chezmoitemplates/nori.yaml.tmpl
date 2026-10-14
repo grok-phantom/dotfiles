@@ -1,0 +1,6 @@
+{{- /* nori.yaml = the shared policy (1Password document "nori policy": schema, source limits, policy,
+       refresh) deep-merged with this Mac's own fields from data.nori_machine_json (deployment, target,
+       storage, runtime, source.secret_file). Edit the policy once in 1Password, then apply on each Mac. */ -}}
+{{- $shared := onepasswordDocument "nori policy" | fromJson -}}
+{{- $machine := .nori_machine_json | fromJson -}}
+{{- mergeOverwrite $shared $machine | toPrettyJson }}

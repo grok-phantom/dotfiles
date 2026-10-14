@@ -88,7 +88,7 @@
     {{ $key }} = {{ get $ $key }}
 {{   end }}
 {{ end }}
-{{ range $key := list "ssh_personal_document" "ssh_personal_vault" "ssh_personal_pubkey" }}
+{{ range $key := list "ssh_personal_document" "ssh_personal_vault" "ssh_personal_pubkey" "nori_config_dir" "nori_machine_json" }}
 {{   if hasKey $ $key }}
     {{ $key }} = {{ get $ $key | quote }}
 {{   end }}
