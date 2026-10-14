@@ -546,7 +546,7 @@ class TemplateTests(Fixture):
         self.assertEqual(data['policy'], {'groups': []})
 
     def test_gui_proxy_agent_uses_the_shared_proxy_ports(self):
-        path = self.repo/'home/Library/LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
+        path = self.repo/'home/Library/private_LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
         out = self.chezmoi('core','config','execute-template','--file',path,
             extra={'chezmoi':{'os':'darwin'},'proxy_host':'127.0.0.1','proxy_http_port':'6152','proxy_socks_port':'6153'}).stdout
         import plistlib
