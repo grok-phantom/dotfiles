@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Check this Mac's nori deployment; push a Bark notice when the set of problems changes.
+
+usage: nori-watch --config ~/.config/nori/nori.yaml [--proxy http://127.0.0.1:6152]
+                  [--max-age-hours 60] [--name NAME] [--print]
+
+The LaunchAgent local.dotfiles.nori-watch runs it every 30 minutes. A problem is: `nori status`
+fails; the proxy or the scheduled refresh is off; nori needs maintenance or recovery; the last
+refresh ended in an error; no successful refresh for --max-age-hours; or a request through
+--proxy fails while this Mac can still reach the internet directly (being offline is not a
+problem). As with infra-health on the servers, only changes are pushed: new problems, and an
+all-clear once everything recovers. Bark is called directly, never through the proxy it reports
+on. The Bark URL comes from ~/.config/nori-watch/bark.url; without it nothing is sent.
+--print checks and prints without notifying or saving state.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+HOME = Path.home()
+NORI = Path(os.environ.get('NORI_WATCH_NORI', HOME / '.local/bin/nori'))
+BARK = Path(os.environ.get('NORI_WATCH_BARK', HOME / '.config/nori-watch/bark.url'))
+STATE = Path(os.environ.get('NORI_WATCH_STATE', HOME / '.local/state/nori-watch/state.json'))
+# Results nori records after a successful operation; anything else (an error code) is a failure.
+FINE = {'unchanged', 'applied', 'published_pending_start', 'exported_not_imported', 'staged',
+        'recovered', 'started', 'stopped', 'upgraded'}
+DIRECT = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
+def nori_problems(config, max_age_hours, now):
+    try:
+        result = subprocess.run([str(NORI), 'status', '--config', config],
+                                capture_output=True, text=True, timeout=60)
+        status = json.loads(result.stdout) if result.returncode == 0 else None
+    except (OSError, subprocess.SubprocessError, ValueError):
+        result, status = None, None
+    if status is None:
+        detail = ((result.stderr or result.stdout).strip().splitlines() or ['no output'])[-1] if result else 'did not run'
+        return [f'nori status failed: {detail[:200]}']
+    found = []
+    if not status.get('running'):
+        found.append('proxy is not running')
+    if not status.get('schedule_enabled'):
+        found.append('scheduled refresh is off')
+    if status.get('maintenance_required'):
+        found.append('nori needs maintenance')
+    if status.get('recovery_required'):
+        found.append('nori needs recovery')
+    if status.get('result') not in FINE:
+        found.append(f"last refresh failed: {status.get('result')}")
+    last = status.get('last_success')
+    if not last:
+        found.append('never refreshed successfully')
+    elif now - last > max_age_hours * 3600:
+        found.append(f'no successful refresh for {int((now - last) / 3600)}h')
+    return found
+
+
+def reachable(opener, url):
+    """True when the URL answers at all (any HTTP status counts)."""
+    try:
+        opener.open(url, timeout=15).close()
+        return True
+    except urllib.error.HTTPError:
+        return True
+    except Exception:
+        return False
+
+
+def proxy_problems(proxy, probe_url, direct_url):
+    via = urllib.request.build_opener(urllib.request.ProxyHandler({'http': proxy, 'https': proxy}))
+    try:
+        with via.open(probe_url, timeout=15) as response:
+            if response.status in (200, 204):
+                return []
+            code = response.status
+    except urllib.error.HTTPError as error:
+        code = error.code
+        error.close()
+    except Exception as error:
+        code = type(error).__name__
+    if not reachable(DIRECT, direct_url):
+        return []  # offline: nothing to say about the proxy
+    return [f'request through the proxy failed: {code}']
+
+
+def notify(title, body):
+    url = BARK.read_text().strip() if BARK.exists() else ''
+    if not url:
+        print('no Bark URL configured; notice not sent', file=sys.stderr)
+        return
+    payload = json.dumps({'title': title, 'body': body, 'group': 'nori'}, ensure_ascii=False).encode()
+    request = urllib.request.Request(url, payload, {'Content-Type': 'application/json'})
+    DIRECT.open(request, timeout=15).close()
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--config', required=True)
+    parser.add_argument('--proxy', help='HTTP proxy to send a test request through, e.g. http://127.0.0.1:6152')
+    parser.add_argument('--max-age-hours', type=float, default=60)
+    parser.add_argument('--name', default=socket.gethostname().split('.')[0])
+    parser.add_argument('--probe-url', default='http://www.gstatic.com/generate_204')
+    parser.add_argument('--direct-url', default='https://www.baidu.com/')
+    parser.add_argument('--print', action='store_true', dest='print_only')
+    args = parser.parse_args(argv)
+    found = nori_problems(os.path.expanduser(args.config), args.max_age_hours, time.time())
+    if args.proxy:
+        found += proxy_problems(args.proxy, args.probe_url, args.direct_url)
+    found.sort()
+    if args.print_only:
+        print('\n'.join(found) or 'ok')
+        return 1 if found else 0
+    previous = json.loads(STATE.read_text()) if STATE.exists() else []
+    if found != previous:
+        new = [p for p in found if p not in previous]
+        try:
+            if found:
+                notify(f'{args.name}: {len(found)} nori problem(s)', '\n'.join(new or found))
+            else:
+                notify(f'{args.name}: nori all clear', 'Recovered: ' + '; '.join(previous))
+        except Exception as error:  # try again next run; the state stays as it was
+            print(f'notice not sent: {type(error).__name__}', file=sys.stderr)
+            return 2
+        STATE.parent.mkdir(parents=True, exist_ok=True)
+        STATE.write_text(json.dumps(found) + '\n')
+    if found:
+        print(time.strftime('%Y-%m-%d %H:%M ') + '; '.join(found))
+    return 1 if found else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

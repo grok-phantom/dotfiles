@@ -1,0 +1,28 @@
+{{- /* Every 30 minutes ~/bin/nori-watch checks this Mac's nori deployment (data.nori_config_dir) and the
+       local proxy, and pushes changes to Bark. Opt-in per Mac with data.nori_watch. */ -}}
+{{- $proxy := includeTemplate "proxy.json.tmpl" . | fromJson -}}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.dotfiles.nori-watch</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>{{ .chezmoi.homeDir }}/bin/nori-watch</string>
+        <string>--config</string>
+        <string>{{ .chezmoi.homeDir }}/.config/{{ .nori_config_dir }}/nori.yaml</string>
+        <string>--proxy</string>
+        <string>http://{{ $proxy.host }}:{{ $proxy.http_port }}</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>1800</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>{{ .chezmoi.homeDir }}/Library/Logs/nori-watch.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{ .chezmoi.homeDir }}/Library/Logs/nori-watch.log</string>
+</dict>
+</plist>
