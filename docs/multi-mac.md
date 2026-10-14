@@ -86,6 +86,7 @@ sshtmp prune
 
 - **私钥**：放在 1Password，由 SSH agent 签名，不渲染到磁盘。把它的公钥写进本机 data `ssh_personal_pubkey`，chezmoi 生成 `~/.ssh/personal-1password.pub`；个人主机写 `IdentityFile ~/.ssh/personal-1password.pub`，开了 agent 后默认 `IdentitiesOnly yes`，只出示主机指定的那把钥。1Password → Settings → Developer → Use the SSH agent；导入或新建密钥后，删除磁盘上的旧私钥，并把对应公钥更新到各服务器的 `authorized_keys`。公司密钥不放个人 vault。
 - **个人主机清单**：在 1Password 建一个 Document（例如名为 `SSH hosts`），内容就是 `personal.conf`。本机设 `ssh_personal_document = "SSH hosts"`，需要 `op` 命令行（`1password-cli`，已在软件清单）并在 1Password 设置里打开 Integrate with 1Password CLI。只有渲染 `personal.conf` 时才读 1Password，`status`/`plan` 也会触发一次读取授权。
+- **提交签名**：再设 `personal_git_signing = true`（需要 `personal_email` 和 `ssh_personal_pubkey`），个人目录下的提交和 tag 由 1Password 签名（`op-ssh-sign`），并生成 `~/.config/git/allowed_signers` 供本地验证。把同一把公钥作为 Signing key 加到 GitHub，提交会显示 Verified。
 - 主机清单很少变，改完 1Password 里的文档后再 `chezmoi apply ~/.ssh/config.d/personal.conf` 即可。
 
 切换前后用 `ssh -G <alias>` 逐个核对 hostname/user/port/proxyjump/identityfile；`ssh -G` 成功不代表能登录。

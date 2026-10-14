@@ -523,6 +523,23 @@ class TemplateTests(Fixture):
         self.assertIn('email = "person@example.invalid"',output)
         self.assertNotIn('includeIf',output)
 
+    def test_personal_signing_uses_the_1password_key(self):
+        key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest lei-personal'
+        extra = {'personal_email':'me@example.invalid','personal_git_signing':True,'ssh_personal_pubkey':key,
+                 'chezmoi':{'os':'darwin'}}
+        git = self.repo/'home/private_dot_config/git'
+        conf = self.chezmoi('core','config','execute-template','--file',git/'personal.conf.tmpl',extra=extra).stdout
+        for line in ('signingkey = ~/.ssh/personal-1password.pub','format = ssh','gpgsign = true','op-ssh-sign'):
+            self.assertIn(line, conf)
+        signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
+        self.assertEqual(signers.strip(), 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest')
+        extra['ssh_personal_pubkey'] = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest'
+        signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
+        self.assertEqual(signers.strip(), 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest')
+        plain = self.chezmoi('core','config','execute-template','--file',git/'personal.conf.tmpl',
+            extra={'personal_email':'me@example.invalid'}).stdout
+        self.assertNotIn('gpgsign', plain)
+
     def test_ssh_is_opt_in_and_personal_hosts_need_a_document(self):
         def managed(extra):
             out = self.chezmoi('core','config','managed','--include','files',extra=extra).stdout.split()
