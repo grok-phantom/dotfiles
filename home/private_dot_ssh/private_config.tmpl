@@ -22,6 +22,8 @@ Host *
     ControlPath ~/.ssh/controlmasters/%C
     ForwardAgent no
 {{- if and (eq .chezmoi.os "darwin") (get . "ssh_1password_agent") }}
+    # Offer only the key a host names (personal hosts name ~/.ssh/personal-1password.pub), not every agent key.
+    IdentitiesOnly yes
     IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{- end }}
 {{/* vim: set filetype=sshconfig: */}}

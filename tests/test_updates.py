@@ -529,6 +529,7 @@ class TemplateTests(Fixture):
             return [name for name in out if name.startswith('.ssh')]
         self.assertEqual(managed({}), [])
         self.assertEqual(sorted(managed({'ssh_managed':True})), ['.ssh/config', '.ssh/controlmasters/.keep'])
+        self.assertIn('.ssh/personal-1password.pub', managed({'ssh_managed':True,'ssh_personal_pubkey':'ssh-ed25519 AAAA test'}))
         self.assertIn('.ssh/config.d/personal.conf',
             managed({'ssh_managed':True,'ssh_personal_document':'SSH hosts'}))
 
@@ -544,6 +545,7 @@ class TemplateTests(Fixture):
         with_agent = self.chezmoi('core','config','execute-template','--file',path,
             extra={'ssh_managed':True,'ssh_1password_agent':True,'chezmoi':{'os':'darwin'}}).stdout
         self.assertIn(agent, with_agent)
+        self.assertIn('IdentitiesOnly yes', with_agent)
         # Rendered config parses, and a category file wins over the defaults.
         ssh = self.target/'.ssh'
         (ssh/'config.d').mkdir(parents=True)
