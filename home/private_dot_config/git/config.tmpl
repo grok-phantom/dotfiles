@@ -15,6 +15,10 @@
 	autocrlf = input
 	pager = less -FX
 	quotepath = false
+{{- if get . "git_hooks_path" }}
+	# Set by this machine's management tooling, which rewrites it here; mirrored so chezmoi sees no drift.
+	hooksPath = {{ .git_hooks_path }}
+{{- end }}
 [init]
 	defaultBranch = main
 [pull]

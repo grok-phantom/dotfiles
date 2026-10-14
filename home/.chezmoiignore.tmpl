@@ -61,10 +61,10 @@ Library/**
        deployment reads (nori or nori-mba) and data.nori_machine_json holds that Mac's own fields. */}}
 {{- $noriDir := get . "nori_config_dir" | default "" }}
 {{ if or (ne $noriDir "nori") (not (get . "nori_machine_json")) }}
-.config/nori/nori.yaml
-.config/nori/subscription.env
+.config/nori
+.config/nori/**
 {{ end }}
 {{ if or (ne $noriDir "nori-mba") (not (get . "nori_machine_json")) }}
-.config/nori-mba/nori.yaml
-.config/nori-mba/subscription.env
+.config/nori-mba
+.config/nori-mba/**
 {{ end }}

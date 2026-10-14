@@ -546,7 +546,7 @@ class TemplateTests(Fixture):
         self.assertEqual(data['policy'], {'groups': []})
 
     def test_gui_proxy_agent_uses_the_shared_proxy_ports(self):
-        path = self.repo/'home/Library/LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
+        path = self.repo/'home/Library/private_LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
         out = self.chezmoi('core','config','execute-template','--file',path,
             extra={'chezmoi':{'os':'darwin'},'proxy_host':'127.0.0.1','proxy_http_port':'6152','proxy_socks_port':'6153'}).stdout
         import plistlib
@@ -596,6 +596,8 @@ class TemplateTests(Fixture):
             extra={'ssh_managed':True,'ssh_1password_agent':True,'chezmoi':{'os':'darwin'}}).stdout
         self.assertIn(agent, with_agent)
         self.assertIn('IdentitiesOnly yes', with_agent)
+        self.assertLess(with_agent.index('Match host * exec'), with_agent.index('Host *'))
+        self.assertNotIn('Match host', plain)
         # Rendered config parses, and a category file wins over the defaults.
         ssh = self.target/'.ssh'
         (ssh/'config.d').mkdir(parents=True)
