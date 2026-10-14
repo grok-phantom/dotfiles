@@ -21,6 +21,7 @@ Library/**
 {{- end }}
 {{ if not $claudeProxy }}
 .claude/settings.json
+Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 {{ end }}
 
 {{- $profile := (get . "profile") | default "full" }}

@@ -28,6 +28,10 @@ packages:
       - yazi
       - zoxide
       - atuin
+      - chezmoi
+      - pandoc
+      - imagemagick
+      - zellij
     casks:
       - appcleaner
       - alt-tab
@@ -48,6 +52,13 @@ packages:
       - zotero
       - raycast
       - 1password-cli
+      - 1password
+      - bartender
+      - keyboard-maestro
+      - transmit
+      - rustdesk
+      - claude-code
+      - codex
     # Existing casks remain the desktop group; role groups are explicit additions.
     cask_groups:
       personal: []

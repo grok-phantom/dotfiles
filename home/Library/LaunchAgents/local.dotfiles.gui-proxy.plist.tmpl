@@ -1,0 +1,26 @@
+{{- /* GUI apps (Codex, Claude desktop, ...) do not read shell profiles; set the same local proxy for the
+       login session. Uses proxy_host/proxy_http_port/proxy_socks_port like the shell and Claude Code. */ -}}
+{{- $proxy := includeTemplate "proxy.json.tmpl" . | fromJson -}}
+{{- $http := printf "http://%s:%s" $proxy.host $proxy.http_port -}}
+{{- $socks := printf "socks5://%s:%s" $proxy.host $proxy.socks_port -}}
+{{- $noProxy := "localhost,127.0.0.1,::1" -}}
+{{- $commands := list -}}
+{{- range $name, $value := dict "HTTP_PROXY" $http "HTTPS_PROXY" $http "ALL_PROXY" $socks "NO_PROXY" $noProxy "http_proxy" $http "https_proxy" $http "all_proxy" $socks "no_proxy" $noProxy -}}
+{{-   $commands = append $commands (printf "/bin/launchctl setenv %s %s" $name $value) -}}
+{{- end -}}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.dotfiles.gui-proxy</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>{{ join "; " $commands }}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
