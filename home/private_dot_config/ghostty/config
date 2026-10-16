@@ -4,6 +4,8 @@ font-size = 11
 theme = Gruvbox Dark
 window-padding-x = 8
 window-padding-y = 6
+window-padding-balance = true
+mouse-hide-while-typing = true
 
 # Preserve macOS Option-character input; do not force Option into terminal Alt.
 macos-option-as-alt = false
@@ -12,11 +14,18 @@ macos-option-as-alt = false
 keybind = ctrl+tab=unbind
 keybind = ctrl+shift+tab=unbind
 
-# Ask before terminal applications (including SSH) access the clipboard.
-# Ordinary Cmd+C / Cmd+V still use native behavior.
+# Programs may write the clipboard (OSC 52 from Claude Code, tmux, vim) without
+# a prompt; reading it still asks, which is the risky direction. No toast on copy.
 clipboard-read = ask
-clipboard-write = ask
+clipboard-write = allow
 clipboard-paste-protection = true
+app-notifications = no-clipboard-copy,config-reload
+
+# Notify when a long command (build, test, agent run) finishes while Ghostty
+# is not focused.
+notify-on-command-finish = unfocused
+notify-on-command-finish-after = 30s
+notify-on-command-finish-action = bell,notify
 
 # Keep native defaults for shell integration, directory inheritance,
 # running-command close confirmation, Cmd shortcuts and TERM.
