@@ -20,7 +20,9 @@ Library/**
 {{-   $claudeProxy = and (eq .chezmoi.os "darwin") (not (get . "ephemeral")) }}
 {{- end }}
 {{ if not $claudeProxy }}
+{{   if not (get . "automation_git") }}
 .claude/settings.json
+{{   end }}
 Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 {{ end }}
 

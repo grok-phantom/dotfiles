@@ -1,8 +1,26 @@
 {{- /* chezmoi:modify-template */ -}}
-{{- $proxy := includeTemplate "proxy.json.tmpl" . | fromJson -}}
-{{- $proxyURL := printf "http://%s:%s" $proxy.host $proxy.http_port -}}
-{{- $noProxy := "localhost,127.0.0.1,::1" -}}
-{{- $wanted := dict "HTTP_PROXY" $proxyURL "HTTPS_PROXY" $proxyURL "http_proxy" $proxyURL "https_proxy" $proxyURL "NO_PROXY" $noProxy "no_proxy" $noProxy -}}
+{{- $claudeProxy := get . "claude_proxy" -}}
+{{- if not (kindIs "bool" $claudeProxy) -}}
+{{-   $claudeProxy = and (eq .chezmoi.os "darwin") (not (get . "ephemeral")) -}}
+{{- end -}}
+{{- $wanted := dict -}}
+{{- if $claudeProxy -}}
+{{-   $proxy := includeTemplate "proxy.json.tmpl" . | fromJson -}}
+{{-   $proxyURL := printf "http://%s:%s" $proxy.host $proxy.http_port -}}
+{{-   $noProxy := "localhost,127.0.0.1,::1" -}}
+{{-   $wanted = dict "HTTP_PROXY" $proxyURL "HTTPS_PROXY" $proxyURL "http_proxy" $proxyURL "https_proxy" $proxyURL "NO_PROXY" $noProxy "no_proxy" $noProxy -}}
+{{- end -}}
+{{- /* automation_git: git run by Claude Code never waits for a 1Password approval. GitHub goes over HTTPS
+       with gh's token, and commits are signed with a key file kept only on this machine. */ -}}
+{{- $gh := "gh" -}}
+{{- if lookPath "gh" -}}{{- $gh = lookPath "gh" -}}{{- end -}}
+{{- $gitConfig := list
+      (list "credential.https://github.com.helper" "")
+      (list "credential.https://github.com.helper" (printf "!%s auth git-credential" $gh))
+      (list "url.https://github.com/.insteadOf" "git@github.com:")
+      (list "url.https://github.com/.insteadOf" "ssh://git@github.com/")
+      (list "gpg.ssh.program" "ssh-keygen")
+      (list "user.signingkey" (printf "%s/.ssh/automation-signing" .chezmoi.homeDir)) -}}
 {{- $settings := .chezmoi.stdin | trim | default "{}" | fromJson -}}
 {{- if not (kindIs "map" $settings) -}}
 {{-   fail "Claude settings.json must contain a JSON object" -}}
@@ -11,17 +29,34 @@
 {{-   fail "Claude settings.json env must contain a JSON object" -}}
 {{- end -}}
 {{- $env := get $settings "env" | default (dict) -}}
+{{- $ownsGitConfig := eq (toString (get $env "GIT_CONFIG_KEY_0")) (index $gitConfig 0 0) -}}
+{{- if get . "automation_git" -}}
+{{-   $_ := set $wanted "GIT_CONFIG_COUNT" (len $gitConfig | toString) -}}
+{{-   range $i, $entry := $gitConfig -}}
+{{-     $_ := set $wanted (printf "GIT_CONFIG_KEY_%d" $i) (index $entry 0) -}}
+{{-     $_ := set $wanted (printf "GIT_CONFIG_VALUE_%d" $i) (index $entry 1) -}}
+{{-   end -}}
+{{- end -}}
 {{- $changed := false -}}
 {{- range $key, $value := $wanted -}}
 {{-   if not (and (hasKey $env $key) (eq (toString (get $env $key)) $value)) -}}
 {{-     $changed = true -}}
-{{-     $settings = setValueAtPath (printf "env.%s" $key) $value $settings -}}
+{{-     $_ := set $env $key $value -}}
+{{-   end -}}
+{{- end -}}
+{{- /* Switching automation_git off removes only the git entries this file wrote. */ -}}
+{{- if and $ownsGitConfig (not (get . "automation_git")) -}}
+{{-   $changed = true -}}
+{{-   $_ := unset $env "GIT_CONFIG_COUNT" -}}
+{{-   range $i, $entry := $gitConfig -}}
+{{-     $_ := unset $env (printf "GIT_CONFIG_KEY_%d" $i) -}}
+{{-     $_ := unset $env (printf "GIT_CONFIG_VALUE_%d" $i) -}}
 {{-   end -}}
 {{- end -}}
 {{- /* Re-serializing sorts keys; keep Claude's own formatting when nothing needs to change. */ -}}
 {{- if $changed -}}
+{{-   $_ := set $settings "env" $env -}}
 {{ toPrettyJson $settings -}}
 {{ else -}}
 {{ .chezmoi.stdin }}
 {{- end -}}
-{{- /* vim: set filetype=gotmpl: */ -}}

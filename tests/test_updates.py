@@ -592,6 +592,9 @@ class TemplateTests(Fixture):
         extra['ssh_personal_pubkey'] = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest'
         signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
         self.assertEqual(signers.strip(), 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest')
+        extra['automation_signing_pubkey'] = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIauto mba-automation'
+        signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
+        self.assertEqual(signers.splitlines()[1], 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIauto')
         plain = self.chezmoi('core','config','execute-template','--file',git/'personal.conf.tmpl',
             extra={'personal_email':'me@example.invalid'}).stdout
         self.assertNotIn('gpgsign', plain)
