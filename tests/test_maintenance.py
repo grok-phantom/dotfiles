@@ -49,6 +49,8 @@ class LocalChoicesTests(base.Fixture):
         self.assertIs(self.render_init({})['claude_proxy'], expected)
         self.assertIs(self.render_init({'ephemeral': True})['claude_proxy'], False)
         self.assertIs(self.render_init({'claude_proxy': not expected})['claude_proxy'], not expected)
+        self.assertIs(self.render_init({'automation_git': True})['automation_git'], True)
+        self.assertNotIn('automation_git', self.render_init({}))
 
     def render_claude(self, data, settings):
         self.config.write_text(json.dumps({'data': dict(profile='full', ephemeral=False, **data)}))
@@ -74,6 +76,31 @@ class LocalChoicesTests(base.Fixture):
         entry = self.render_claude({'claude_proxy': True, 'proxy_host': '127.0.0.1',
             'proxy_http_port': '18080'}, current)
         self.assertEqual(entry, current)
+
+    def test_automation_git_adds_and_removes_only_its_git_config(self):
+        data = {'claude_proxy': False, 'automation_git': True}
+        merged = json.loads(self.render_claude(data, '{"env":{"KEEP":"1"}}'))
+        env = merged['env']
+        self.assertNotIn('HTTPS_PROXY', env)
+        self.assertEqual(env['KEEP'], '1')
+        pairs = [(env[f'GIT_CONFIG_KEY_{i}'], env[f'GIT_CONFIG_VALUE_{i}']) for i in range(int(env['GIT_CONFIG_COUNT']))]
+        self.assertIn(('url.https://github.com/.insteadOf', 'git@github.com:'), pairs)
+        self.assertIn(('gpg.ssh.program', 'ssh-keygen'), pairs)
+        self.assertIn(('user.signingkey', f'{self.target}/.ssh/automation-signing'), pairs)
+        # The empty helper resets inherited helpers before gh's is added.
+        helpers = [value for key, value in pairs if key == 'credential.https://github.com.helper']
+        self.assertEqual(helpers[0], '')
+        self.assertTrue(helpers[1].endswith('auth git-credential'))
+        # Turning the switch off (proxy still managed) removes the git entries and nothing else.
+        off = json.loads(self.render_claude({'claude_proxy': True, 'proxy_host': '127.0.0.1',
+            'proxy_http_port': '18080'}, json.dumps(merged)))
+        self.assertFalse([key for key in off['env'] if key.startswith('GIT_CONFIG_')])
+        self.assertEqual(off['env']['KEEP'], '1')
+        # A GIT_CONFIG_* set by hand is left alone.
+        manual = '{"env":{"GIT_CONFIG_COUNT":"1","GIT_CONFIG_KEY_0":"core.pager","GIT_CONFIG_VALUE_0":"cat"}}'
+        kept = json.loads(self.render_claude({'claude_proxy': True, 'proxy_host': '127.0.0.1',
+            'proxy_http_port': '18080'}, manual))
+        self.assertEqual(kept['env']['GIT_CONFIG_KEY_0'], 'core.pager')
 
     def test_full_shell_does_not_load_removed_tldr_plugin(self):
         rendered = self.cmd(['chezmoi', '--source', self.repo, '--destination', self.target,
