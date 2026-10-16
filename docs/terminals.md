@@ -27,8 +27,10 @@ wins. See [iTerm2 documentation](https://iterm2.com/documentation-dynamic-profil
 Use `MesloLGS NF`, size 11, and `Gruvbox Dark`, with 8pt horizontal / 6pt
 vertical padding. Keep macOS Option-character input (`macos-option-as-alt = false`);
 terminal Alt-letter sequences are intentionally not enabled. Clipboard OSC 52 reads
-and writes ask first, including requests from SSH; native Cmd+C/V remain unchanged.
-Unsafe paste protection stays enabled. Directory inheritance and running-command
+ask first, including requests from SSH; OSC 52 writes (Claude Code, tmux, vim copy)
+are allowed without a prompt, and the copy toast is off. Native Cmd+C/V remain
+unchanged. Unsafe paste protection stays enabled. Commands running 30s or longer
+send a desktop notification when they finish while Ghostty is unfocused. Directory inheritance and running-command
 close confirmation use the verified 1.3.1 defaults. No extra shell/TERM setup is needed.
 The existing full-profile font provision supplies MesloLGS NF. `config` remains
 supported by 1.3.1 and older releases; `config.ghostty` is also supported since
