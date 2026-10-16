@@ -11,6 +11,11 @@
 Library/**
 {{ end }}
 
+{{/* ~/workspace is a plain directory unless this host keeps it elsewhere (e.g. an external disk). */}}
+{{ if not (get . "workspace_root") }}
+workspace
+{{ end }}
+
 {{ if ne .chezmoi.os "linux" }}
 .local/share/fonts
 {{ end }}

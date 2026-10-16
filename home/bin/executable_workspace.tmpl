@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# Keep ~/workspace in the shared layout; see docs/workspace.md in the dotfiles repo.
+set -euo pipefail
+
+root=${WORKSPACE_ROOT:-$HOME/workspace}
+volume_uuid=${WORKSPACE_VOLUME_UUID:-{{ get . "workspace_volume_uuid" | default "" | quote }}}
+company=${WORKSPACE_COMPANY:-{{ if get . "company" }}1{{ else }}0{{ end }}}
+manifest_default=${XDG_CONFIG_HOME:-$HOME/.config}/workspace/repos.tsv
+categories=(projects oss learning archive worktrees)
+repo_categories=(projects oss learning)
+
+usage() {
+  cat <<'EOF'
+usage: workspace init          create the directory skeleton
+       workspace doctor        report misplaced dirs, repos without remote, unpushed work
+       workspace list          print "path<TAB>origin" for every repo with a remote
+       workspace clone [file]  clone repos from a list missing here (default ~/.config/workspace/repos.tsv)
+
+Layout: <owner>/<category>/<repo>, owner = personal | company,
+category = projects | oss | learning | archive | worktrees; plus scratch/.
+Environment: WORKSPACE_ROOT (default ~/workspace), WORKSPACE_VOLUME_UUID.
+EOF
+}
+
+die() { echo "workspace: $*" >&2; exit 1; }
+contains() { local x=$1; shift; for y in "$@"; do [[ $x == "$y" ]] && return 0; done; return 1; }
+owners() { echo personal; [[ $company == 1 || -d $root/company ]] && echo company; return 0; }
+
+# Refuse to touch a root on an external disk that is missing or not the expected volume,
+# so nothing is ever created on the internal disk by mistake.
+guard() {
+  if [[ -L $root && ! -e $root ]]; then die "$root points to $(readlink "$root"), which is not mounted"; fi
+  [[ -e $root ]] || return 0
+  local real vol uuid
+  real=$(cd "$root" && pwd -P)
+  if [[ $real == /Volumes/* ]]; then
+    vol=/Volumes/$(cut -d/ -f3 <<<"$real")
+    [[ $(stat -f %d "$vol") != "$(stat -f %d /)" ]] || die "$vol is not a mounted volume"
+    if [[ -n $volume_uuid ]]; then
+      uuid=$(diskutil info "$vol" | awk -F': *' '/Volume UUID/ {print $2}')
+      [[ $uuid == "$volume_uuid" ]] || die "$vol has UUID $uuid, expected $volume_uuid"
+    fi
+  fi
+}
+
+is_repo() { [[ -e $1/.git ]]; }
+
+cmd_init() {
+  guard
+  local owner category
+  for owner in $(owners); do
+    for category in "${categories[@]}"; do mkdir -p "$root/$owner/$category"; done
+  done
+  mkdir -p "$root/scratch"
+  echo "workspace: layout ready under $root"
+}
+
+cmd_doctor() {
+  guard
+  [[ -d $root ]] || die "$root does not exist; run: workspace init"
+  local warnings=0 entry name owner category repo origin dirty unpushed
+  warn() { echo "WARN  $1  $2"; warnings=$((warnings + 1)); }
+  shopt -s nullglob
+  for entry in "$root"/*; do
+    name=${entry##*/}
+    contains "$name" personal company scratch || warn "$name" "unexpected top-level entry (use personal/, company/ or scratch/)"
+  done
+  for owner in personal company; do
+    [[ -d $root/$owner ]] || continue
+    for entry in "$root/$owner"/*; do
+      contains "${entry##*/}" "${categories[@]}" || warn "$owner/${entry##*/}" "unexpected category"
+    done
+    for category in "${repo_categories[@]}"; do
+      for repo in "$root/$owner/$category"/*; do
+        [[ -d $repo ]] || continue
+        name=$owner/$category/${repo##*/}
+        if ! is_repo "$repo"; then
+          [[ $category == learning ]] || warn "$name" "not a git repo (no grouping dirs; one repo per directory)"
+          continue
+        fi
+        origin=$(git -C "$repo" remote get-url origin 2>/dev/null || true)
+        [[ -n $origin ]] || warn "$name" "no origin remote; it cannot be cloned on another machine"
+        unpushed=$(git -C "$repo" rev-list --count --branches --not --remotes 2>/dev/null || echo 0)
+        [[ $unpushed == 0 ]] || warn "$name" "$unpushed commit(s) not on any remote"
+        dirty=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+        [[ $dirty == 0 ]] || echo "note  $name  $dirty uncommitted change(s)"
+      done
+    done
+  done
+  echo "workspace: $warnings warning(s) under $root"
+  [[ $warnings == 0 ]]
+}
+
+cmd_list() {
+  guard
+  local owner category repo origin
+  shopt -s nullglob
+  for owner in $(owners); do
+    for category in "${repo_categories[@]}" archive; do
+      for repo in "$root/$owner/$category"/*; do
+        is_repo "$repo" || continue
+        origin=$(git -C "$repo" remote get-url origin 2>/dev/null || true)
+        [[ -z $origin ]] || printf '%s\t%s\n' "$owner/$category/${repo##*/}" "$origin"
+      done
+    done
+  done
+}
+
+cmd_clone() {
+  local file=${1:-$manifest_default} rel url cloned=0 skipped=0
+  [[ -r $file ]] || die "cannot read $file (create it with: workspace list > $file)"
+  guard
+  [[ -d $root ]] || die "$root does not exist; run: workspace init"
+  while IFS=$'\t' read -r rel url || [[ -n $rel ]]; do
+    [[ -z $rel || $rel == \#* ]] && continue
+    [[ $rel =~ ^(personal|company)/(projects|oss|learning|archive)/[^/]+$ ]] || die "bad path in $file: $rel"
+    [[ -n $url ]] || die "missing url for $rel"
+    if [[ $rel == company/* && $company != 1 ]]; then skipped=$((skipped + 1)); continue; fi
+    if [[ -e $root/$rel ]]; then skipped=$((skipped + 1)); continue; fi
+    mkdir -p "$(dirname "$root/$rel")"
+    git clone -q "$url" "$root/$rel"
+    echo "cloned $rel"
+    cloned=$((cloned + 1))
+  done <"$file"
+  echo "workspace: $cloned cloned, $skipped already present or skipped"
+}
+
+case ${1:-} in
+  init) cmd_init ;;
+  doctor) cmd_doctor ;;
+  list) cmd_list ;;
+  clone) shift; cmd_clone "$@" ;;
+  -h|--help|help|"") usage ;;
+  *) usage >&2; exit 2 ;;
+esac
