@@ -9,4 +9,6 @@
 {{- if hasKey . "proxy_host" -}}{{- $host = .proxy_host -}}{{- end -}}
 {{- if hasKey . "proxy_http_port" -}}{{- $httpPort = .proxy_http_port -}}{{- end -}}
 {{- if hasKey . "proxy_socks_port" -}}{{- $socksPort = .proxy_socks_port -}}{{- end -}}
-{{- dict "host" $host "http_port" (toString $httpPort) "socks_port" (toString $socksPort) | toJson -}}
+{{- /* Apple (App Store Connect, uploads, sign-in) stays direct; Surge rules still decide for browsers. */ -}}
+{{- $noProxy := "localhost,127.0.0.1,::1,apple.com,mzstatic.com" -}}
+{{- dict "host" $host "http_port" (toString $httpPort) "socks_port" (toString $socksPort) "no_proxy" $noProxy | toJson -}}

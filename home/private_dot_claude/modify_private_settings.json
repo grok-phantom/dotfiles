@@ -7,7 +7,7 @@
 {{- if $claudeProxy -}}
 {{-   $proxy := includeTemplate "proxy.json.tmpl" . | fromJson -}}
 {{-   $proxyURL := printf "http://%s:%s" $proxy.host $proxy.http_port -}}
-{{-   $noProxy := "localhost,127.0.0.1,::1" -}}
+{{-   $noProxy := $proxy.no_proxy -}}
 {{-   $wanted = dict "HTTP_PROXY" $proxyURL "HTTPS_PROXY" $proxyURL "http_proxy" $proxyURL "https_proxy" $proxyURL "NO_PROXY" $noProxy "no_proxy" $noProxy -}}
 {{- end -}}
 {{- /* automation_git: git run by Claude Code never waits for a 1Password approval. GitHub goes over HTTPS

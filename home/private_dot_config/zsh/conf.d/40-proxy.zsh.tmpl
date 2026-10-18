@@ -2,20 +2,24 @@
 {{- $proxyHost := $proxy.host -}}
 {{- $proxyHttpPort := $proxy.http_port -}}
 {{- $proxySocksPort := $proxy.socks_port -}}
+{{- $proxyNoProxy := $proxy.no_proxy -}}
 {{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
 proxy_host={{ $proxyHost | quote }}
 proxy_http_port={{ $proxyHttpPort | quote }}
 proxy_socks_port={{ $proxySocksPort | quote }}
 proxy_http_url="http://${proxy_host}:{{ $proxyHttpPort }}"
 proxy_socks_url="socks5://${proxy_host}:{{ $proxySocksPort }}"
+proxy_no_proxy={{ $proxyNoProxy | quote }}
 
 proxyon() {
   export http_proxy="$proxy_http_url"
   export https_proxy="$proxy_http_url"
   export all_proxy="$proxy_socks_url"
+  export no_proxy="$proxy_no_proxy"
   export HTTP_PROXY="$http_proxy"
   export HTTPS_PROXY="$https_proxy"
   export ALL_PROXY="$all_proxy"
+  export NO_PROXY="$no_proxy"
 }
 
 proxyon-ssh() {
@@ -31,7 +35,7 @@ proxyon-ssh() {
 }
 
 proxyoff() {
-  unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
+  unset http_proxy https_proxy all_proxy no_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY
 }
 
 withproxy() {
@@ -44,9 +48,11 @@ withproxy() {
     http_proxy="$proxy_http_url" \
     https_proxy="$proxy_http_url" \
     all_proxy="$proxy_socks_url" \
+    no_proxy="$proxy_no_proxy" \
     HTTP_PROXY="$proxy_http_url" \
     HTTPS_PROXY="$proxy_http_url" \
     ALL_PROXY="$proxy_socks_url" \
+    NO_PROXY="$proxy_no_proxy" \
     "$@"
 }
 
