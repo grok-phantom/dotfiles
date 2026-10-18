@@ -83,6 +83,9 @@ fi
 
 {{ end -}}
 # User configuration
+# Every open shell sees commands from the others; oh-my-zsh sets this too, but core profiles skip it.
+setopt SHARE_HISTORY
+
 for zsh_file in "$HOME/.config/zsh/conf.d/"*.zsh(N); do
   source "$zsh_file"
 done
