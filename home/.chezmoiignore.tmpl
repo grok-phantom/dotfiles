@@ -11,6 +11,11 @@
 Library/**
 {{ end }}
 
+{{/* ~/workspace is a plain directory unless this host keeps it elsewhere (e.g. an external disk). */}}
+{{ if not (get . "workspace_root") }}
+workspace
+{{ end }}
+
 {{ if ne .chezmoi.os "linux" }}
 .local/share/fonts
 {{ end }}
@@ -20,7 +25,9 @@ Library/**
 {{-   $claudeProxy = and (eq .chezmoi.os "darwin") (not (get . "ephemeral")) }}
 {{- end }}
 {{ if not $claudeProxy }}
+{{   if not (get . "automation_git") }}
 .claude/settings.json
+{{   end }}
 Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 {{ end }}
 
@@ -67,4 +74,15 @@ Library/**
 {{ if or (ne $noriDir "nori-mba") (not (get . "nori_machine_json")) }}
 .config/nori-mba
 .config/nori-mba/**
+{{ end }}
+
+{{- /* nori-watch, opt-in per Mac with data.nori_watch (checks the deployment in data.nori_config_dir).
+       The Bark URL renders from 1Password only where nori's config does (data.nori_machine_json);
+       elsewhere put it in ~/.config/nori-watch/bark.url by hand. */}}
+{{ if not (and (get . "nori_watch") $noriDir) }}
+Library/LaunchAgents/local.dotfiles.nori-watch.plist
+.config/nori-watch
+.config/nori-watch/**
+{{ else if not (get . "nori_machine_json") }}
+.config/nori-watch/bark.url
 {{ end }}

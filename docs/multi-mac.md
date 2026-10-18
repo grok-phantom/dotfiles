@@ -87,11 +87,48 @@ sshtmp prune
 - **私钥**：放在 1Password，由 SSH agent 签名，不渲染到磁盘。把它的公钥写进本机 data `ssh_personal_pubkey`，chezmoi 生成 `~/.ssh/personal-1password.pub`；个人主机写 `IdentityFile ~/.ssh/personal-1password.pub`，开了 agent 后默认 `IdentitiesOnly yes`，只出示主机指定的那把钥。1Password → Settings → Developer → Use the SSH agent；导入或新建密钥后，删除磁盘上的旧私钥，并把对应公钥更新到各服务器的 `authorized_keys`。公司密钥不放个人 vault。
 - **个人主机清单**：在 1Password 建一个 Document（例如名为 `SSH hosts`），内容就是 `personal.conf`。本机设 `ssh_personal_document = "SSH hosts"`，需要 `op` 命令行（`1password-cli`，已在软件清单）并在 1Password 设置里打开 Integrate with 1Password CLI。只有渲染 `personal.conf` 时才读 1Password，`status`/`plan` 也会触发一次读取授权。
 - **提交签名**：再设 `personal_git_signing = true`（需要 `personal_email` 和 `ssh_personal_pubkey`），个人目录下的提交和 tag 由 1Password 签名（`op-ssh-sign`），并生成 `~/.config/git/allowed_signers` 供本地验证。把同一把公钥作为 Signing key 加到 GitHub，提交会显示 Verified。
+- **无人值守的 git（`automation_git`）**：1Password 每次连 GitHub、每次签名都要人点批准，锁屏后直接失败，Claude Code 自动跑的 git 就会卡住。在需要的机器上设 `automation_git = true`，chezmoi 往 `~/.claude/settings.json` 的 `env` 写一组 `GIT_CONFIG_*`，只影响 Claude Code 启动的 git，你自己终端里的 git 不变：
+  - GitHub 改走 HTTPS，凭据用 `gh auth git-credential`（`gh auth login` 已登录的 token；建议用只授权个人仓库的 fine-grained PAT）；
+  - 签名改用本机磁盘上的 `~/.ssh/automation-signing`（`ssh-keygen` 直接签，不经 agent）。这把钥只放这台机器、不放 1Password，丢了只吊销它：
+    ```bash
+    ssh-keygen -t ed25519 -N '' -C "$(hostname -s)-automation" -f ~/.ssh/automation-signing
+    ```
+    把公钥加到 GitHub → Settings → SSH and GPG keys → **Signing key**（不要加成 Authentication key），并写进本机 data `automation_signing_pubkey`，`allowed_signers` 会多一行用于本地验证。
+  - 关掉开关再 apply，只删除这组由它写入的 `GIT_CONFIG_*`；重启 Claude Code 后生效。连服务器的 SSH 仍走 1Password，写主机的操作照旧要人批准。
 - 主机清单很少变，改完 1Password 里的文档后再 `chezmoi apply ~/.ssh/config.d/personal.conf` 即可。
 
 切换前后用 `ssh -G <alias>` 逐个核对 hostname/user/port/proxyjump/identityfile；`ssh -G` 成功不代表能登录。
 
 参考：[chezmoi 的 1Password 集成](https://www.chezmoi.io/user-guide/password-managers/1password/)、[1Password SSH agent 配置](https://developer.1password.com/docs/ssh/agent/config/)。
+
+## 远程开发主机
+
+常用的远程开发主机名写在本机 `~/.config/clip-to-remote/host`（第一行，不进 Git），下面几个命令共用。它们都带 Raycast 头，在 Raycast → Settings → Extensions → Script Commands 里 Add Directories 选 `~/bin`，再给各自绑全局快捷键：
+
+- `rt [session]`（Remote tmux）：`ssh -t` 后直接 `tmux new-session -A -s <session>`（默认 `main`），断线或 detach 后会话仍在远端。远端缺 Ghostty terminfo 时回退到 `xterm-256color`。从 Raycast 运行时在 Ghostty 新开标签页执行 `rt`。
+- `shot-to-remote`（Screenshot to Remote）：框选截图 → 上传到远端 `~/.cache/clip/` → 远端路径进剪贴板；Ghostty 在前台时直接把路径输入到当前终端，正在远端跑的 Claude Code / Codex 输入框里就有了。
+- `clip-to-remote`（Clip Image to Remote）：同上，但上传剪贴板里已有的图片，或命令行给出的文件；`-s` 等同 `shot-to-remote`。
+
+Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着 SSH 和 tmux 也一样；zsh 里是在命令行中插入换行。Codex 也可用 Ctrl+J。
+
+### 远端不弹窗
+
+远端合盖时，任何需要在它屏幕上点的确认都等于卡死。约定：在 SSH 会话里（`SSH_CONNECTION` 非空）需要签名的操作都走转发过来的 agent，1Password 在你面前这台 Mac 上确认：
+
+- `ssh`（含 `git push` 到 GitHub）：`~/.ssh/config` 的 `Match` 块在 SSH 会话中一律用 `SSH_AUTH_SOCK`；没有可用的转发 agent 时直接失败，不回落到远端的 1Password。
+- tmux 会话比 SSH 连接活得久，旧 pane 里的 `SSH_AUTH_SOCK` 会失效。`~/.zprofile` 在每次 SSH 登录时把 `~/.ssh/agent-forwarded.sock` 指向当前的转发 socket，并让后续进程都用这个固定路径。改动之前已经开着的 tmux 会话要重开一次（`tmux kill-server`，或新建会话）才会用上。
+- 提交签名：`gpg.ssh.program` 是 `~/bin/git-ssh-sign`，本机用 `op-ssh-sign`，SSH 会话里改用 `ssh-keygen` 经转发 agent 签名。
+- 远端 Claude Code 自己跑的 git 用 `automation_git`（见上文），完全不需要确认；远端也设上它。
+
+仍会在远端弹窗的：远端执行 `op` / 需要 1Password 的 `chezmoi apply`（1Password CLI 走远端的桌面 App），以及 macOS 钥匙串访问确认（例如 Claude Code 升级后首次读取登录凭据）。这些在远端本机处理一次即可，或在远端选“始终允许”。
+
+这几个命令每次都是新的 `ssh` 进程，主机块里关掉 `ControlMaster` 时每次都要走一遍 1Password 确认（有 ProxyJump 时是两次）；让该主机沿用默认的 `ControlMaster auto` 后，8 小时内的后续连接复用同一条连接，不再询问。
+
+## nori 定时检查
+
+`~/bin/nori-watch` 每 30 分钟检查本机的 nori 部署，问题有变化时推 Bark（新问题，以及全部恢复后的一条 all clear）。检查项：`nori status` 能否读出、代理和定时刷新是否开着、是否需要维护或恢复、上次刷新是否报错、是否超过 60 小时没有刷新成功，以及经本机代理（`proxy_host:proxy_http_port`）访问一次 `generate_204`。断网时不评判代理，所以离线不会误报。Bark 请求直接发出，不经过被检查的代理。
+
+按机器开启：data 设 `nori_watch = true`，并用 `nori_config_dir` 指明部署读取的目录（`nori` 或 `nori-mba`）。chezmoi 会装上 LaunchAgent `local.dotfiles.nori-watch`，首次需要手动加载：`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.nori-watch.plist`，之后登录时自动加载。nori 配置从 1Password 渲染的机器（设了 `nori_machine_json`），Bark 地址同样从 `Personal/infra secrets` 的 `bark_url` 渲染到 `~/.config/nori-watch/bark.url`；其他机器手工放这个文件（0600）。`nori-watch --config <nori.yaml> --print` 只检查、不推送；日志在 `~/Library/Logs/nori-watch.log`，只记有问题的那几次。
 
 ## 容器与代理迁移
 

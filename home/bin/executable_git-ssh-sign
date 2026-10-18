@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# gpg.ssh.program for 1Password-signed commits. In an SSH session, sign through
+# the forwarded agent (ssh-keygen accepts the public signingkey and asks the
+# agent), so 1Password approves on the Mac you are sitting at instead of
+# popping up on this machine's screen. Locally, use 1Password's own signer.
+set -eufo pipefail
+
+if [[ -n "${SSH_CONNECTION:-}" ]]; then
+  exec ssh-keygen "$@"
+fi
+exec /Applications/1Password.app/Contents/MacOS/op-ssh-sign "$@"

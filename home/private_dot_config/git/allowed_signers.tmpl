@@ -1,3 +1,6 @@
 {{- if and (get . "personal_email") (get . "personal_git_signing") (get . "ssh_personal_pubkey") -}}
 {{ .personal_email }} namespaces="git" {{ slice (splitList " " (trim .ssh_personal_pubkey)) 0 2 | join " " }}
 {{ end -}}
+{{- if and (get . "personal_email") (get . "automation_signing_pubkey") -}}
+{{ .personal_email }} namespaces="git" {{ slice (splitList " " (trim .automation_signing_pubkey)) 0 2 | join " " }}
+{{ end -}}

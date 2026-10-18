@@ -556,6 +556,29 @@ class TemplateTests(Fixture):
         self.assertIn('launchctl setenv ALL_PROXY socks5://127.0.0.1:6153', script)
         self.assertEqual(data['Label'], 'local.dotfiles.gui-proxy')
 
+    def test_nori_watch_is_opt_in_and_bark_url_follows_nori_from_1password(self):
+        def managed(extra):
+            out = self.chezmoi('full','config','managed','--include','files',
+                               extra={'chezmoi':{'os':'darwin'}, **extra}).stdout.split()
+            return sorted(n for n in out if 'nori-watch' in n and n != 'bin/nori-watch')
+        self.assertEqual(managed({'nori_config_dir':'nori-mba'}), [])
+        self.assertEqual(managed({'nori_watch':True}), [])
+        self.assertEqual(managed({'nori_watch':True,'nori_config_dir':'nori-mba'}),
+                         ['Library/LaunchAgents/local.dotfiles.nori-watch.plist'])
+        self.assertEqual(managed({'nori_watch':True,'nori_config_dir':'nori','nori_machine_json':'{}'}),
+                         ['.config/nori-watch/bark.url', 'Library/LaunchAgents/local.dotfiles.nori-watch.plist'])
+
+    def test_nori_watch_agent_checks_the_selected_deployment_through_the_shared_proxy(self):
+        path = self.repo/'home/Library/private_LaunchAgents/local.dotfiles.nori-watch.plist.tmpl'
+        out = self.chezmoi('core','config','execute-template','--file',path,
+            extra={'chezmoi':{'os':'darwin','homeDir':'/Users/me'},'nori_config_dir':'nori-mba',
+                   'proxy_host':'127.0.0.1','proxy_http_port':'6152'}).stdout
+        import plistlib
+        data = plistlib.loads(out.encode())
+        self.assertEqual(data['ProgramArguments'], ['/usr/bin/python3', '/Users/me/bin/nori-watch', '--config',
+                         '/Users/me/.config/nori-mba/nori.yaml', '--proxy', 'http://127.0.0.1:6152'])
+        self.assertEqual(data['StartInterval'], 1800)
+
     def test_personal_signing_uses_the_1password_key(self):
         key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest lei-personal'
         extra = {'personal_email':'me@example.invalid','personal_git_signing':True,'ssh_personal_pubkey':key,
@@ -569,6 +592,9 @@ class TemplateTests(Fixture):
         extra['ssh_personal_pubkey'] = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest'
         signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
         self.assertEqual(signers.strip(), 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest')
+        extra['automation_signing_pubkey'] = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIauto mba-automation'
+        signers = self.chezmoi('core','config','execute-template','--file',git/'allowed_signers.tmpl',extra=extra).stdout
+        self.assertEqual(signers.splitlines()[1], 'me@example.invalid namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIauto')
         plain = self.chezmoi('core','config','execute-template','--file',git/'personal.conf.tmpl',
             extra={'personal_email':'me@example.invalid'}).stdout
         self.assertNotIn('gpgsign', plain)

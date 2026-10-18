@@ -140,6 +140,9 @@ company flag 不再代表某个固定身份。已有 `data.email` 保留，姓�
 `~/workspace/personal/`），该目录下的仓库会通过 `includeIf` 使用个人邮箱，避免个人仓库提交带上公司邮箱。
 这两个值只存在本机配置里，重新 `chezmoi init` 时会保留。
 
+代码目录统一为 `~/workspace/{personal,company}/{projects,oss,learning,archive,worktrees}` 加 `scratch/`，
+可放外置盘；`workspace init|doctor|list|clone` 见 [workspace](docs/workspace.md)。
+
 `~/.config/git/local.conf` 是可选的本机 Git include，适合身份、组织 URL rewrite 等；
 它不属于本仓库托管范围。不要把凭据、主机专属地址、私钥、token 或渲染后的私有配置提交到公开仓库。
 现有 localhost 代理辅助函数保留，但包装函数默认直连；需要时显式设置 `DOTFILES_PROXY_MODE=on`
@@ -159,7 +162,7 @@ HTTP/HTTPS 和 NO_PROXY 环境变量，保留其他设置和环境变量；登�
 并在代理客户端确认请求命中的出口策略。此配置独立于 shell 的 `proxyoff` / `noproxy`。
 该托管由本机 `data.claude_proxy` 控制：默认只在非 ephemeral 的 macOS 上开启，Linux 和
 ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中显式设为 `true` 或 `false`。
-关闭后已有的 env 值不会被自动删除。代理值已正确时原样保留文件内容；`scripts/dotfiles`
+关闭后已有的 env 值不会被自动删除。同一文件还承载 `data.automation_git`：让 Claude Code 跑的 git 走 HTTPS + gh token、用本机签名钥，不等 1Password 批准，见 [多 Mac 迁移](docs/multi-mac.md#1password)。代理值已正确时原样保留文件内容；`scripts/dotfiles`
 不把应用对 `modify_` 目标的改写视为漂移，因为 apply 会基于当前内容合并。
 
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：

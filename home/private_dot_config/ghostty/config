@@ -14,6 +14,11 @@ macos-option-as-alt = false
 keybind = ctrl+tab=unbind
 keybind = ctrl+shift+tab=unbind
 
+# Shift+Enter sends Esc+Return, which Claude Code reads as a newline even inside
+# tmux over SSH (where Shift+Enter is otherwise just Return); zsh inserts a
+# newline into the command line. Codex also accepts Ctrl+J.
+keybind = shift+enter=text:\x1b\r
+
 # Programs may write the clipboard (OSC 52 from Claude Code, tmux, vim) without
 # a prompt; reading it still asks, which is the risky direction. No toast on copy.
 clipboard-read = ask
@@ -26,6 +31,10 @@ app-notifications = no-clipboard-copy,config-reload
 notify-on-command-finish = unfocused
 notify-on-command-finish-after = 30s
 notify-on-command-finish-action = bell,notify
+
+# On `ssh`, install Ghostty's terminfo on the remote host once (or fall back to
+# xterm-256color), so tmux and TUIs there work without manual setup.
+shell-integration-features = ssh-env,ssh-terminfo
 
 # Keep native defaults for shell integration, directory inheritance,
 # running-command close confirmation, Cmd shortcuts and TERM.
