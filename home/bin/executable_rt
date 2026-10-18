@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title Remote tmux
+# @raycast.mode silent
+# Optional parameters:
+# @raycast.icon 🖥️
+# @raycast.packageName Dotfiles
+# @raycast.description Open a Ghostty tab attached to the tmux session on the remote dev host.
+# @raycast.argument1 { "type": "text", "placeholder": "session", "optional": true }
+set -eufo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: rt [-H host] [session]
+
+Attach to tmux session SESSION (default: main) on a remote host over SSH,
+creating it if needed. Detach with the tmux prefix + d; the session keeps
+running on the remote host.
+
+Without a terminal (e.g. from Raycast), opens a new Ghostty tab and runs rt
+there instead.
+
+Host: -H, else $RT_HOST, else the first line of ~/.config/clip-to-remote/host
+(the same machine-local file clip-to-remote reads; not managed by chezmoi).
+EOF
+}
+
+host="${RT_HOST:-}"
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+if [[ "${1:-}" == "-H" ]]; then
+  host="${2:?rt: -H needs a host}"
+  shift 2
+fi
+if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+fi
+# Raycast passes an empty argument when the optional session is left blank.
+session="${1:-main}"
+[[ -n "$session" ]] || session=main
+
+if [[ -z "$host" ]]; then
+  echo "rt: no host; use -H, RT_HOST or ~/.config/clip-to-remote/host" >&2
+  exit 1
+fi
+if [[ ! "$session" =~ ^[A-Za-z0-9_.-]+$ || ! "$host" =~ ^[A-Za-z0-9_.@-]+$ ]]; then
+  echo "rt: host and session must be plain names" >&2
+  exit 1
+fi
+
+if [[ ! -t 0 || ! -t 1 ]]; then
+  # Ghostty 1.3+ AppleScript: a new tab whose shell runs rt, so detaching
+  # leaves an ordinary local shell behind.
+  exec osascript \
+    -e 'on run argv' \
+    -e 'tell application "Ghostty"' \
+    -e 'activate' \
+    -e 'set cfg to new surface configuration' \
+    -e 'set initial input of cfg to (item 1 of argv)' \
+    -e 'if (count of windows) is 0 then' \
+    -e 'new window with configuration cfg' \
+    -e 'else' \
+    -e 'new tab in front window with configuration cfg' \
+    -e 'end if' \
+    -e 'end tell' \
+    -e 'end run' "rt -H $host $session"$'\n' >/dev/null
+fi
+
+# Fall back to xterm-256color when the remote lacks Ghostty's terminfo, and
+# use a login shell so Homebrew's tmux is on PATH.
+exec ssh -t "$host" \
+  "infocmp \"\$TERM\" >/dev/null 2>&1 || export TERM=xterm-256color; exec \"\$SHELL\" -lc 'exec tmux new-session -A -s $session'"

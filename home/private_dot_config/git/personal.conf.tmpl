@@ -10,7 +10,8 @@
 [gpg]
     format = ssh
 [gpg "ssh"]
-    program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+    # op-ssh-sign locally; the forwarded agent inside SSH sessions (see git-ssh-sign).
+    program = {{ joinPath .chezmoi.homeDir "bin/git-ssh-sign" }}
     allowedSignersFile = ~/.config/git/allowed_signers
 [commit]
     gpgsign = true

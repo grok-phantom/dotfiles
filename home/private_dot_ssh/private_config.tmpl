@@ -16,8 +16,9 @@ Include ~/.ssh/config.d/*.local.conf
 
 {{ if and (eq .chezmoi.os "darwin") (get . "ssh_1password_agent") -}}
 # Inside an SSH session (e.g. after `ssh mba-home`), use the agent forwarded from the Mac you
-# came from, so 1Password asks for approval on that Mac's screen instead of this one's.
-Match host * exec "test -n \"$SSH_CONNECTION\" -a -S \"$SSH_AUTH_SOCK\""
+# came from, so 1Password asks for approval on that Mac's screen instead of this one's. With no
+# live forwarded agent this fails rather than prompting on a screen nobody is looking at.
+Match host * exec "test -n \"$SSH_CONNECTION\""
     IdentityAgent SSH_AUTH_SOCK
 
 {{ end -}}

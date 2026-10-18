@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title Clip Image to Remote
+# @raycast.mode silent
+# Optional parameters:
+# @raycast.icon 🖼️
+# @raycast.packageName Dotfiles
+# @raycast.description Upload the clipboard image to the remote dev host and copy its path.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: clip-to-remote [-H host] [-s] [image ...]
+
+Upload the clipboard image (or the given image files) to ~/.cache/clip on a
+remote host over SSH, then put the remote path(s) on the clipboard, ready to
+paste into a Claude Code session running there.
+
+  -s  select a screen area first (screencapture -i) and upload that instead
+
+Without a terminal (e.g. from Raycast) and with Ghostty in front, the path is
+also typed into Ghostty's focused terminal, so it lands in the remote prompt.
+
+Host: -H, else $CLIP_REMOTE_HOST, else the first line of
+~/.config/clip-to-remote/host (machine-local, not managed by chezmoi).
+Remote clips older than 7 days are pruned on each upload.
+EOF
+}
+
+host="${CLIP_REMOTE_HOST:-}"
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+if [[ "${1:-}" == "-H" ]]; then
+  host="${2:?clip-to-remote: -H needs a host}"
+  shift 2
+fi
+shot=false
+if [[ "${1:-}" == "-s" ]]; then
+  shot=true
+  shift
+fi
+if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+fi
+
+notify() {
+  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "clip-to-remote"' -e 'end run' "$1" >/dev/null 2>&1 || true
+}
+fail() {
+  echo "clip-to-remote: $1" >&2
+  notify "$1"
+  exit 1
+}
+
+[[ -n "$host" ]] || fail "no host; use -H, CLIP_REMOTE_HOST or ~/.config/clip-to-remote/host"
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+# Decide before screencapture, which can briefly take focus.
+front_ghostty=false
+if [[ ! -t 1 ]] && [[ "$(osascript -e 'if application "Ghostty" is running then tell application "Ghostty" to return frontmost' -e 'return false' 2>/dev/null)" == "true" ]]; then
+  front_ghostty=true
+fi
+
+files=("$@")
+if $shot; then
+  screencapture -i "$tmp/shot.png"
+  # Esc cancels the selection without an error; treat a missing file as done.
+  [[ -s "$tmp/shot.png" ]] || exit 0
+  files=("$tmp/shot.png")
+elif [[ ${#files[@]} -eq 0 ]]; then
+  # Screenshots and copied images both expose PNG data on the pasteboard.
+  if ! osascript \
+    -e 'on run argv' \
+    -e 'set f to open for access (POSIX file (item 1 of argv)) with write permission' \
+    -e 'try' \
+    -e 'write (the clipboard as «class PNGf») to f' \
+    -e 'on error e' \
+    -e 'close access f' \
+    -e 'error e' \
+    -e 'end try' \
+    -e 'close access f' \
+    -e 'end run' "$tmp/clip.png" >/dev/null 2>&1; then
+    fail "clipboard has no image"
+  fi
+  files=("$tmp/clip.png")
+fi
+
+paths=()
+for f in "${files[@]}"; do
+  [[ -f "$f" ]] || fail "not a file: $f"
+  ext="${f##*.}"
+  [[ "$ext" == "$f" ]] && ext=png
+  name="$(date +%Y%m%d-%H%M%S)-$RANDOM.$(tr '[:upper:]' '[:lower:]' <<<"$ext")"
+  # The remote side prints the absolute path, so the paste works from any cwd.
+  remote_path="$(ssh -o BatchMode=yes "$host" \
+    "d=\"\$HOME/.cache/clip\"; mkdir -p \"\$d\" && cat > \"\$d/$name\" && find \"\$d\" -type f -mtime +7 -delete; echo \"\$d/$name\"" \
+    <"$f")" || fail "upload to $host failed"
+  paths+=("$remote_path")
+done
+
+printf '%s' "${paths[*]}" | pbcopy
+if $front_ghostty; then
+  # Ghostty 1.3+ AppleScript; the paths are plain, so no text: escaping needed.
+  osascript \
+    -e 'on run argv' \
+    -e 'tell application "Ghostty" to perform action ("text:" & (item 1 of argv) & " ") on focused terminal of selected tab of front window' \
+    -e 'end run' "${paths[*]}" >/dev/null 2>&1 || true
+fi
+notify "Copied ${#paths[@]} remote path(s) for $host"
+printf '%s\n' "${paths[@]}"
