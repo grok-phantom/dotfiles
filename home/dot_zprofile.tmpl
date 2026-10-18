@@ -6,4 +6,12 @@ for dotfiles_brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/
   fi
 done
 unset dotfiles_brew
+
+# In an SSH session, point SSH_AUTH_SOCK at a fixed link to the forwarded agent,
+# refreshed on each login, so tmux sessions that outlive the connection keep
+# reaching the agent of whichever machine is connected now.
+if [[ -n "$SSH_CONNECTION" && -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent-forwarded.sock" ]]; then
+  ln -sfn -- "$SSH_AUTH_SOCK" "$HOME/.ssh/agent-forwarded.sock" &&
+    export SSH_AUTH_SOCK="$HOME/.ssh/agent-forwarded.sock"
+fi
 {{/* vim: set filetype=zsh: */}}
