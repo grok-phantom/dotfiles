@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Point each repo's Claude Code auto-memory at a shared iCloud Drive folder, so every Mac
+# reads the same notes. Claude names project dirs after the resolved path (/Volumes/... vs
+# /Users/...), so the shared folder is keyed by repo name instead and linked per machine.
+set -eufo pipefail
+
+root=${WORKSPACE_ROOT:-$HOME/workspace}
+projects=${CLAUDE_PROJECTS_DIR:-$HOME/.claude/projects}
+shared=${CLAUDE_MEMORY_SHARED:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/claude-memory}
+source_repo=${CHEZMOI_REPO:-$HOME/.local/share/chezmoi}
+dry_run=0
+
+usage() {
+  cat <<'EOF'
+usage: claude-memory-link [-n]
+
+Links ~/.claude/projects/<project>/memory to <shared>/<repo name> for every git repo under
+~/workspace/personal/<category>/ and the chezmoi source repo. Company repos are left local.
+An existing non-empty local memory moves into an empty shared folder; if both hold notes,
+the repo is skipped with a warning. -n prints what would change.
+Environment: WORKSPACE_ROOT, CLAUDE_PROJECTS_DIR, CLAUDE_MEMORY_SHARED, CHEZMOI_REPO.
+EOF
+}
+
+case ${1:-} in
+  -n) dry_run=1 ;;
+  "") ;;
+  -h|--help|help) usage; exit 0 ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+die() { echo "claude-memory-link: $*" >&2; exit 1; }
+[[ -d $(dirname "$shared") ]] || die "$(dirname "$shared") not found; is iCloud Drive enabled?"
+
+run() { if [[ $dry_run == 1 ]]; then echo "would: $*"; else "$@"; fi; }
+is_empty() { [[ -z $(find "$1" -mindepth 1 -maxdepth 1 -print -quit) ]]; }
+
+repos() {
+  [[ -d $root/personal ]] && find "$root/personal" -mindepth 3 -maxdepth 3 -name .git -prune -print |
+    sed 's|/\.git$||' | sort
+  [[ -e $source_repo/.git ]] && echo "$source_repo"
+  return 0
+}
+
+linked=0 skipped=0 warnings=0
+seen=" "
+while IFS= read -r repo; do
+  [[ -n $repo ]] || continue
+  name=${repo##*/}
+  [[ $repo == "$source_repo" ]] && name=chezmoi
+  if [[ $seen == *" $name "* ]]; then
+    echo "WARN  $repo  another repo already uses the name $name; skipped"
+    warnings=$((warnings + 1)); continue
+  fi
+  seen+="$name "
+  real=$(cd "$repo" && pwd -P)
+  memory=$projects/${real//[^A-Za-z0-9]/-}/memory
+  target=$shared/$name
+
+  if [[ -L $memory ]]; then
+    if [[ $(readlink "$memory") == "$target" ]]; then skipped=$((skipped + 1)); continue; fi
+    echo "WARN  $memory  links to $(readlink "$memory"), not $target; left alone"
+    warnings=$((warnings + 1)); continue
+  fi
+  run mkdir -p "$target" "$(dirname "$memory")"
+  if [[ -d $memory ]]; then
+    if ! is_empty "$memory"; then
+      if [[ -d $target ]] && ! is_empty "$target"; then
+        echo "WARN  $memory  both it and $target hold notes; merge them by hand"
+        warnings=$((warnings + 1)); continue
+      fi
+      run mkdir -p "$HOME/.claude/backups"
+      run tar -czf "$HOME/.claude/backups/memory-before-icloud-$name-$(date +%Y%m%d%H%M%S).tgz" \
+        -C "$(dirname "$memory")" memory
+      run find "$memory" -mindepth 1 -maxdepth 1 -exec mv {} "$target/" \;
+    fi
+    run rmdir "$memory"
+  elif [[ -e $memory ]]; then
+    echo "WARN  $memory  is not a directory; left alone"
+    warnings=$((warnings + 1)); continue
+  fi
+  run ln -s "$target" "$memory"
+  [[ $dry_run == 1 ]] || echo "linked $name  ($real)"
+  linked=$((linked + 1))
+done < <(repos)
+
+echo "claude-memory-link: $linked linked, $skipped already linked, $warnings warning(s)"
+[[ $warnings == 0 ]]

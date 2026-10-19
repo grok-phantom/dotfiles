@@ -130,6 +130,12 @@ Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着
 
 按机器开启：data 设 `nori_watch = true`，并用 `nori_config_dir` 指明部署读取的目录（`nori` 或 `nori-mba`）。chezmoi 会装上 LaunchAgent `local.dotfiles.nori-watch`，首次需要手动加载：`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.nori-watch.plist`，之后登录时自动加载。nori 配置从 1Password 渲染的机器（设了 `nori_machine_json`），Bark 地址同样从 `Personal/infra secrets` 的 `bark_url` 渲染到 `~/.config/nori-watch/bark.url`；其他机器手工放这个文件（0600）。`nori-watch --config <nori.yaml> --print` 只检查、不推送；日志在 `~/Library/Logs/nori-watch.log`，只记有问题的那几次。
 
+## Claude Code 跨机器记忆与 Remote Control
+
+记忆分三层：仓库里的 `CLAUDE.md` 放项目约定；`~/.claude/CLAUDE.md` 放关于自己的事实，chezmoi 把它软链到 iCloud Drive 的 `claude-memory/USER.md`，内容不进本仓库；Claude 自动写的 auto memory 按仓库链到 `claude-memory/<仓库名>`。Claude 用解析后的真实路径给项目目录命名，`~/workspace` 在外置盘上的机器和其他机器名字不同，所以由 `~/bin/claude-memory-link` 按仓库名逐台机器建链：覆盖 `~/workspace/personal/<category>/` 下的仓库和本仓库，company 仓库保持本地。新克隆仓库后跑一次；`-n` 只预览。本地已有笔记会先打包到 `~/.claude/backups/` 再移入空的共享目录，两边都有笔记时跳过并提示手工合并。不要设全局 `autoMemoryDirectory`，它会绕过这些软链。这两项只在开着 iCloud Drive 的非 ephemeral Mac 上安装。
+
+按机器开启 Remote Control：data 设 `claude_rc = true`，可选 `claude_rc_dirs`（相对 `$HOME` 的目录列表，默认 `["workspace"]`）。LaunchAgent `local.dotfiles.claude-rc` 在登录时和之后每 5 分钟运行 `~/bin/claude-rc`，确保 tmux 会话 `claude-rc` 里每个目录都有一个窗口在循环运行 `claude remote-control`（先 `-c` 接回上次的会话，退出 10 秒后重启）。首次加载用 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.claude-rc.plist`，第一次启动要在窗口里确认信任该目录。升级 Claude Code 后跑 `claude-rc restart`；`claude-rc status` 查看窗口。tmux 升级后新客户端可能连不上旧 server，这类机器上用 `brew pin tmux`，自己挑时间升级。日志在 `~/Library/Logs/claude-rc.log`。
+
 ## 容器与代理迁移
 
 容器、Compose、订阅转换、LaunchAgent 和代理服务属于本机 infra。先查明当前消费链、

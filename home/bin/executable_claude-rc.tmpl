@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Keep `claude remote-control` servers running in tmux so the phone and claude.ai/code can
+# reach this Mac. Run by the local.dotfiles.claude-rc LaunchAgent; safe to run any time.
+set -eufo pipefail
+
+session=${CLAUDE_RC_SESSION:-claude-rc}
+# Space-separated dirs, relative to $HOME unless absolute (data.claude_rc_dirs).
+dirs=${CLAUDE_RC_DIRS:-{{ get . "claude_rc_dirs" | default (list "workspace") | join " " | quote }}}
+export PATH=$PATH:/opt/homebrew/bin:/usr/local/bin
+
+usage() {
+  cat <<'EOF'
+usage: claude-rc           start any missing remote-control windows (idempotent)
+       claude-rc restart   restart every window, e.g. after upgrading Claude Code
+       claude-rc status    list windows and what they run
+
+Each dir gets a tmux window in session "claude-rc" running `claude remote-control` in a
+loop: it reattaches to the last session for that dir (-c) and restarts if it exits.
+EOF
+}
+
+die() { echo "claude-rc: $*" >&2; exit 1; }
+command -v tmux >/dev/null || die "tmux not found"
+command -v claude >/dev/null || die "claude not found"
+
+# Window names come from the dir's basename; tmux rejects '.' and ':' in targets.
+window_name() { local n=${1##*/}; n=${n//[.:]/-}; echo "${n:-home}"; }
+abs_dir() { [[ $1 == /* ]] && echo "$1" || echo "$HOME/$1"; }
+loop() {
+  printf 'export PATH=%q; while :; do claude remote-control -c || claude remote-control; echo "claude-rc: exited, restarting in 10s"; sleep 10; done' "$PATH"
+}
+
+ensure() {
+  local d dir name
+  for d in $dirs; do
+    dir=$(abs_dir "$d")
+    [[ -d $dir ]] || { echo "claude-rc: skip $dir (missing)"; continue; }
+    name=$(window_name "$dir")
+    if ! tmux has-session -t "=$session" 2>/dev/null; then
+      tmux new-session -d -s "$session" -n "$name" -c "$dir" "$(loop)"
+      echo "claude-rc: started $name in $dir"
+    elif ! tmux list-windows -t "=$session" -F '#{window_name}' | grep -qxF "$name"; then
+      tmux new-window -d -t "=$session:" -n "$name" -c "$dir" "$(loop)"
+      echo "claude-rc: started $name in $dir"
+    fi
+  done
+}
+
+case ${1:-} in
+  "") ensure ;;
+  restart)
+    ensure
+    for d in $dirs; do
+      dir=$(abs_dir "$d")
+      [[ -d $dir ]] || continue
+      tmux respawn-window -k -t "=$session:$(window_name "$dir")" -c "$dir" "$(loop)"
+    done
+    echo "claude-rc: restarted" ;;
+  status) tmux list-windows -t "=$session" -F '#{window_name}  #{pane_current_path}  #{pane_current_command}' ;;
+  -h|--help|help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac

@@ -31,6 +31,18 @@ workspace
 Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 {{ end }}
 
+{{- /* Claude memory shared through iCloud Drive: user CLAUDE.md and the per-repo linker. */}}
+{{ if not (and (eq .chezmoi.os "darwin") (not (get . "ephemeral")) (stat (joinPath .chezmoi.homeDir "Library/Mobile Documents/com~apple~CloudDocs"))) }}
+.claude/CLAUDE.md
+bin/claude-memory-link
+{{ end }}
+
+{{- /* claude-rc keeps `claude remote-control` running in tmux; opt-in per Mac with data.claude_rc. */}}
+{{ if not (and (eq .chezmoi.os "darwin") (get . "claude_rc")) }}
+Library/LaunchAgents/local.dotfiles.claude-rc.plist
+bin/claude-rc
+{{ end }}
+
 {{- $profile := (get . "profile") | default "full" }}
 {{- if not (has $profile (list "core" "full")) }}
 {{- fail "profile must be core or full" }}
