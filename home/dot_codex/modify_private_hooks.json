@@ -1,0 +1,46 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* roost_hooks: Codex's lifecycle hooks report agent state to roost, the same way Claude's do
+       (stdin JSON, run inside the agent so $TMUX_PANE is set). Entries are recognised by their
+       command, so hooks added by hand are left alone; false removes only roost's. Codex asks once
+       to trust new or changed hooks and remembers that in config.toml ([hooks.state]). */ -}}
+{{- $hooksFile := .chezmoi.stdin | trim | default "{}" | fromJson -}}
+{{- if not (kindIs "map" $hooksFile) -}}
+{{-   fail "~/.codex/hooks.json must contain a JSON object" -}}
+{{- end -}}
+{{- if and (hasKey $hooksFile "hooks") (not (kindIs "map" (get $hooksFile "hooks"))) -}}
+{{-   fail "~/.codex/hooks.json hooks must contain a JSON object" -}}
+{{- end -}}
+{{- $roostOn := get . "roost_hooks" -}}
+{{- $roostCommand := printf "%s/bin/roost hook codex" .chezmoi.homeDir -}}
+{{- $roostHook := dict "type" "command" "command" $roostCommand "timeout" 10 -}}
+{{- $hooks := get $hooksFile "hooks" | default (dict) -}}
+{{- $changed := false -}}
+{{- /* The events Codex 0.163 fires; tool events take a matcher. */ -}}
+{{- range $event := list "SessionStart" "UserPromptSubmit" "PreToolUse" "PermissionRequest" "PostToolUse" "Stop" -}}
+{{-   $roostGroup := dict "hooks" (list $roostHook) -}}
+{{-   if has $event (list "PreToolUse" "PermissionRequest" "PostToolUse") -}}{{- $_ := set $roostGroup "matcher" "*" -}}{{- end -}}
+{{-   $kept := list -}}
+{{-   $ours := list -}}
+{{-   range $group := get $hooks $event | default (list) -}}
+{{-     $mine := false -}}
+{{-     range $hook := get $group "hooks" | default (list) -}}
+{{-       if eq (toString (get $hook "command")) $roostCommand -}}{{- $mine = true -}}{{- end -}}
+{{-     end -}}
+{{-     if $mine -}}{{- $ours = append $ours $group -}}{{- else -}}{{- $kept = append $kept $group -}}{{- end -}}
+{{-   end -}}
+{{-   if $roostOn -}}
+{{-     if not (and (eq (len $ours) 1) (eq (index $ours 0 | toJson) ($roostGroup | toJson))) -}}
+{{-       $changed = true -}}
+{{-       $_ := set $hooks $event (append $kept $roostGroup) -}}
+{{-     end -}}
+{{-   else if $ours -}}
+{{-     $changed = true -}}
+{{-     if $kept -}}{{- $_ := set $hooks $event $kept -}}{{- else -}}{{- $_ := unset $hooks $event -}}{{- end -}}
+{{-   end -}}
+{{- end -}}
+{{- if $changed -}}
+{{-   if $hooks -}}{{- $_ := set $hooksFile "hooks" $hooks -}}{{- else -}}{{- $_ := unset $hooksFile "hooks" -}}{{- end -}}
+{{-   if $hooksFile -}}{{ toPrettyJson $hooksFile }}{{ "\n" }}{{- end -}}
+{{- else -}}
+{{ .chezmoi.stdin -}}
+{{- end -}}
