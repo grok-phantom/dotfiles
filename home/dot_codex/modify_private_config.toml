@@ -1,0 +1,38 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* roost_hooks: Codex runs a single notify program, and Codex Computer Use already claims it.
+       roost wraps whatever is there with --chain, so both see every event; false unwraps it again.
+       Only a one-line `notify = [...]` is understood. */ -}}
+{{- $config := .chezmoi.stdin -}}
+{{- $prefix := printf "%s, \"hook\", \"codex\"" (printf "%s/bin/roost" .chezmoi.homeDir | toJson) -}}
+{{- $line := regexFind `(?m)^notify[ \t]*=.*$` $config -}}
+{{- $inner := "" -}}
+{{- if $line -}}
+{{-   if not (regexMatch `^notify[ \t]*=[ \t]*\[.*\][ \t]*$` $line) -}}
+{{-     fail "~/.codex/config.toml: roost_hooks needs notify as a one-line array" -}}
+{{-   end -}}
+{{-   $inner = regexReplaceAll `^notify[ \t]*=[ \t]*\[(.*)\][ \t]*$` $line "${1}" | trim -}}
+{{- end -}}
+{{- /* The notify value without roost. */ -}}
+{{- $original := $inner -}}
+{{- if hasPrefix $prefix $inner -}}
+{{-   $original = "" -}}
+{{-   if contains `"--chain",` $inner -}}
+{{-     $original = regexReplaceAll `^.*?"--chain",[ \t]*` $inner "" -}}
+{{-   end -}}
+{{- end -}}
+{{- $want := $original -}}
+{{- if get . "roost_hooks" -}}
+{{-   $want = $prefix -}}
+{{-   if $original -}}{{- $want = printf "%s, \"--chain\", %s" $prefix $original -}}{{- end -}}
+{{- end -}}
+{{- $result := $config -}}
+{{- if ne $want $inner -}}
+{{-   if and $line $want -}}
+{{-     $result = replace $line (printf "notify = [%s]" $want) $config -}}
+{{-   else if $line -}}
+{{-     $result = regexReplaceAll `(?m)^notify[ \t]*=.*\n?` $config "" -}}
+{{-   else -}}
+{{-     $result = printf "notify = [%s]\n%s" $want $config -}}
+{{-   end -}}
+{{- end -}}
+{{ $result -}}
