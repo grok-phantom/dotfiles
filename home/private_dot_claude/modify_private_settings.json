@@ -38,6 +38,40 @@
 {{-   end -}}
 {{- end -}}
 {{- $changed := false -}}
+{{- /* roost_hooks: report agent state to roost (tmux pane options and phone pushes, see the roost repo).
+       Its entries are recognised by their command, so hooks added by hand are left alone. */ -}}
+{{- $roostOn := get . "roost_hooks" -}}
+{{- $roostCommand := printf "%s/bin/roost hook claude" .chezmoi.homeDir -}}
+{{- $roostGroup := dict "hooks" (list (dict "type" "command" "command" $roostCommand "timeout" 10)) -}}
+{{- if and (hasKey $settings "hooks") (not (kindIs "map" (get $settings "hooks"))) -}}
+{{-   fail "Claude settings.json hooks must contain a JSON object" -}}
+{{- end -}}
+{{- $hooks := get $settings "hooks" | default (dict) -}}
+{{- $hooksChanged := false -}}
+{{- range $event := list "SessionStart" "UserPromptSubmit" "PreToolUse" "PostToolUse" "PostToolUseFailure" "PermissionRequest" "PermissionDenied" "Notification" "Stop" "StopFailure" "SessionEnd" -}}
+{{-   $kept := list -}}
+{{-   $ours := list -}}
+{{-   range $group := get $hooks $event | default (list) -}}
+{{-     $mine := false -}}
+{{-     range $hook := get $group "hooks" | default (list) -}}
+{{-       if eq (toString (get $hook "command")) $roostCommand -}}{{- $mine = true -}}{{- end -}}
+{{-     end -}}
+{{-     if $mine -}}{{- $ours = append $ours $group -}}{{- else -}}{{- $kept = append $kept $group -}}{{- end -}}
+{{-   end -}}
+{{-   if $roostOn -}}
+{{-     if not (and (eq (len $ours) 1) (eq (index $ours 0 | toJson) ($roostGroup | toJson))) -}}
+{{-       $hooksChanged = true -}}
+{{-       $_ := set $hooks $event (append $kept $roostGroup) -}}
+{{-     end -}}
+{{-   else if $ours -}}
+{{-     $hooksChanged = true -}}
+{{-     if $kept -}}{{- $_ := set $hooks $event $kept -}}{{- else -}}{{- $_ := unset $hooks $event -}}{{- end -}}
+{{-   end -}}
+{{- end -}}
+{{- if $hooksChanged -}}
+{{-   $changed = true -}}
+{{-   if $hooks -}}{{- $_ := set $settings "hooks" $hooks -}}{{- else -}}{{- $_ := unset $settings "hooks" -}}{{- end -}}
+{{- end -}}
 {{- range $key, $value := $wanted -}}
 {{-   if not (and (hasKey $env $key) (eq (toString (get $env $key)) $value)) -}}
 {{-     $changed = true -}}
@@ -55,7 +89,7 @@
 {{- end -}}
 {{- /* Re-serializing sorts keys; keep Claude's own formatting when nothing needs to change. */ -}}
 {{- if $changed -}}
-{{-   $_ := set $settings "env" $env -}}
+{{-   if or $env (hasKey $settings "env") -}}{{- $_ := set $settings "env" $env -}}{{- end -}}
 {{ toPrettyJson $settings -}}
 {{ else -}}
 {{ .chezmoi.stdin }}

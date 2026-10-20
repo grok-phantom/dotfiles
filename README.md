@@ -165,6 +165,12 @@ ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中�
 关闭后已有的 env 值不会被自动删除。同一文件还承载 `data.automation_git`：让 Claude Code 跑的 git 走 HTTPS + gh token、用本机签名钥，不等 1Password 批准，见 [多 Mac 迁移](docs/multi-mac.md#1password)。代理值已正确时原样保留文件内容；`scripts/dotfiles`
 不把应用对 `modify_` 目标的改写视为漂移，因为 apply 会基于当前内容合并。
 
+`data.roost_hooks = true`（目前只在 mba-home）把 roost（`~/workspace/personal/projects/roost`，手机上看 tmux 里 agent 的 App）接进 agent：
+`~/.claude/settings.json` 的 `hooks` 里每个相关事件加一条 `~/bin/roost hook claude`；
+`~/.codex/config.toml` 的 `notify` 改成 `~/bin/roost hook codex --chain <原来的程序…>`——Codex 只允许一个 notify，
+原来的 Codex Computer Use 照常收到事件。手写的 hooks 不受影响；设为 `false` 再 apply 会把这两处还原。
+没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 仓库的 `scripts/deploy-mba` 安装。
+
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
 `bash scripts/manual/macos-defaults.sh --apply`。它会改系统偏好并重启相关桌面进程，
 不在任一更新组件中自动调用。dotfiles 更新不要求授予 Full Disk Access。
