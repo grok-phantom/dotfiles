@@ -1,7 +1,6 @@
 # 功能总览
 
-本页说明本分支自有配置和工具的完整范围。其他分支的功能单独列在末尾；
-源码中的选项、锁文件和忽略规则是最终依据。
+本页说明仓库自有配置和工具的完整范围；源码中的选项、锁文件和忽略规则是最终依据。
 
 `.chezmoiroot` 把 `home/` 映射到用户 home；`scripts/`、`docs/`、`tests/` 和
 `locks/` 留在 source 仓库。`private_` 控制目标权限，不表示文件内容不会公开；
@@ -85,7 +84,8 @@ agent 转发并启用连接复用。转发应在特定主机块中按需设置�
 登录时维护稳定的 agent socket 链接供长寿命 tmux 会话使用。临时主机由 `sshtmp`
 管理，单独使用 `known_hosts.temp`；清单中的到期项在后续命令运行时清理。
 
-`rt` 连接或创建远程 tmux 会话；`clip-to-remote` / `shot-to-remote` 上传图片并
+`rt` 连接或创建远程 tmux 会话，可用于运行 Codex；它不依赖 Claude Remote Control。
+`clip-to-remote` / `shot-to-remote` 上传图片并
 复制远端路径，上传时清理远端缓存中超过 7 天的文件。主机名保存在本机配置中。
 三个命令可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。
 
@@ -119,8 +119,10 @@ nori-watch 检查状态、维护/恢复标志、刷新结果和刷新年龄；�
 ## macOS、软件和验证边界
 
 Karabiner 只为配置中匹配的键盘把右 Option 映射为右 Command；不重映射 Caps Lock。
-系统偏好脚本需手动 `--apply`：设置 Safari 搜索、触控板轻点、Dock 大小、按键重复、
-Finder 显示和菜单栏项目，并重启相关桌面进程。它不由配置更新或软件安装入口执行；
+系统偏好脚本需手动 `--apply`：设置 Safari 搜索、触控板轻点、关闭三指轻点查询、
+自动切换浅色/深色、Dock 图标大小 31、固定 Spaces 顺序、取消平铺窗口间距、
+按键重复、Finder 列表视图/路径栏/状态栏/扩展名和菜单栏项目，并重启相关桌面进程。
+它不由配置更新或软件安装入口执行；菜单栏使用 macOS 26 的键名，
 不同 macOS 版本对这些 defaults 键的支持需要实际验收。
 
 软件清单覆盖开发 CLI、编辑器/终端、文档媒体工具和 macOS 桌面应用。
@@ -133,12 +135,13 @@ Homebrew/apt 的安装与升级分开，版本不锁定；Miniforge 安装器固
 VM 验收是其他独立范围。CI 在 Linux/macOS 运行离线套件，另有 Gitleaks 秘密扫描
 和每月 GitHub Actions Dependabot 更新；详情见[测试说明](testing.md)。
 
-## 尚未合并的功能
+## 已退役的集成
 
-以下是 2026-10-21 的核对快照，状态以 PR 页面为准；它们不属于上述 main 基线。
+Claude 跨 Mac 记忆同步和 Remote Control 已于 2026-10-21 退役，
+对应 [PR #17](https://github.com/grok-phantom/dotfiles/pull/17) 已关闭而未合并。
+仓库不提供 `claude-memory-link`、`claude-rc` 或其定时守护，也不管理
+`claude_rc` / `claude_rc_dirs` 数据项。
 
-| PR | 提供的变化 | 使用前提 |
-| --- | --- | --- |
-| [#17](https://github.com/grok-phantom/dotfiles/pull/17) | Claude 跨 Mac 记忆链接、`claude-memory-link`、`claude-rc` 和 Remote Control 定时守护 | 仍未合并；与 main 的初始化模板有冲突。记忆链接需要非 ephemeral macOS 和 iCloud；Remote Control 按机器开启 |
-
-合并功能时同步更新本页、命令速查和参数参考，再移除对应的待合并条目。
+曾从该分支安装的主机需单独停止定时器和专用会话、移除旧工具与本机数据项；
+记忆链接应先复制并校验为本地内容，保留共享目录原件和恢复备份。
+切换分支不会自动清理这些目标。通用 `rt`、截图上传和上述 Claude/Codex 配置继续保留。

@@ -8,7 +8,7 @@
 
 | 想了解什么 | 文档 |
 | --- | --- |
-| 仓库管理哪些功能、文件在哪里、哪些功能尚未合并 | [功能总览](docs/features.md) |
+| 仓库管理哪些功能、文件在哪里、哪些集成已退役 | [功能总览](docs/features.md) |
 | 更新、软件维护、shell、远程开发和小工具怎么用 | [命令速查](docs/commands.md) |
 | core/full、平台守卫、本机 data 和环境变量 | [本机配置参考](docs/configuration.md) |
 | 首次使用、新 Mac 迁移、SSH、签名与代理 | [多 Mac 迁移](docs/multi-mac.md) |

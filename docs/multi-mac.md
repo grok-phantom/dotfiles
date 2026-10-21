@@ -109,6 +109,10 @@ sshtmp prune
 - `shot-to-remote`（Screenshot to Remote）：框选截图 → 上传到远端 `~/.cache/clip/` → 远端路径进剪贴板；Ghostty 在前台时直接把路径输入到当前终端，正在远端跑的 Claude Code / Codex 输入框里就有了。
 - `clip-to-remote`（Clip Image to Remote）：同上，但上传剪贴板里已有的图片，或命令行给出的文件；`-s` 等同 `shot-to-remote`。
 
+用 Codex 远程开发时，在本机执行 `rt codex`，进入远端会话后再执行 `codex`。
+远端需已安装 Codex；`rt` 使用登录 shell 查找工具，会话名本身不会自动启动程序。
+再次执行 `rt codex` 可接回同一会话。此流程不依赖已退役的 Claude Remote Control。
+
 Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着 SSH 和 tmux 也一样；zsh 里是在命令行中插入换行。Codex 也可用 Ctrl+J。
 
 ### 远端不弹窗
