@@ -4,6 +4,25 @@
 机器服务、Docker 权限、防火墙、系统级代理等属于独立 infra；应用部署属于应用仓库。
 这里不做服务器管理，也不自动修改登录 shell、用户组或持久权限。
 
+## 文档导航
+
+| 想了解什么 | 文档 |
+| --- | --- |
+| 仓库管理哪些功能、文件在哪里、哪些功能尚未合并 | [功能总览](docs/features.md) |
+| 更新、软件维护、shell、远程开发和小工具怎么用 | [命令速查](docs/commands.md) |
+| core/full、平台守卫、本机 data 和环境变量 | [本机配置参考](docs/configuration.md) |
+| 首次使用、新 Mac 迁移、SSH、签名与代理 | [多 Mac 迁移](docs/multi-mac.md) |
+| 代码目录、外置盘、仓库清单和克隆 | [Workspace](docs/workspace.md) |
+| Ghostty、iTerm2、快捷键和回退 | [终端](docs/terminals.md) |
+| 本地测试、CI、缓存与运行时检查 | [测试说明](docs/testing.md) |
+| 完整安装与系统偏好验收范围 | [macOS VM 验收计划](docs/macos-vm-acceptance.md) |
+| 外部插件、字体和 Miniforge 的版本来源 | [依赖锁](locks/README.md) |
+| 分支合并状态、worktree 和清理判断 | [分支维护](docs/branches.md) |
+
+功能包括 Git 身份与签名、Zsh/历史/代理、Vim/Tmux/Yazi、终端与字体、
+Python 工具配置、workspace、SSH 与远程截图、Claude/Codex 集成、nori 配置与检查、
+macOS 键盘和手动系统偏好。软件安装与配置应用各有独立入口，下面是日常维护流程。
+
 ## 更新入口
 
 需要 Python 3.9+、Git、chezmoi（本次验证版本 v2.73.0）。默认只检查：
@@ -89,6 +108,7 @@ Vim 的 `.vimrc` 和 Tmux 的 `.tmux.conf` 现在是可 diff 的目标；不再�
 ## 软件安装和升级：单独执行
 
 软件命令也默认只 plan，要求 clean source；profile 默认 full，从原 `packages.yaml` 读取同一份清单。
+软件入口只接受 full；`--profile core` 会拒绝安装、升级和软件检查。
 它不更新 dotfiles Git 分支，也不会接着应用配置。
 包管理器操作针对当前主机，不是 `--target` 下的沙箱；软件入口对 package 组件拒绝其他 target。
 
@@ -150,7 +170,7 @@ company flag 不再代表某个固定身份。已有 `data.email` 保留，姓�
 
 SSH 配置按机器启用（`ssh_managed`），主机分自己的 / 公司 / 临时三类文件，私钥和个人主机清单可放 1Password，见 [多 Mac 迁移](docs/multi-mac.md#ssh-配置)。
 
-GUI 应用（Codex、Claude 桌面版等）不读 shell 配置；同一个开关下 `~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist` 在登录时用 `launchctl setenv` 设置同一组代理变量，取代手工的 `com.openai.codex.proxy-env`。修改后 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist` 立即生效。
+GUI 应用（Codex、Claude 桌面版等）不读 shell 配置；macOS full 在 `claude_proxy` 开启时管理 `~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist`，登录时用 `launchctl setenv` 设置同一组代理变量。首次加载用 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist`；已加载项修改后需先卸载再加载，并重启目标应用以获取新环境。应用是否采用这些变量仍需实际检查。
 
 Claude Code 的 `~/.claude/settings.json` 单独托管代理设置，复用本机 chezmoi data 中的
 `proxy_host` 和 `proxy_http_port`（macOS 默认 `127.0.0.1:6152`，Linux 默认
@@ -165,11 +185,13 @@ ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中�
 关闭后已有的 env 值不会被自动删除。同一文件还承载 `data.automation_git`：让 Claude Code 跑的 git 走 HTTPS + gh token、用本机签名钥，不等 1Password 批准，见 [多 Mac 迁移](docs/multi-mac.md#1password)。代理值已正确时原样保留文件内容；`scripts/dotfiles`
 不把应用对 `modify_` 目标的改写视为漂移，因为 apply 会基于当前内容合并。
 
-`data.roost_hooks = true`（目前只在 mba-home）把 roost（`~/workspace/personal/projects/roost`，手机上看 tmux 里 agent 的 App）接进 agent：
+`data.roost_hooks = true` 按机器把 roost（在手机上查看 tmux 中 agent 状态的应用）接进 agent：
 `~/.claude/settings.json` 的 `hooks` 里每个相关事件加一条 `~/bin/roost hook claude`；
 `~/.codex/config.toml` 的 `notify` 改成 `~/bin/roost hook codex --chain <原来的程序…>`——Codex 只允许一个 notify，
-原来的 Codex Computer Use 照常收到事件。手写的 hooks 不受影响；设为 `false` 再 apply 会把这两处还原。
-没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 仓库的 `scripts/deploy-mba` 安装。
+原来的 Codex Computer Use 照常收到事件。手写的 hooks 不受影响；设为 `false` 再 apply 会清理仍在托管范围内的对应条目，详见[关闭功能时的行为](docs/configuration.md#关闭功能时的行为)。
+没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 应用仓库另行安装。
+这里描述的是当前 main 的 notify 实现；改用 Codex 生命周期 hooks 的变更仍在
+[PR #20](https://github.com/grok-phantom/dotfiles/pull/20)，未合并功能见[功能总览](docs/features.md#尚未合并的功能)。
 
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
 `bash scripts/manual/macos-defaults.sh --apply`。它会改系统偏好并重启相关桌面进程，

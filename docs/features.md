@@ -1,0 +1,145 @@
+# 功能总览
+
+本页说明仓库自有配置和工具的完整范围。核对基线为 2026-10-21 的 main
+`2393feb`；其他分支的功能单独列在末尾。源码中的选项、锁文件和忽略规则是最终依据。
+
+`.chezmoiroot` 把 `home/` 映射到用户 home；`scripts/`、`docs/`、`tests/` 和
+`locks/` 留在 source 仓库。`private_` 控制目标权限，不表示文件内容不会公开；
+秘密只在本机 data、环境或密码管理器中保存。
+
+## 功能与入口
+
+| 功能 | 当前提供的行为 | 主要源码 / 使用说明 |
+| --- | --- | --- |
+| 配置更新 | status → fetch → plan → apply → verify；计划绑定提交、渲染结果和目标状态；只允许向前更新 | [scripts/dotfiles](../scripts/dotfiles)、[README](../README.md#更新入口) |
+| 软件维护 | Homebrew / apt 清单安装、升级、检查；独立的 Miniforge 安装器与校验 | [scripts/software](../scripts/software)、[软件清单](../home/.chezmoidata/packages.yaml) |
+| 外部资源 | 固定 commit 和 SHA-256 的插件、主题、字体；显式选择 externals 才下载 | [外部声明](../home/.chezmoiexternal.toml.tmpl)、[依赖锁](../locks/README.md) |
+| Shell | Zsh、共享命令历史、命令提示、vi 模式、目录跳转、可选历史搜索、代理函数 | [Zsh 入口](../home/dot_zshrc.tmpl)、[shell 模块](../home/private_dot_config/zsh/conf.d)、[命令速查](commands.md#shell-日常操作) |
+| Git | 全局身份、个人目录邮箱、可选 SSH 签名、本机 include、自动跟踪与 prune | [Git 配置](../home/private_dot_config/git)、[多 Mac 迁移](multi-mac.md#1password) |
+| Vim | amix/Pathogen、Gruvbox、补全、搜索、标签、诊断、格式化与远程复制 | [Vim 入口](../home/dot_vimrc)、[自有配置](../home/private_dot_config/vim/my_configs.vim.tmpl) |
+| Tmux / Yazi | 锁定的 Tmux 配置；Yazi 的 ranger 风格按键和退出后切换目录 | [Tmux 链接](../home/symlink_dot_tmux.conf)、[Yazi 按键](../home/private_dot_config/yazi/keymap.toml) |
+| 桌面终端 | iTerm2 Dynamic Profile、Ghostty、MesloLGS NF 字体、远程终端支持 | [终端说明](terminals.md) |
+| Python 工具配置 | pip/uv 的默认镜像、Conda 的 conda-forge/strict 配置与关闭 base 自动激活 | [pip](../home/private_dot_config/pip/pip.conf)、[uv](../home/private_dot_config/uv/uv.toml)、[Conda](../home/dot_condarc) |
+| Workspace | 统一代码布局、外置盘符号链接与卷校验、目录检查、仓库清单与克隆 | [workspace](../home/bin/executable_workspace.tmpl)、[使用说明](workspace.md) |
+| SSH | 可选托管、主机分类、1Password agent、公钥、连接复用、转发 agent、临时主机到期管理 | [SSH 模板](../home/private_dot_ssh/private_config.tmpl)、[sshtmp](../home/bin/executable_sshtmp)、[迁移说明](multi-mac.md#ssh-配置) |
+| 远程开发 | 远程 tmux、截图/剪贴板图片上传、Raycast 入口、SSH 内签名 | [远程开发说明](multi-mac.md#远程开发主机) |
+| Claude / Codex | Claude 代理、无人值守 Git、Roost 状态接入；按目标合并已有应用设置 | [Claude 模板](../home/private_dot_claude/modify_private_settings.json)、[Codex 模板](../home/dot_codex/modify_private_config.toml) |
+| nori | 从密码管理器合并共享策略与本机配置，渲染订阅；定时健康检查与 Bark 通知 | [共享模板](../home/.chezmoitemplates/nori.yaml.tmpl)、[nori-watch](../home/bin/executable_nori-watch)、[使用说明](multi-mac.md#nori-定时检查) |
+| macOS 偏好 | Karabiner 指定键盘映射；独立手动系统偏好脚本 | [Karabiner](../home/private_dot_config/private_karabiner/private_karabiner.json)、[macOS 脚本](../scripts/manual/macos-defaults.sh) |
+| 开发小工具 | JSON 格式化、TCP 监听检查、HTTP 文件服务、直连/代理比较 | [命令速查](commands.md#开发小工具) |
+| 验证与维护 | 本地隔离测试、缓存集成、运行时检查、终端检查、CI、秘密扫描、Dependabot | [测试说明](testing.md)、[分支维护](branches.md) |
+
+## 平台与 profile
+
+配置入口支持 macOS / Linux 的 arm64/aarch64/x86_64，具体组合由入口检查。
+CLI 默认 full，直接 chezmoi 使用本机 `data.profile`，未设置也回落到 full。
+
+| 范围 | core | full |
+| --- | --- | --- |
+| Git、基础 Zsh、Readline vi 模式、pip/uv、`~/bin` 工具 | 管理 | 管理 |
+| OMZ、Powerlevel10k、Vim、Tmux、Yazi、Conda 配置和初始化 | 跳过 | 管理；程序需另外安装 |
+| 锁定插件与字体 | 跳过 | 还需选择 `--component externals`；ephemeral 跳过字体 |
+| iTerm2、Ghostty、Karabiner、LaunchAgents | 跳过 | 仅 macOS |
+| SSH、Claude、Codex、nori 配置 | 由各自本机开关决定 | 由各自本机开关决定 |
+| `scripts/software` | 拒绝执行 | 显式 plan / install / upgrade / apply / verify |
+
+工具文件被管理不等于能在所有平台运行：截图、剪贴板和 Raycast 流程依赖 macOS；
+nori-watch 需已有 nori；Roost 需应用仓库安装的 `~/bin/roost`。
+从 full 切换到 core 只忽略可选目标，保留既有文件与软件。所有开关见[配置参考](configuration.md)。
+
+## Shell、编辑器与终端
+
+Zsh 登录时探测 Homebrew；交互启动时发现 `~/bin`、Go/Cargo/本地工具路径并去重。
+两个 profile 都启用 `SHARE_HISTORY`。存在 zoxide、atuin 时才初始化，atuin 在
+zsh-vi-mode 的延迟初始化后绑定按键。VS Code / iTerm2 的 shell integration
+按当前终端和本机文件是否存在加载。
+
+full 使用 OMZ + Powerlevel10k，关闭 OMZ 自动更新。启用 Git、eza、extract、
+vi 模式、语法高亮、自动建议、command-not-found、aliases、history、tmux 插件；
+Docker/rsync 按渲染时工具是否存在加入，Linux 加 systemd。Conda 优先加载
+`conda.sh`，缺失时回退到 hook；`DOTFILES_CONDA_INIT=hook` 可显式选择 hook。
+
+Vim 的自有设置在 `~/.config/vim/my_configs.vim`，加载 amix 后再加载 Pathogen
+和 Gruvbox。外部锁包含 ALE、Gruvbox、jedi-vim 及 Jedi/Parso/递归类型依赖、
+webapi-vim、SuperTab、vim-oscyank、fzf.vim、Tagbar。Python 的 flake8/black、
+C/C++ 的 clang-tidy/clang-format 由项目环境提供；Tagbar 依赖 Ctags，Jedi 依赖
+带 Python 支持的 Vim。快捷键见[命令速查](commands.md#编辑器与文件管理)。
+
+Tmux 使用锁定的 `gpakosz/.tmux`，`~/.tmux.conf` 是托管链接，
+`~/.tmux.conf.local` 留给用户。Yazi 的 smart-enter 同样来自锁定归档。
+外部目录有 `exact` 管理，额外文件可能被删除；自有配置放在外部目录之外。
+
+macOS full 管理 iTerm2 的 `wizplus` Dynamic Profile 和 Ghostty 配置，不自动切换
+默认终端。Ghostty 支持 OSC 52 写剪贴板、长命令完成通知、Shift+Enter 换行，
+并显式启用 SSH 环境/terminfo 集成。快捷键、效果检查和回退见[终端说明](terminals.md)。
+
+## Git、SSH 与远程开发
+
+Git 提供 `main` 默认分支、pull rebase、push 自动建立 upstream、fetch prune、
+UTF-8 路径显示、公共 ignore 和 `~/.config/git/local.conf` 本机扩展。
+`personal_email` 通过 `includeIf` 为个人代码目录选择邮箱；可在 macOS 选择
+1Password SSH 签名，SSH 会话改走转发 agent。
+
+`ssh_managed` 开启后按 personal/work/temp/local 分类 include 主机配置，默认关闭
+agent 转发并启用连接复用。转发应在特定主机块中按需设置；`.zprofile` 在 SSH
+登录时维护稳定的 agent socket 链接供长寿命 tmux 会话使用。临时主机由 `sshtmp`
+管理，单独使用 `known_hosts.temp`；清单中的到期项在后续命令运行时清理。
+
+`rt` 连接或创建远程 tmux 会话；`clip-to-remote` / `shot-to-remote` 上传图片并
+复制远端路径，上传时清理远端缓存中超过 7 天的文件。主机名保存在本机配置中。
+三个命令可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。
+
+## 代理、AI 工具与 nori
+
+代理地址来自同一份 `proxy.json.tmpl`，供 shell 函数、Claude Code、GUI
+LaunchAgent 和 nori-watch 使用。三种入口分别作用于当前 shell、Claude 子进程、
+GUI 登录会话；改变 shell 环境不会同步清理另两处。模板的 NO_PROXY 包含 loopback
+和 Apple 服务域名；应用是否采用环境变量，需在应用内验证。
+
+Claude 的 `settings.json` 采用 modify template，合并代理 env、automation_git
+和 Roost hooks，保留不相关设置。`automation_git` 让 Claude 启动的 Git 使用
+GitHub HTTPS + gh 凭据，并指定本机签名钥；不创建密钥、不完成 gh 登录。
+`cct` 则为临时 Claude 会话创建 `~/workspace/scratch/<name>`。
+
+当前 main 的 Roost 集成在 Claude hooks 中添加命令，在 Codex 的单行 `notify`
+数组外包装 `roost hook codex --chain ...`。未设置 `roost_hooks` 时忽略 Codex
+目录。关闭时需要显式设为 false 并 apply；Claude 目标若已被其他开关共同关闭而
+忽略，需先恢复该目标的管理才能清理，详见[配置参考](configuration.md#关闭功能时的行为)。
+
+nori 配置由 1Password 中的共享策略深度合并 `nori_machine_json`，本机字段覆盖
+共享字段；订阅和 Bark URL 分别渲染到私有目标。目录名由 `nori_config_dir` 选择。
+仓库只提供配置和检查，不安装或重启 nori 服务。
+
+nori-watch 检查状态、维护/恢复标志、刷新结果和刷新年龄；加 `--proxy` 才做
+代理连通性探测，LaunchAgent 会传入这一参数。直连也不可达时跳过代理故障判断，
+但仍报告 nori 自身状态问题。定时器间隔 30 分钟，当前 main 根据问题文本变化
+发送 Bark，新问题和全部恢复会通知；刷新小时数增长的重复提醒修复仍在 PR #18。
+
+## macOS、软件和验证边界
+
+Karabiner 只为配置中匹配的键盘把右 Option 映射为右 Command；不重映射 Caps Lock。
+系统偏好脚本需手动 `--apply`：设置 Safari 搜索、触控板轻点、Dock 大小、按键重复、
+Finder 显示和菜单栏项目，并重启相关桌面进程。它不由配置更新或软件安装入口执行；
+不同 macOS 版本对这些 defaults 键的支持需要实际验收。
+
+软件清单覆盖开发 CLI、编辑器/终端、文档媒体工具和 macOS 桌面应用。
+完整包名以 [packages.yaml](../home/.chezmoidata/packages.yaml) 为准；被列入清单
+不代表该应用的用户设置由仓库托管，例如 VS Code 配置与 Settings Sync 仍由用户管理。
+Homebrew/apt 的安装与升级分开，版本不锁定；Miniforge 安装器固定版本和哈希，
+只管理 base 安装，不负责项目环境升级。
+
+`scripts/test all` 运行 unit + static；cached-externals、runtime、终端检查、
+VM 验收是其他独立范围。CI 在 Linux/macOS 运行离线套件，另有 Gitleaks 秘密扫描
+和每月 GitHub Actions Dependabot 更新；详情见[测试说明](testing.md)。
+
+## 尚未合并的功能
+
+以下是 2026-10-21 的核对快照，状态以 PR 页面为准；它们不属于上述 main 基线。
+
+| PR | 提供的变化 | 使用前提 |
+| --- | --- | --- |
+| [#17](https://github.com/grok-phantom/dotfiles/pull/17) | Claude 跨 Mac 记忆链接、`claude-memory-link`、`claude-rc` 和 Remote Control 定时守护 | 仍未合并；与 main 的初始化模板有冲突。记忆链接需要非 ephemeral macOS 和 iCloud；Remote Control 按机器开启 |
+| [#18](https://github.com/grok-phantom/dotfiles/pull/18) | nori-watch 比较问题时忽略不断增长的小时数，减少同一故障重复推送 | 仍未合并；当前 main 尚无此去重逻辑 |
+| [#20](https://github.com/grok-phantom/dotfiles/pull/20) | Roost 改用 Codex 生命周期 hooks，移除旧 notify 包装 | 仍未合并；需配套 Roost 可执行程序和支持 hooks 的 Codex |
+
+合并功能时同步更新本页、命令速查和参数参考，再移除对应的待合并条目。

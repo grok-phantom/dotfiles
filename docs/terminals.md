@@ -52,14 +52,18 @@ with the app switcher):
 | Focus split | Cmd+[ / Cmd+] |
 | Search | Cmd+F; Cmd+G / Cmd+Shift+G |
 | Copy / paste | Cmd+C / Cmd+V |
+| Claude multiline input through SSH/tmux | Shift+Enter (Esc+Return); Codex can also use Ctrl+J |
 | Fullscreen | Cmd+Enter or Ctrl+Cmd+F |
 
 Automatic zsh integration is enabled; existing zsh/p10k/fzf/zoxide/Yazi/tmux
 configuration stays intact. Do not source iTerm2 integration in Ghostty or set
 `TERM` globally. Ghostty defaults to `xterm-ghostty`; its bundled terminfo works in
-its own environment but may be missing on remote systems. SSH environment/terminfo
-injection is disabled by default in this version. Do not enable remote installation
-without reviewing the target. iTerm2's native tmux control-mode UI is not replicated
+its own environment but may be missing on remote systems. This repository explicitly
+sets `shell-integration-features = ssh-env,ssh-terminfo`, enabling Ghostty's SSH
+environment and terminfo integration. SSH use may install terminfo on the remote
+host; review that behavior for the target. The separate `rt` helper also checks
+remote terminfo and falls back to `xterm-256color` if unavailable.
+iTerm2's native tmux control-mode UI is not replicated
 by Ghostty; normal tmux inside the terminal is a separate workflow.
 
 Window state uses the macOS-dependent `window-save-state = default`; this is not a
