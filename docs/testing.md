@@ -2,8 +2,9 @@
 
 The canonical command is `./scripts/test all` (`make test` is an alias). Test tooling
 requires Python 3.11+; this does not change the update CLI's Python 3.9+ support.
-The launcher uses `PYTHON` when provided, otherwise finds Python 3.13, 3.12, 3.11,
-then a suitable `python3`. It never installs anything. An explicit unsupported
+The launcher uses `PYTHON` when provided, otherwise tries Python 3.14, 3.13,
+`~/opt/miniforge3/bin/python3.13`, 3.12, 3.11, then a suitable `python3`.
+It never installs anything. An explicit unsupported
 interpreter is rejected, not silently replaced.
 
 ```sh
@@ -62,8 +63,8 @@ hosted runners. It uses only `contents: read`, does not persist checkout credent
 does not use secrets or `pull_request_target`, and has no deployment or writeback step.
 Fork PR code runs with the same read-only scope, with no privileged follow-up workflow.
 
-Actions are pinned to full SHAs verified from the official repositories: checkout
-v4.2.2, setup-python v5.6.0 and upload-artifact v4.6.2. Python is pinned to 3.13.13.
+Actions are pinned to full SHAs in [the workflow](../.github/workflows/tests.yml):
+checkout v7.0.1, setup-python v7.0.0 and upload-artifact v7.0.2. Python is pinned to 3.13.13.
 `tests/ci-tools.json` pins chezmoi 2.73.0 release archive digests from
 <https://github.com/twpayne/chezmoi/releases/tag/v2.73.0>. The CI-only helper downloads
 and verifies those bytes, then extracts only the regular `chezmoi` executable into
@@ -71,12 +72,23 @@ runner temporary storage. It is not called by local test commands.
 
 Hosted OS images, Git/Bash and the Ubuntu Zsh system package are not byte-for-byte
 locked; the reports record the relevant actual versions. CI provisions dependencies
-only on ephemeral runners. This workflow has not been run remotely merely by adding
-the YAML; its first execution requires a separately authorized push.
+only on ephemeral runners. Runs are triggered by pushes and pull requests; check the
+run for the exact commit before claiming CI passed. A local report is not a remote CI result.
 
 The artifact contains only synthetic test reports/logs, is retained for seven days,
 and is uploaded even on test failure. No home directory, cache, credentials or rendered
 user configuration is included.
+
+## Secret scanning and dependency updates
+
+[Secret scan](../.github/workflows/secrets.yml) runs Gitleaks on main pushes and pull
+requests, with full checkout history, read-only contents/PR permissions and the
+workflow's GitHub token. It does not deploy or modify source. This is separate from
+the offline test workflow and does not replace reviewing rendered private data before sharing.
+
+[Dependabot](../.github/dependabot.yml) checks GitHub Actions monthly and groups
+action updates. It does not update Homebrew/apt packages, external plugin/font locks
+or the Miniforge installer lock; those have separate reviewed maintenance paths.
 
 ## Optional locked-runtime check
 
