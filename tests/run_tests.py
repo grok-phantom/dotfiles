@@ -60,7 +60,7 @@ def static_checks(env):
         elif path.suffix == '.json' and not path.name.startswith('modify_'):
             json.loads(path.read_text())
             count += 1
-        elif path.suffix == '.toml':
+        elif path.suffix == '.toml' and not path.name.startswith('modify_'):
             tomllib.loads(path.read_text())
             count += 1
     for command in (['sh', '-n', 'scripts/test'],

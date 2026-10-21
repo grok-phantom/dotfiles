@@ -1,0 +1,33 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* roost_hooks: roost now hears from Codex through its lifecycle hooks (hooks.json), so notify
+       goes back to Codex Computer Use alone. Earlier setups wrapped notify with roost, and Computer
+       Use then wrapped that again (`--previous-notify "[…roost…]"`), where roost lost $TMUX_PANE;
+       both wrappings are taken out. Only a one-line `notify = [...]` is understood. */ -}}
+{{- $config := .chezmoi.stdin -}}
+{{- $prefix := printf "%s, \"hook\", \"codex\"" (printf "%s/bin/roost" .chezmoi.homeDir | toJson) -}}
+{{- $line := regexFind `(?m)^notify[ \t]*=.*$` $config -}}
+{{- $inner := "" -}}
+{{- if $line -}}
+{{-   if not (regexMatch `^notify[ \t]*=[ \t]*\[.*\][ \t]*$` $line) -}}
+{{-     fail "~/.codex/config.toml: roost_hooks needs notify as a one-line array" -}}
+{{-   end -}}
+{{-   $inner = regexReplaceAll `^notify[ \t]*=[ \t]*\[(.*)\][ \t]*$` $line "${1}" | trim -}}
+{{- end -}}
+{{- /* The notify value without roost. */ -}}
+{{- $want := $inner -}}
+{{- if hasPrefix $prefix $want -}}
+{{-   $want = "" -}}
+{{-   if contains `"--chain",` $inner -}}
+{{-     $want = regexReplaceAll `^.*?"--chain",[ \t]*` $inner "" -}}
+{{-   end -}}
+{{- end -}}
+{{- $want = regexReplaceAll `,[ \t]*"--previous-notify",[ \t]*"(?:[^"\\]|\\.)*roost\\",[ ]*\\"hook\\",[ ]*\\"codex\\"(?:[^"\\]|\\.)*"` $want "" -}}
+{{- $result := $config -}}
+{{- if ne $want $inner -}}
+{{-   if $want -}}
+{{-     $result = replace $line (printf "notify = [%s]" $want) $config -}}
+{{-   else -}}
+{{-     $result = regexReplaceAll `(?m)^notify[ \t]*=.*\n?` $config "" -}}
+{{-   end -}}
+{{- end -}}
+{{ $result -}}

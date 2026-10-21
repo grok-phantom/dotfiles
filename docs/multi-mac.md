@@ -126,9 +126,13 @@ Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着
 
 ## nori 定时检查
 
-`~/bin/nori-watch` 每 30 分钟检查本机的 nori 部署，问题有变化时推 Bark（新问题，以及全部恢复后的一条 all clear）。检查项：`nori status` 能否读出、代理和定时刷新是否开着、是否需要维护或恢复、上次刷新是否报错、是否超过 60 小时没有刷新成功，以及经本机代理（`proxy_host:proxy_http_port`）访问一次 `generate_204`。断网时不评判代理，所以离线不会误报。Bark 请求直接发出，不经过被检查的代理。
+`~/bin/nori-watch` 的 LaunchAgent 每 30 分钟检查本机的 nori 部署，问题有变化时推 Bark（新问题，以及全部恢复后的一条 all clear）。检查项：`nori status` 能否读出、代理和定时刷新是否开着、是否需要维护或恢复、上次刷新是否报错、是否超过 60 小时没有刷新成功，以及经本机代理（`proxy_host:proxy_http_port`）访问一次 `generate_204`。直连也不可达时跳过代理故障判断；nori 本身的状态问题仍会报告。Bark 请求直接发出，不经过被检查的代理。
 
-按机器开启：data 设 `nori_watch = true`，并用 `nori_config_dir` 指明部署读取的目录（`nori` 或 `nori-mba`）。chezmoi 会装上 LaunchAgent `local.dotfiles.nori-watch`，首次需要手动加载：`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.nori-watch.plist`，之后登录时自动加载。nori 配置从 1Password 渲染的机器（设了 `nori_machine_json`），Bark 地址同样从 `Personal/infra secrets` 的 `bark_url` 渲染到 `~/.config/nori-watch/bark.url`；其他机器手工放这个文件（0600）。`nori-watch --config <nori.yaml> --print` 只检查、不推送；日志在 `~/Library/Logs/nori-watch.log`，只记有问题的那几次。
+按机器开启：data 设 `nori_watch = true`，并用 `nori_config_dir` 指明部署读取的目录（`nori` 或 `nori-mba`）。macOS full 会管理 LaunchAgent `local.dotfiles.nori-watch`，首次需要手动加载：`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.nori-watch.plist`，之后登录时自动加载。nori 配置从 1Password 渲染的机器（设了 `nori_machine_json`），Bark 地址同样从 `Personal/infra secrets` 的 `bark_url` 渲染到 `~/.config/nori-watch/bark.url`；其他机器手工放这个文件（0600）。`nori-watch --config <nori.yaml> --print` 只检查 nori 状态、不推送；要同时验证代理，加 `--proxy <本机代理 URL>`，LaunchAgent 已带此参数。日志在 `~/Library/Logs/nori-watch.log`，记录发现的问题及通知失败。
+
+同一刷新故障仅小时数增长时不会重复通知；状态仍保存最新年龄用于恢复提醒。
+共享策略渲染、所有开关及
+关闭后的清理行为见[本机配置参考](configuration.md#nori-配置与定时检查)。
 
 ## 容器与代理迁移
 

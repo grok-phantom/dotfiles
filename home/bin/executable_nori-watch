@@ -9,13 +9,15 @@ fails; the proxy or the scheduled refresh is off; nori needs maintenance or reco
 refresh ended in an error; no successful refresh for --max-age-hours; or a request through
 --proxy fails while this Mac can still reach the internet directly (being offline is not a
 problem). As with infra-health on the servers, only changes are pushed: new problems, and an
-all-clear once everything recovers. Bark is called directly, never through the proxy it reports
-on. The Bark URL comes from ~/.config/nori-watch/bark.url; without it nothing is sent.
+all-clear once everything recovers; a growing hour count is not a change. Bark is called
+directly, never through the proxy it reports on. The Bark URL comes from
+~/.config/nori-watch/bark.url; without it nothing is sent.
 --print checks and prints without notifying or saving state.
 """
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import subprocess
@@ -32,6 +34,12 @@ STATE = Path(os.environ.get('NORI_WATCH_STATE', HOME / '.local/state/nori-watch/
 FINE = {'unchanged', 'applied', 'published_pending_start', 'exported_not_imported', 'staged',
         'recovered', 'started', 'stopped', 'upgraded'}
 DIRECT = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+AGE = re.compile(r'(no successful refresh for )\d+h')
+
+
+def kind(problem):
+    """The problem without its growing hour count, so a stale refresh is pushed once, not every hour."""
+    return AGE.sub(r'\1Nh', problem)
 
 
 def nori_problems(config, max_age_hours, now):
@@ -120,9 +128,12 @@ def main(argv):
         return 1 if found else 0
     previous = json.loads(STATE.read_text()) if STATE.exists() else []
     if found != previous:
-        new = [p for p in found if p not in previous]
+        seen = {kind(p) for p in previous}
+        new = [p for p in found if kind(p) not in seen]
         try:
-            if found:
+            if sorted(map(kind, found)) == sorted(map(kind, previous)):
+                pass  # same problems, only the hour count moved: keep the text current, push nothing
+            elif found:
                 notify(f'{args.name}: {len(found)} nori problem(s)', '\n'.join(new or found))
             else:
                 notify(f'{args.name}: nori all clear', 'Recovered: ' + '; '.join(previous))

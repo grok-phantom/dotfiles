@@ -102,6 +102,81 @@ class LocalChoicesTests(base.Fixture):
             'proxy_http_port': '18080'}, manual))
         self.assertEqual(kept['env']['GIT_CONFIG_KEY_0'], 'core.pager')
 
+    def test_roost_hooks_add_and_remove_only_their_entries(self):
+        command = f'{self.target}/bin/roost hook claude'
+        mine = {'hooks': [{'type': 'command', 'command': 'say done'}]}
+        current = json.dumps({'hooks': {'Stop': [mine]}, 'theme': 'dark'})
+        on = self.render_claude({'claude_proxy': False, 'roost_hooks': True}, current)
+        merged = json.loads(on)
+        self.assertNotIn('env', merged)
+        self.assertEqual(merged['theme'], 'dark')
+        self.assertEqual(merged['hooks']['Stop'][0], mine)
+        events = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure',
+                  'PermissionRequest', 'PermissionDenied', 'Notification', 'Stop', 'StopFailure', 'SessionEnd']
+        self.assertEqual(sorted(merged['hooks']), sorted(events))
+        for event in events:
+            ours = [g for g in merged['hooks'][event] if g['hooks'][0]['command'] == command]
+            self.assertEqual(ours, [{'hooks': [{'type': 'command', 'command': command, 'timeout': 10}]}])
+        # Already applied: passes through byte for byte.
+        self.assertEqual(self.render_claude({'claude_proxy': False, 'roost_hooks': True}, on), on)
+        # Off keeps the hand-written hook and drops events that only had roost's.
+        off = json.loads(self.render_claude({'claude_proxy': False, 'roost_hooks': False, 'automation_git': True}, on))
+        self.assertEqual(off['hooks'], {'Stop': [mine]})
+        self.assertIsNone(self.render_claude({'claude_proxy': False}, '{}'))
+
+    def render_codex(self, data, content, name='config.toml'):
+        self.config.write_text(json.dumps({'data': dict(profile='full', ephemeral=False, claude_proxy=False, **data)}))
+        (self.target/'.codex').mkdir(exist_ok=True)
+        if content is not None:
+            (self.target/'.codex'/name).write_text(content)
+        chezmoi = ['chezmoi', '--source', self.repo, '--destination', self.target, '--config', self.config,
+                   '--persistent-state', self.root/'state', '--cache', self.root/'cache']
+        managed = self.cmd(chezmoi + ['managed', '--include=files', self.target/'.codex']).stdout.split()
+        if f'.codex/{name}' not in managed:
+            return None
+        return self.cmd(chezmoi + ['cat', self.target/'.codex'/name]).stdout
+
+    def test_roost_takes_itself_out_of_codex_notify(self):
+        roost = json.dumps(f'{self.target}/bin/roost')
+        before = 'model = "gpt-5"\nnotify = ["/Apps/Sky.app/Client", "turn-ended"]\n\n[tui]\nx = 1\n'
+        # Left alone when roost isn't in it, on or off.
+        self.assertEqual(self.render_codex({'roost_hooks': True}, before), before)
+        self.assertEqual(self.render_codex({'roost_hooks': False}, before), before)
+        # The old wrapping, roost outside.
+        wrapped = before.replace('notify = [', f'notify = [{roost}, "hook", "codex", "--chain", ')
+        self.assertEqual(self.render_codex({'roost_hooks': True}, wrapped), before)
+        # Computer Use wrapped roost's wrapping again; roost lost $TMUX_PANE in there.
+        chain = json.dumps([f'{self.target}/bin/roost', 'hook', 'codex', '--chain', '/Apps/Sky.app/Client', 'turn-ended'], separators=(',', ':')).replace('/', '\\/')
+        nested = before.replace('"turn-ended"]', '"turn-ended", "--previous-notify", ' + json.dumps(chain) + ']')
+        self.assertIn('--previous-notify', tomllib.loads(nested)['notify'])
+        self.assertEqual(self.render_codex({'roost_hooks': True}, nested), before)
+        # Only roost: notify goes away.
+        alone = f'notify = [{roost}, "hook", "codex"]\n[tui]\nx = 1\n'
+        self.assertEqual(self.render_codex({'roost_hooks': True}, alone), '[tui]\nx = 1\n')
+        # Hosts that never set roost_hooks don't manage Codex at all.
+        self.assertIsNone(self.render_codex({}, before))
+
+    def test_roost_codex_hooks_add_and_remove_only_their_entries(self):
+        command = f'{self.target}/bin/roost hook codex'
+        mine = {'hooks': [{'type': 'command', 'command': 'say done'}]}
+        on = self.render_codex({'roost_hooks': True}, json.dumps({'hooks': {'Stop': [mine]}}), 'hooks.json')
+        merged = json.loads(on)
+        events = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PermissionRequest', 'PostToolUse', 'Stop']
+        self.assertEqual(sorted(merged['hooks']), sorted(events))
+        self.assertEqual(merged['hooks']['Stop'][0], mine)
+        roost = {'type': 'command', 'command': command, 'timeout': 10}
+        self.assertEqual(merged['hooks']['PreToolUse'], [{'matcher': '*', 'hooks': [roost]}])
+        self.assertEqual(merged['hooks']['SessionStart'], [{'hooks': [roost]}])
+        # Already applied: passes through byte for byte.
+        self.assertEqual(self.render_codex({'roost_hooks': True}, on, 'hooks.json'), on)
+        # Off keeps the hand-written hook only.
+        off = json.loads(self.render_codex({'roost_hooks': False}, on, 'hooks.json'))
+        self.assertEqual(off, {'hooks': {'Stop': [mine]}})
+        # No file yet.
+        fresh = json.loads(self.render_codex({'roost_hooks': True}, None, 'hooks.json'))
+        self.assertEqual(sorted(fresh['hooks']), sorted(events))
+        self.assertIsNone(self.render_codex({}, None, 'hooks.json'))
+
     def test_full_shell_does_not_load_removed_tldr_plugin(self):
         rendered = self.cmd(['chezmoi', '--source', self.repo, '--destination', self.target,
                     '--config', self.config, '--override-data', '{"profile":"full"}',
