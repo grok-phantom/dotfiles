@@ -40,6 +40,7 @@ git branch --merged origin/main
 | main 或默认分支 | 保留；工作区干净时用 `git merge --ff-only origin/main` 更新 |
 | PR 已合并，所有分支提交已被包含或确认等价 | 本地与远端功能分支通常可以清理 |
 | PR 仍 open，或存在未合并的独有改动 | 保留；有冲突时先协调，不当作废弃分支 |
+| 已明确退役的未合并功能 | 先确认范围、保存可恢复备份并关闭 PR，再按核对过的提交删除分支 |
 | 仅本地存在、没有 upstream | 先检查独有提交；需要保留时推送或另作可恢复备份 |
 | upstream 已删除，但本地有新增提交 | 保留新增工作，不根据 `[gone]` 删除 |
 | 分支仍被 worktree 使用 | 先检查该 worktree 的 tracked、untracked、ignored 文件和使用情况 |

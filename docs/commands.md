@@ -126,6 +126,9 @@ Python 更新入口使用进程环境，不经过这些 shell 函数。
 | `shot-to-remote` | 调用 `clip-to-remote -s`，使用已配置的默认主机 |
 | `git-ssh-sign` | Git 自动调用的签名适配器：本机用 1Password signer，SSH 会话用 ssh-keygen |
 
+运行 Codex 时，先用 `rt codex` 连接名为 `codex` 的远程会话，再在远端运行 `codex`。
+`rt` 只管理 SSH/tmux 连接，会话名不会自动启动同名程序；远端需已安装 Codex。
+
 主机优先级：`-H` → `RT_HOST` / `CLIP_REMOTE_HOST` →
 `~/.config/clip-to-remote/host` 第一行。截图工具需要 macOS 截屏/自动化权限与可用
 SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghostty。
