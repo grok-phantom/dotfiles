@@ -15,7 +15,7 @@ usage: clip-to-remote [-H host] [-s] [image ...]
 
 Upload the clipboard image (or the given image files) to ~/.cache/clip on a
 remote host over SSH, then put the remote path(s) on the clipboard, ready to
-paste into a Claude Code session running there.
+paste into Codex or another agent running there.
 
   -s  select a screen area first (screencapture -i) and upload that instead
 
@@ -93,12 +93,18 @@ fi
 paths=()
 for f in "${files[@]}"; do
   [[ -f "$f" ]] || fail "not a file: $f"
-  ext="${f##*.}"
-  [[ "$ext" == "$f" ]] && ext=png
+  filename="${f##*/}"
+  ext="${filename##*.}"
+  [[ "$ext" == "$filename" ]] && ext=png
+  # The generated name is embedded in a remote shell command.
+  [[ "$ext" =~ ^[A-Za-z0-9]+$ ]] || fail "file extension must contain only letters and digits: $f"
   name="$(date +%Y%m%d-%H%M%S)-$RANDOM.$(tr '[:upper:]' '[:lower:]' <<<"$ext")"
   # The remote side prints the absolute path, so the paste works from any cwd.
   remote_path="$(ssh -o BatchMode=yes "$host" \
-    "d=\"\$HOME/.cache/clip\"; mkdir -p \"\$d\" && cat > \"\$d/$name\" && find \"\$d\" -type f -mtime +7 -delete; echo \"\$d/$name\"" \
+    "d=\"\$HOME/.cache/clip\"; mkdir -p \"\$d\" &&
+     cat > \"\$d/$name\" &&
+     find \"\$d\" -type f -mtime +7 -delete &&
+     printf '%s\\n' \"\$d/$name\"" \
     <"$f")" || fail "upload to $host failed"
   paths+=("$remote_path")
 done
