@@ -187,11 +187,12 @@ ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中�
 
 `data.roost_hooks = true` 按机器把 roost（在手机上查看 tmux 中 agent 状态的应用）接进 agent：
 `~/.claude/settings.json` 的 `hooks` 里每个相关事件加一条 `~/bin/roost hook claude`；
-`~/.codex/config.toml` 的 `notify` 改成 `~/bin/roost hook codex --chain <原来的程序…>`——Codex 只允许一个 notify，
-原来的 Codex Computer Use 照常收到事件。手写的 hooks 不受影响；设为 `false` 再 apply 会清理仍在托管范围内的对应条目，详见[关闭功能时的行为](docs/configuration.md#关闭功能时的行为)。
+`~/.codex/hooks.json` 里同样给每个事件加一条 `~/bin/roost hook codex`（Codex 0.163 起有和 Claude 同格式的生命周期钩子，
+跑在 agent 进程里，带得到 `$TMUX_PANE`）。`~/.codex/config.toml` 的 `notify` 留给 Codex Computer Use：
+早先 roost 用 `--chain` 包过它，Computer Use 又把那层包进 `--previous-notify`，roost 在里面拿不到 pane；
+apply 会把这两种包装里的 roost 都拿掉。Codex 第一次看到新的或改过的钩子会问一次要不要信任，
+结果记在 `config.toml` 的 `[hooks.state]`。手写的 hooks 不受影响；设为 `false` 再 apply 会清理仍在托管范围内的对应条目，详见[关闭功能时的行为](docs/configuration.md#关闭功能时的行为)。
 没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 应用仓库另行安装。
-这里描述的是当前 main 的 notify 实现；改用 Codex 生命周期 hooks 的变更仍在
-[PR #20](https://github.com/grok-phantom/dotfiles/pull/20)，未合并功能见[功能总览](docs/features.md#尚未合并的功能)。
 
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
 `bash scripts/manual/macos-defaults.sh --apply`。它会改系统偏好并重启相关桌面进程，

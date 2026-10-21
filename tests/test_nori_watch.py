@@ -102,6 +102,21 @@ class NoriWatch(unittest.TestCase):
         self.assertEqual(self.notices[0][1], '/push')  # sent to Bark itself, not through --proxy
         self.assertEqual(json.loads((self.dir / 'state/state.json').read_text()), [])
 
+    def test_growing_hour_count_is_not_pushed_again(self):
+        self.status(result='fetch', last_success=time.time() - 60.5 * 3600)
+        self.run_watch()
+        self.status(result='fetch', last_success=time.time() - 61.5 * 3600)
+        self.run_watch()
+        self.status(result='fetch', running=False, last_success=time.time() - 62.5 * 3600)
+        self.run_watch()
+        bodies = [json.loads(body)['body'] for method, path, body in self.notices]
+        self.assertEqual(bodies, ['last refresh failed: fetch\nno successful refresh for 60h',
+                                  'proxy is not running'])
+        self.status()
+        self.run_watch()
+        self.assertEqual(json.loads(self.notices[-1][2])['body'], 'Recovered: last refresh failed: fetch; '
+                         'no successful refresh for 62h; proxy is not running')
+
     def test_failed_notice_is_retried_next_run(self):
         (self.dir / 'bark.url').write_text('http://127.0.0.1:9/push\n')
         self.status(running=False)

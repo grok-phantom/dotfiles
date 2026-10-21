@@ -1,7 +1,7 @@
 # 功能总览
 
-本页说明仓库自有配置和工具的完整范围。核对基线为 2026-10-21 的 main
-`2393feb`；其他分支的功能单独列在末尾。源码中的选项、锁文件和忽略规则是最终依据。
+本页说明本分支自有配置和工具的完整范围。其他分支的功能单独列在末尾；
+源码中的选项、锁文件和忽略规则是最终依据。
 
 `.chezmoiroot` 把 `home/` 映射到用户 home；`scripts/`、`docs/`、`tests/` 和
 `locks/` 留在 source 仓库。`private_` 控制目标权限，不表示文件内容不会公开；
@@ -23,7 +23,7 @@
 | Workspace | 统一代码布局、外置盘符号链接与卷校验、目录检查、仓库清单与克隆 | [workspace](../home/bin/executable_workspace.tmpl)、[使用说明](workspace.md) |
 | SSH | 可选托管、主机分类、1Password agent、公钥、连接复用、转发 agent、临时主机到期管理 | [SSH 模板](../home/private_dot_ssh/private_config.tmpl)、[sshtmp](../home/bin/executable_sshtmp)、[迁移说明](multi-mac.md#ssh-配置) |
 | 远程开发 | 远程 tmux、截图/剪贴板图片上传、Raycast 入口、SSH 内签名 | [远程开发说明](multi-mac.md#远程开发主机) |
-| Claude / Codex | Claude 代理、无人值守 Git、Roost 状态接入；按目标合并已有应用设置 | [Claude 模板](../home/private_dot_claude/modify_private_settings.json)、[Codex 模板](../home/dot_codex/modify_private_config.toml) |
+| Claude / Codex | Claude 代理、无人值守 Git、Roost 状态接入；按目标合并已有应用设置 | [Claude 模板](../home/private_dot_claude/modify_private_settings.json)、[Codex hooks](../home/dot_codex/modify_private_hooks.json)、[notify 迁移](../home/dot_codex/modify_private_config.toml) |
 | nori | 从密码管理器合并共享策略与本机配置，渲染订阅；定时健康检查与 Bark 通知 | [共享模板](../home/.chezmoitemplates/nori.yaml.tmpl)、[nori-watch](../home/bin/executable_nori-watch)、[使用说明](multi-mac.md#nori-定时检查) |
 | macOS 偏好 | Karabiner 指定键盘映射；独立手动系统偏好脚本 | [Karabiner](../home/private_dot_config/private_karabiner/private_karabiner.json)、[macOS 脚本](../scripts/manual/macos-defaults.sh) |
 | 开发小工具 | JSON 格式化、TCP 监听检查、HTTP 文件服务、直连/代理比较 | [命令速查](commands.md#开发小工具) |
@@ -101,9 +101,10 @@ Claude 的 `settings.json` 采用 modify template，合并代理 env、automatio
 GitHub HTTPS + gh 凭据，并指定本机签名钥；不创建密钥、不完成 gh 登录。
 `cct` 则为临时 Claude 会话创建 `~/workspace/scratch/<name>`。
 
-当前 main 的 Roost 集成在 Claude hooks 中添加命令，在 Codex 的单行 `notify`
-数组外包装 `roost hook codex --chain ...`。未设置 `roost_hooks` 时忽略 Codex
-目录。关闭时需要显式设为 false 并 apply；Claude 目标若已被其他开关共同关闭而
+Roost 集成分别在 Claude 的 settings.json 和 Codex 的 hooks.json 中添加生命周期
+hooks，并从 Codex notify 中移除旧的 Roost 包装，让 Computer Use 继续使用 notify。
+未设置 `roost_hooks` 时忽略 Codex 目录。关闭时需要显式设为 false 并 apply；
+Claude 目标若已被其他开关共同关闭而
 忽略，需先恢复该目标的管理才能清理，详见[配置参考](configuration.md#关闭功能时的行为)。
 
 nori 配置由 1Password 中的共享策略深度合并 `nori_machine_json`，本机字段覆盖
@@ -112,8 +113,8 @@ nori 配置由 1Password 中的共享策略深度合并 `nori_machine_json`，�
 
 nori-watch 检查状态、维护/恢复标志、刷新结果和刷新年龄；加 `--proxy` 才做
 代理连通性探测，LaunchAgent 会传入这一参数。直连也不可达时跳过代理故障判断，
-但仍报告 nori 自身状态问题。定时器间隔 30 分钟，当前 main 根据问题文本变化
-发送 Bark，新问题和全部恢复会通知；刷新小时数增长的重复提醒修复仍在 PR #18。
+但仍报告 nori 自身状态问题。定时器间隔 30 分钟，新问题和全部恢复会通知；
+比较问题时忽略不断增长的刷新小时数，同时保存最新文本用于恢复通知。
 
 ## macOS、软件和验证边界
 
@@ -139,7 +140,5 @@ VM 验收是其他独立范围。CI 在 Linux/macOS 运行离线套件，另有 
 | PR | 提供的变化 | 使用前提 |
 | --- | --- | --- |
 | [#17](https://github.com/grok-phantom/dotfiles/pull/17) | Claude 跨 Mac 记忆链接、`claude-memory-link`、`claude-rc` 和 Remote Control 定时守护 | 仍未合并；与 main 的初始化模板有冲突。记忆链接需要非 ephemeral macOS 和 iCloud；Remote Control 按机器开启 |
-| [#18](https://github.com/grok-phantom/dotfiles/pull/18) | nori-watch 比较问题时忽略不断增长的小时数，减少同一故障重复推送 | 仍未合并；当前 main 尚无此去重逻辑 |
-| [#20](https://github.com/grok-phantom/dotfiles/pull/20) | Roost 改用 Codex 生命周期 hooks，移除旧 notify 包装 | 仍未合并；需配套 Roost 可执行程序和支持 hooks 的 Codex |
 
 合并功能时同步更新本页、命令速查和参数参考，再移除对应的待合并条目。

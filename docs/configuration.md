@@ -56,7 +56,7 @@
 | `claude_proxy` | 非 ephemeral macOS 默认 true，其他默认 false | 合并 Claude 代理 env；macOS full 同时管理 GUI 代理 LaunchAgent |
 | `automation_git` | 默认关闭 | Claude 子进程 Git 使用 gh HTTPS 凭据和本机 `~/.ssh/automation-signing` |
 | `automation_signing_pubkey` | 默认空 | 与 `personal_email` 一起增加本地 Git allowed signer；不生成私钥 |
-| `roost_hooks` | 未设置时忽略 Codex；true 开启，显式 false 用于清理 | Claude hooks 和当前 main 的 Codex notify 包装；需已安装 `~/bin/roost` |
+| `roost_hooks` | 未设置时忽略 Codex；true 开启，显式 false 用于清理 | Claude/Codex 生命周期 hooks，并清理旧 Codex notify 包装；需已安装 `~/bin/roost` |
 
 NO_PROXY 列表在 [proxy.json.tmpl](../home/.chezmoitemplates/proxy.json.tmpl) 中共享，
 目前不是单独的 data 选项。`claude_proxy` 不控制 shell 的 proxyon/proxyoff。
@@ -65,7 +65,8 @@ GUI plist 只设置登录会话环境，首次需加载；修改已加载项后�
 
 Claude 设置在上述三个功能中至少一个为 true 时参与管理。Codex 只要 data 中
 存在 `roost_hooks` 键就参与管理，因此 false 和删除键的含义不同。
-当前 main 的 Codex 模板只接受单行 `notify = [...]`，不会重写整份 TOML。
+Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 notify 包装，
+接受单行 `notify = [...]`，不会重写整份 TOML。
 登录凭据、会话、记忆、其他 Codex 设置和 Roost 程序本身由各工具维护。
 
 ## nori 配置与定时检查

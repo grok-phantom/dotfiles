@@ -130,8 +130,8 @@ Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着
 
 按机器开启：data 设 `nori_watch = true`，并用 `nori_config_dir` 指明部署读取的目录（`nori` 或 `nori-mba`）。macOS full 会管理 LaunchAgent `local.dotfiles.nori-watch`，首次需要手动加载：`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.nori-watch.plist`，之后登录时自动加载。nori 配置从 1Password 渲染的机器（设了 `nori_machine_json`），Bark 地址同样从 `Personal/infra secrets` 的 `bark_url` 渲染到 `~/.config/nori-watch/bark.url`；其他机器手工放这个文件（0600）。`nori-watch --config <nori.yaml> --print` 只检查 nori 状态、不推送；要同时验证代理，加 `--proxy <本机代理 URL>`，LaunchAgent 已带此参数。日志在 `~/Library/Logs/nori-watch.log`，记录发现的问题及通知失败。
 
-当前 main 按完整问题文本判断变化，刷新小时数增长也可能触发重复通知；去重修复见
-[PR #18](https://github.com/grok-phantom/dotfiles/pull/18)。共享策略渲染、所有开关及
+同一刷新故障仅小时数增长时不会重复通知；状态仍保存最新年龄用于恢复提醒。
+共享策略渲染、所有开关及
 关闭后的清理行为见[本机配置参考](configuration.md#nori-配置与定时检查)。
 
 ## 容器与代理迁移
