@@ -167,8 +167,11 @@ ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中�
 
 `data.roost_hooks = true`（目前只在 mba-home）把 roost（`~/workspace/personal/projects/roost`，手机上看 tmux 里 agent 的 App）接进 agent：
 `~/.claude/settings.json` 的 `hooks` 里每个相关事件加一条 `~/bin/roost hook claude`；
-`~/.codex/config.toml` 的 `notify` 改成 `~/bin/roost hook codex --chain <原来的程序…>`——Codex 只允许一个 notify，
-原来的 Codex Computer Use 照常收到事件。手写的 hooks 不受影响；设为 `false` 再 apply 会把这两处还原。
+`~/.codex/hooks.json` 里同样给每个事件加一条 `~/bin/roost hook codex`（Codex 0.163 起有和 Claude 同格式的生命周期钩子，
+跑在 agent 进程里，带得到 `$TMUX_PANE`）。`~/.codex/config.toml` 的 `notify` 留给 Codex Computer Use：
+早先 roost 用 `--chain` 包过它，Computer Use 又把那层包进 `--previous-notify`，roost 在里面拿不到 pane；
+apply 会把这两种包装里的 roost 都拿掉。Codex 第一次看到新的或改过的钩子会问一次要不要信任，
+结果记在 `config.toml` 的 `[hooks.state]`。手写的 hooks 不受影响；设为 `false` 再 apply 只删 roost 的条目。
 没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 仓库的 `scripts/deploy-mba` 安装。
 
 macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
