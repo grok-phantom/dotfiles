@@ -14,10 +14,9 @@ macos-option-as-alt = false
 keybind = ctrl+tab=unbind
 keybind = ctrl+shift+tab=unbind
 
-# Shift+Enter sends Esc+Return, which Claude Code reads as a newline even inside
-# tmux over SSH (where Shift+Enter is otherwise just Return); zsh inserts a
-# newline into the command line. Codex also accepts Ctrl+J.
-keybind = shift+enter=text:\x1b\r
+# Send Ctrl+J for newline input in Claude Code and Codex, including over SSH/tmux.
+# In a regular shell this retains the shell's Ctrl+J behavior (usually accept-line).
+keybind = shift+enter=text:\x0a
 
 # Programs may write the clipboard (OSC 52 from Claude Code, tmux, vim) without
 # a prompt; reading it still asks, which is the risky direction. No toast on copy.
