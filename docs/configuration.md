@@ -66,7 +66,8 @@ GUI plist 只设置登录会话环境，首次需加载；修改已加载项后�
 Claude 设置在上述三个功能中至少一个为 true 时参与管理。Codex 只要 data 中
 存在 `roost_hooks` 键就参与管理，因此 false 和删除键的含义不同。
 Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 notify 包装，
-接受单行 `notify = [...]`，不会重写整份 TOML。
+接受单行或多行 TOML 数组（含注释和尾逗号）；无旧包装时原样保留，
+需要迁移时只替换 notify 项，不会重写整份 TOML。
 登录凭据、会话、记忆、其他 Codex 设置和 Roost 程序本身由各工具维护。
 
 ## nori 配置与定时检查

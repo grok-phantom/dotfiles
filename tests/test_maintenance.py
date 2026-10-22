@@ -156,6 +156,45 @@ class LocalChoicesTests(base.Fixture):
         # Hosts that never set roost_hooks don't manage Codex at all.
         self.assertIsNone(self.render_codex({}, before))
 
+    def test_codex_multiline_notify_without_roost_is_preserved(self):
+        before = ('model = "gpt-5"\nnotify = [\n'
+                  '    "/Apps/Computer Use.app/Client", # keep this comment\n'
+                  '    "turn-ended",\n]\n\n[tui]\nx = 1\n')
+        for enabled in (True, False):
+            with self.subTest(roost_hooks=enabled):
+                self.assertEqual(self.render_codex({'roost_hooks': enabled}, before), before)
+
+    def test_roost_multiline_notify_migrates_without_changing_other_settings(self):
+        roost = f'{self.target}/bin/roost'
+        client = ['/Apps/[Computer Use]/$Client', 'turn-ended']
+        suffix = '\n[tui]\nx = 1\nnotify = ["unrelated nested setting"]\n'
+        legacy = [roost, 'hook', 'codex', '--chain', *client]
+        nested = [*client, '--previous-notify', json.dumps(legacy)]
+        for args in (legacy, nested, [roost, 'hook', 'codex']):
+            for enabled in (True, False):
+                with self.subTest(args=args, roost_hooks=enabled):
+                    before = 'model = "gpt-5"\nnotify = [\n' + ''.join(
+                        f'    {json.dumps(arg)}, # argument\n' for arg in args) + '] # notify\n' + suffix
+                    rendered = self.render_codex({'roost_hooks': enabled}, before)
+                    parsed = tomllib.loads(rendered)
+                    self.assertEqual(parsed.get('notify'), client if len(args) > 3 else None)
+                    self.assertTrue(rendered.startswith('model = "gpt-5"\n'))
+                    self.assertTrue(rendered.endswith(suffix))
+                    self.assertEqual(self.render_codex({'roost_hooks': enabled}, rendered), rendered)
+
+    def test_roost_notify_accepts_literal_strings_and_crlf(self):
+        before = (f"notify = [\r\n  '{self.target}/bin/roost', 'hook', 'codex',\r\n"
+                  "  '--chain', '/Apps/[Computer Use]/$Client', 'turn-ended',\r\n] # keep\r\n"
+                  "[tui]\r\nx = 1\r\n")
+        # subprocess text mode normalizes newlines in captured output.
+        rendered = self.render_codex({'roost_hooks': True}, before)
+        self.assertEqual(tomllib.loads(rendered)['notify'], ['/Apps/[Computer Use]/$Client', 'turn-ended'])
+        self.assertIn(' # keep\n[tui]\nx = 1\n', rendered)
+
+    def test_nested_notify_without_top_level_notify_is_preserved(self):
+        before = f'[custom]\nnotify = [\n"{self.target}/bin/roost", "hook", "codex",\n]\n'
+        self.assertEqual(self.render_codex({'roost_hooks': True}, before), before)
+
     def test_roost_codex_hooks_add_and_remove_only_their_entries(self):
         command = f'{self.target}/bin/roost hook codex'
         mine = {'hooks': [{'type': 'command', 'command': 'say done'}]}

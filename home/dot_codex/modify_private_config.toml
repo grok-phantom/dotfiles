@@ -2,16 +2,18 @@
 {{- /* roost_hooks: roost now hears from Codex through its lifecycle hooks (hooks.json), so notify
        goes back to Codex Computer Use alone. Earlier setups wrapped notify with roost, and Computer
        Use then wrapped that again (`--previous-notify "[…roost…]"`), where roost lost $TMUX_PANE;
-       both wrappings are taken out. Only a one-line `notify = [...]` is understood. */ -}}
+       both wrappings are taken out. Parse the array as TOML; leave unrelated notify values
+       and the rest of the file byte-for-byte unchanged. */ -}}
 {{- $config := .chezmoi.stdin -}}
 {{- $prefix := printf "%s, \"hook\", \"codex\"" (printf "%s/bin/roost" .chezmoi.homeDir | toJson) -}}
-{{- $line := regexFind `(?m)^notify[ \t]*=.*$` $config -}}
+{{- $notify := get (fromToml $config) "notify" -}}
 {{- $inner := "" -}}
-{{- if $line -}}
-{{-   if not (regexMatch `^notify[ \t]*=[ \t]*\[.*\][ \t]*$` $line) -}}
-{{-     fail "~/.codex/config.toml: roost_hooks needs notify as a one-line array" -}}
+{{- if kindIs "slice" $notify -}}
+{{-   $args := list -}}
+{{-   range $notify -}}
+{{-     $args = append $args (toJson .) -}}
 {{-   end -}}
-{{-   $inner = regexReplaceAll `^notify[ \t]*=[ \t]*\[(.*)\][ \t]*$` $line "${1}" | trim -}}
+{{-   $inner = join ", " $args -}}
 {{- end -}}
 {{- /* The notify value without roost. */ -}}
 {{- $want := $inner -}}
@@ -24,10 +26,18 @@
 {{- $want = regexReplaceAll `,[ \t]*"--previous-notify",[ \t]*"(?:[^"\\]|\\.)*roost\\",[ ]*\\"hook\\",[ ]*\\"codex\\"(?:[^"\\]|\\.)*"` $want "" -}}
 {{- $result := $config -}}
 {{- if ne $want $inner -}}
+{{- /* Locate only the legacy assignment being migrated, including multiline arrays and
+         comments. Quoted strings may themselves contain brackets or escaped quotes. */ -}}
+{{-   $array := `(?m)^[ \t]*(?:notify|"notify"|'notify')[ \t]*=[ \t]*\[(?:[ \t\r\n,]|#[^\r\n]*|"(?:[^"\\]|\\.)*"|'[^']*')*\]` -}}
+{{-   $line := regexFind (printf `%s[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)` $array) $config -}}
+{{-   if or (not $line) (ne (get (fromToml $line) "notify" | toJson) ($notify | toJson)) -}}
+{{-     fail "~/.codex/config.toml: cannot locate legacy roost notify safely" -}}
+{{-   end -}}
 {{-   if $want -}}
-{{-     $result = replace $line (printf "notify = [%s]" $want) $config -}}
+{{-     $replacement := regexReplaceAllLiteral $array $line (printf "notify = [%s]" $want) -}}
+{{-     $result = replace $line $replacement $config -}}
 {{-   else -}}
-{{-     $result = regexReplaceAll `(?m)^notify[ \t]*=.*\n?` $config "" -}}
+{{-     $result = replace $line "" $config -}}
 {{-   end -}}
 {{- end -}}
 {{ $result -}}
