@@ -39,7 +39,7 @@ Use `tests/fixtures/vm-result-template.json` for a future run; all cases begin
 | V08 | Full config + locked externals | First use the existing-cache integration command below. Then explicitly plan full externals and verify in guest home; check Zsh/Vim/Tmux/Yazi/fonts in real sessions. Review `exact` directory deletions. |
 | V09 | Full → core | Core targets verify; optional old files remain. This is exclusion, not uninstall or cleanup. |
 | V10 | Optional Homebrew/Miniforge install, repeat and upgrade | Separate baseline branch, approved network/package installation; capture versions and diffs. Test real failure handling and restore environment backups. Mocks do not satisfy this row; no promise of transactional package rollback. |
-| V11 | Optional defaults, login, permissions and Keychain integration | Separate reviewed guest-only manual run; log out/in or reboot as needed. Basic guest Keychain behavior does not prove host production identity, enterprise policies or hardware-backed authentication. |
+| V11 | Optional defaults, login, permissions and Keychain integration | In the guest, run defaults `--check`, review `--apply`, record its backup path/readback, then `--restore` and verify original managed keys plus preservation of unrelated edits. Check the actual UI and log out/in or reboot as needed. Basic guest Keychain behavior does not prove host production identity, enterprise policies or hardware-backed authentication. |
 
 Each row must record status (`passed`, `failed`, `blocked`, `not_run`), exact command,
 UTC time, commit/platform, output or assertion, and any cleanup/recovery performed.

@@ -133,8 +133,9 @@ Python 更新入口使用进程环境，不经过这些 shell 函数。
 `~/.config/clip-to-remote/host` 第一行。截图工具需要 macOS 截屏/自动化权限与可用
 SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghostty。
 文件扩展名仅接受字母和数字；没有扩展名时使用 `.png`。
-目录创建、写入或远端清理失败时返回错误，保留原剪贴板，不输入上传路径。
-远端 `~/.cache/clip` 超过 7 天的文件在上传时清理。设置步骤见[远程开发说明](multi-mac.md#远程开发主机)。
+目录创建或上传写入失败时返回错误，保留原剪贴板，不输入上传路径。
+远端 `~/.cache/clip` 超过 7 天的文件在上传后清理；清理失败只在 stderr 提醒，
+已上传的文件仍返回路径并更新剪贴板。设置步骤见[远程开发说明](multi-mac.md#远程开发主机)。
 
 ## 编辑器与文件管理
 
@@ -162,8 +163,26 @@ SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghos
 | `./scripts/test cached-externals --cache /path/to/cache` | 已下载锁定资源的校验与临时目标应用 |
 | `./scripts/test runtime --cache /path/to/cache` | 在上述基础上检查 Zsh/Vim/Tmux |
 | `./scripts/verify-terminals` | iTerm2 JSON；macOS 上检查已安装 Ghostty 的配置、字体、主题和搜索能力 |
-| `bash -n scripts/manual/macos-defaults.sh` | 只做脚本语法检查 |
-| `bash scripts/manual/macos-defaults.sh --apply` | 实际修改 macOS 偏好并重启相关桌面进程，需先阅读脚本 |
+| `bash -n scripts/manual/macos-defaults.sh` | 只检查 Bash 入口；Python 实现也需运行 static 检查 |
+| `bash scripts/manual/macos-defaults.sh --check` | 只读比较当前值、类型与期望值，不备份、不重启进程 |
+| `bash scripts/manual/macos-defaults.sh --apply` | 有差异时先备份，再写入并回读验证，重启相关桌面进程 |
+| `bash scripts/manual/macos-defaults.sh --restore /path/to/backup.json` | 先备份当前值，再恢复旧备份并回读验证 |
+
+偏好入口要求 macOS 和已有 Python 3.9+（可用 `PYTHON` 指定）。执行前查看
+[24 项偏好清单](../scripts/manual/macos_defaults.py)，先运行 `--check`；预览成功返回 0，
+有差异也不算错误。`--apply` / `--restore` 只有回读一致才返回 0，失败返回非零。
+无差异时不写入、不生成备份，也不重启进程。
+
+每次变更前会打印 `Backup:` 路径，默认位于
+`~/.local/state/dotfiles/macos-defaults/<时间与随机后缀>/backup.json`；设置了
+`XDG_STATE_HOME` 时使用对应状态目录。备份目录权限为 700，文件为 600，必须留在仓库之外。
+备份只包含托管键的原值、类型和存在状态；恢复时原先不存在的键会删除，其他键保持当前值。
+恢复操作也会生成一份新备份，方便撤销恢复。
+
+读取或备份失败会在写入前停止；原值不是字符串、布尔、整数或有限浮点数时也会停止。
+写入失败（含 Safari 权限错误）或回读不一致会明确报错，可能已有部分偏好变更，
+可用打印的备份路径手动恢复。脚本不自动回滚、不要求额外授予权限；
+回读验证 defaults 中的值，界面是否采用这些键仍需实际验收。
 
 测试入口支持 `--report-dir`（新目录）和 `PYTHON`（已有 Python 3.11+）。
 测试、缓存集成、GUI 和 VM 验收的区别见[测试说明](testing.md)。

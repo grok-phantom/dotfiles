@@ -103,8 +103,9 @@ for f in "${files[@]}"; do
   remote_path="$(ssh -o BatchMode=yes "$host" \
     "d=\"\$HOME/.cache/clip\"; mkdir -p \"\$d\" &&
      cat > \"\$d/$name\" &&
-     find \"\$d\" -type f -mtime +7 -delete &&
-     printf '%s\\n' \"\$d/$name\"" \
+     { find \"\$d\" -type f -mtime +7 -delete ||
+       printf '%s\\n' 'Warning: upload succeeded; old remote files could not be cleaned up.' >&2
+       printf '%s\\n' \"\$d/$name\"; }" \
     <"$f")" || fail "upload to $host failed"
   paths+=("$remote_path")
 done

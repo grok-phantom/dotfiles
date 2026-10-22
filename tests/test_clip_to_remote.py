@@ -13,9 +13,9 @@ SCRIPT = ROOT / 'home/bin/executable_clip-to-remote'
 
 class ClipToRemote(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
         self.bin = self.root/'bin'
         self.remote = self.root/'remote'
         self.clipboard = self.root/'clipboard'
@@ -31,11 +31,8 @@ class ClipToRemote(unittest.TestCase):
             sys.exit(subprocess.run(['/bin/sh', '-c', sys.argv[-1]],
                                     cwd=env['HOME'], env=env).returncode)
         ''')
-        self.stub('osascript', '''
-            import sys
-            if any('frontmost' in arg for arg in sys.argv):
-                print('false')
-        ''')
+        # Keep foreground detection off; notification output is discarded.
+        self.stub('osascript', 'print("false")\n')
         self.stub('pbcopy', '''
             import os, pathlib, sys
             pathlib.Path(os.environ['FIXTURE_CLIPBOARD']).write_bytes(sys.stdin.buffer.read())
@@ -46,8 +43,8 @@ class ClipToRemote(unittest.TestCase):
         path.write_text('#!'+sys.executable+'\n'+textwrap.dedent(code))
         path.chmod(0o755)
 
-    def upload(self, path, **env):
-        return subprocess.run(['bash', str(SCRIPT), str(path)], env=dict(self.env, **env),
+    def upload(self, path):
+        return subprocess.run(['bash', str(SCRIPT), str(path)], env=self.env,
                               cwd=self.root, capture_output=True, text=True, timeout=10)
 
     def image(self, name='image.png'):
@@ -96,9 +93,12 @@ class ClipToRemote(unittest.TestCase):
         ''')
         self.assert_failed(self.upload(self.image()))
 
-    def test_remote_cleanup_failure_does_not_publish_a_path(self):
+    def test_remote_cleanup_failure_warns_but_keeps_successful_upload(self):
         self.stub('find', 'raise SystemExit(1)\n')
-        self.assert_failed(self.upload(self.image()))
+        source = self.image()
+        result = self.upload(source)
+        self.assert_uploaded(source, result)
+        self.assertIn('upload succeeded; old remote files could not be cleaned up', result.stderr)
 
 
 if __name__ == '__main__':

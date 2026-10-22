@@ -20,8 +20,8 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 
 | Suite | Real execution | Limit |
 | --- | --- | --- |
-| `unit` | Update, migration, diagnostics, recovery and source-snapshot cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer are mocks; no host software or settings changed |
-| `static` | Python/JSON/TOML parsing, shell syntax, whitespace and lock format | No template apply, download, external checksum verification or system validation |
+| `unit` | Update, migration, diagnostics, recovery, upload and preference-backup cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer and macOS preferences are mocks; no host software or settings changed |
+| `static` | Python/JSON/TOML parsing; discovered shell tools/configs; templates rendered for macOS/Linux × core/full before syntax checks; whitespace and lock format | No shell bodies executed, template apply, download, external checksum verification or system validation |
 | `cached-externals` | Verifies actual bytes of 24 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
 | `runtime` | Full Zsh load/completion init, Vim Python/Jedi/fzf/Tagbar/ALE, dedicated Tmux session/config | Requires the locked cache and existing tools; synthetic config/HOME; no installers |
 | `all` | `unit` + `static` | Does not include cache integration, runtime, VM or live software installation |
@@ -29,7 +29,7 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 The launcher isolates HOME, XDG paths, Git global/system configuration, temporary
 files and proxy/agent inheritance. Tests create synthetic identities and repositories;
 the caller's dotfiles are not applied or inspected. Unit tests must run as a non-root
-user and require installed Git, chezmoi and Zsh. Bash is required for static checks.
+user. Unit and static checks require installed Git, chezmoi, Bash and Zsh.
 Missing selected dependencies are `blocked` (exit 2), assertion failures are `failed`
 (exit 1), and successful selected suites return 0. Unselected/VM suites remain
 `not_run`; an overall `passed` only describes `selected_suites`.
@@ -45,6 +45,22 @@ restoration permits replanning, and switching full to core preserves optional fi
 The partial failure is injected, not a real disk-full or OS permission failure.
 VM recovery, backups of real software and installed package versions need separate
 acceptance in [the VM plan](macos-vm-acceptance.md).
+
+Shell discovery follows shebangs, Zsh configuration filenames and completion paths, including new
+untracked files in the checkout. Templates use synthetic config, HOME, state and
+cache; shared template helpers are loaded from source. The four platform/profile
+combinations cover both company and personal roles, but do not exhaust every
+capability or host-data combination. Syntax checks do not source scripts or run
+their commands. Regressions include an invalid Linux/full-only branch and a marker
+that must never be created by the checked shell body.
+
+Preference tests use typed plist exports from an in-memory `defaults` stand-in.
+They cover a preview without writes, backup-before-write, original value types and
+absent keys, preservation of unrelated edits, undoing a restore, repeated no-op
+apply, read/backup/write failures, rejected backup keys and readback mismatches.
+These tests do not change real preferences or prove that macOS UI honors the keys.
+Upload tests use a local SSH stand-in and temporary clipboard: write failures
+remain fatal, while failed old-file cleanup warns without discarding a successful upload.
 
 Source-snapshot regressions cover ignored files before/after planning, preservation
 of unmanaged targets, intentionally committed files matching ignore rules, and

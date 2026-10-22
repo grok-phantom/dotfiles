@@ -194,9 +194,11 @@ apply 会把这两种包装里的 roost 都拿掉。Codex 第一次看到新的�
 结果记在 `config.toml` 的 `[hooks.state]`。手写的 hooks 不受影响；设为 `false` 再 apply 会清理仍在托管范围内的对应条目，详见[关闭功能时的行为](docs/configuration.md#关闭功能时的行为)。
 没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 应用仓库另行安装。
 
-macOS 偏好保留在 `scripts/manual/macos-defaults.sh`，阅读脚本后可单独运行：
-`bash scripts/manual/macos-defaults.sh --apply`。它会改系统偏好并重启相关桌面进程，
-不在任一更新组件中自动调用。dotfiles 更新不要求授予 Full Disk Access。
+macOS 偏好通过 `scripts/manual/macos-defaults.sh` 手动管理，需要已有 Python 3.9+。
+先用 `--check` 预览；`--apply` 会在仓库外备份托管键的原值，再写入、回读并重启相关桌面进程。
+`--restore /path/to/backup.json` 只恢复这些键，并再次备份恢复前状态；无差异时不写入或重启。
+偏好清单、备份位置与失败处理见[命令参考](docs/commands.md#nori验证与手动系统偏好)。
+它不在任一更新组件中自动调用。dotfiles 更新不要求授予 Full Disk Access。
 登录 shell、Docker 组、服务、网络与持久权限由用户/infra 单独评审操作；这里没有自动命令。
 Docker 组访问接近 root 权限，不能当成普通 dotfiles 的便利设置。
 
