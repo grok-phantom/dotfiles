@@ -2,8 +2,10 @@ packages:
   darwin:
     brews:
       - ack
+      - atuin
       - bat
       - btop
+      - chezmoi
       - curl
       - direnv
       - eza
@@ -11,33 +13,35 @@ packages:
       - ffmpeg
       - fzf
       - gh
-      - glab
       - git
       - git-lfs
+      - glab
       - htop
+      - imagemagick
       - jq
       - lazygit
       - node
-      - python@3.14
+      - pandoc
+      - python@3.15
       - ripgrep
-      - tokei
       - tmux
-      - uv
+      - tokei
       - universal-ctags
+      - uv
       - vim
       - wget
       - yazi
+      - yt-dlp
       - zoxide
-      - atuin
-      - chezmoi
-      - pandoc
-      - imagemagick
-      - zellij
     casks:
-      - appcleaner
+      - 1password
+      - 1password-cli
       - alt-tab
+      - appcleaner
+      - bartender
       - betterdisplay
       - chatgpt
+      - codex
       - ghostty
       - google-chrome
       - hazel
@@ -45,42 +49,39 @@ packages:
       - iterm2
       - karabiner-elements
       - keka
+      - keyboard-maestro
       - neteasemusic
       - obsidian
+      - raycast
+      - rustdesk
+      - transmit
       - typora
       - visual-studio-code
       - wechat
       - zotero
-      - raycast
-      - 1password-cli
-      - 1password
-      - bartender
-      - keyboard-maestro
-      - transmit
-      - rustdesk
-      - claude-code
-      - codex
     # Existing casks remain the desktop group; role groups are explicit additions.
     cask_groups:
       personal: []
       company: []
   linux:
     brews:
-      - gh
-      - glab
-      - node
-      - python@3.14
-      - uv
-      - yazi
+      - atuin
       - btop
       - eza
-      - lazygit
-      - tokei
-      - zoxide
       - fzf
+      - gh
+      - glab
+      - lazygit
+      - node
+      - python@3.15
+      - tokei
+      - uv
       - vim
-      - atuin
+      - yazi
+      - zoxide
     apt:
+      # Baseline for hosts without Homebrew (e.g. ephemeral); where brew also installs
+      # fzf/vim, its newer copy wins on PATH.
       - ack
       - bat
       - curl
@@ -93,7 +94,7 @@ packages:
       - jq
       - ripgrep
       - tmux
-      - wget
       - universal-ctags
       - vim-nox
+      - wget
       - zsh

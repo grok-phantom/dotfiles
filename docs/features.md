@@ -134,6 +134,8 @@ Karabiner 只为配置中匹配的键盘把右 Option 映射为右 Command；不
 不代表该应用的用户设置由仓库托管，例如 VS Code 配置与 Settings Sync 仍由用户管理。
 Homebrew/apt 的安装与升级分开，版本不锁定；Miniforge 安装器固定版本和哈希，
 只管理 base 安装，不负责项目环境升级。
+Claude Code 不在清单中，用官方安装命令（`curl -fsSL https://claude.ai/install.sh | bash`）
+安装到 `~/.local/bin` 并自行更新。
 
 `scripts/test all` 运行 unit + static；cached-externals、runtime、终端检查、
 VM 验收是其他独立范围。CI 在 Linux/macOS 运行离线套件，另有 Gitleaks 秘密扫描
