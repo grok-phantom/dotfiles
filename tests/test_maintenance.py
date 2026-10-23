@@ -240,11 +240,15 @@ class LocalChoicesTests(base.Fixture):
         directories = ['bin','go/bin','.cargo/bin','.local/bin']
         for name in directories:
             (self.target/name).mkdir(parents=True)
+        # A cmux agent shim found late in PATH must end up ahead of the user directories.
+        shim = self.target/'.cmuxterm/cmux-cli-shims/test'
+        inherited = [p for p in self.env.get('PATH', os.defpath).split(os.pathsep) if 'cmux' not in p]
+        env = dict(self.env, TERM_PROGRAM='', PATH=os.pathsep.join(inherited+[str(shim)]))
         output = self.cmd(['zsh','-f','-c','source ~/.zshrc; source ~/.zshrc; print -l -- $path'],
-                          env=dict(self.env, TERM_PROGRAM='')).stdout.splitlines()
+                          env=env).stdout.splitlines()
         for name in directories:
             self.assertEqual(output.count(str(self.target/name)), 1)
-        self.assertEqual(output[:4], [str(self.target/name) for name in directories])
+        self.assertEqual(output[:5], [str(shim)]+[str(self.target/name) for name in directories])
 
     def test_conda_source_and_explicit_or_missing_script_hook_fallback(self):
         prefix = self.target/'opt/miniforge3'

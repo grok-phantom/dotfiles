@@ -14,7 +14,9 @@ dotfiles_paths=("$HOME/bin")
 for dotfiles_path in "$HOME/go/bin" "$HOME/.cargo/bin" "$HOME/.local/bin"; do
   [[ ! -d "$dotfiles_path" ]] || dotfiles_paths+=("$dotfiles_path")
 done
-path=("${dotfiles_paths[@]}" "${path[@]}")
+# cmux's claude/codex shims (local and in mirrored remote tmux) must stay first
+# so agent status reaches its sidebar.
+path=(${(M)path:#*/(cmux-cli-shims|cmux/tmux-agent)/*} "${dotfiles_paths[@]}" "${path[@]}")
 unset dotfiles_path dotfiles_paths
 
 {{ if $full -}}

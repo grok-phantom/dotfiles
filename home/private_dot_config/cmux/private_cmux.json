@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
+  "schemaVersion": 1,
+
+  "app": {
+    "sendAnonymousTelemetry": false
+  },
+
+  "remoteTmux": {
+    "beta": {
+      "enabled": true,
+      "newWorkspaceOnHost": { "enabled": true },
+      "originColors": { "enabled": true },
+      "originHostTitles": { "enabled": true }
+    }
+  },
+
+  "terminal": {
+    "textBoxSubmitActions": [
+      {
+        "id": "claude",
+        "title": "Claude",
+        "kind": "commandTemplate",
+        "commandTemplate": "claude -- {{prompt}}",
+        "systemImage": "sparkle",
+        "assetName": "AgentIcons/Claude",
+        "backgroundColorHex": "#F6D5C8"
+      },
+      {
+        "id": "codex",
+        "title": "Codex",
+        "kind": "commandTemplate",
+        "commandTemplate": "codex -- {{prompt}}",
+        "systemImage": "sparkles",
+        "assetName": "AgentIcons/Codex",
+        "backgroundColorHex": "#8FDBFF"
+      }
+    ]
+  }
+}

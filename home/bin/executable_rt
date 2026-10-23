@@ -6,7 +6,7 @@
 # Optional parameters:
 # @raycast.icon 🖥️
 # @raycast.packageName Dotfiles
-# @raycast.description Open a Ghostty tab attached to the tmux session on the remote dev host.
+# @raycast.description Mirror the remote dev host's tmux sessions into cmux (or one session), else open a Ghostty tab.
 # @raycast.argument1 { "type": "text", "placeholder": "session", "optional": true }
 set -eufo pipefail
 
@@ -18,8 +18,11 @@ Attach to tmux session SESSION (default: main) on a remote host over SSH,
 creating it if needed. Detach with the tmux prefix + d; the session keeps
 running on the remote host.
 
-Without a terminal (e.g. from Raycast), opens a new Ghostty tab and runs rt
-there instead.
+Without a terminal (e.g. from Raycast), mirrors into cmux when it is installed
+(RT_APP=ghostty to skip): the named session, or every session on the host when
+none is named. Otherwise it opens a new Ghostty tab and runs rt there instead.
+Reaching cmux from outside it needs its socket in password mode
+(Settings > Automation); the cmux CLI reads the password saved there.
 
 Host: -H, else $RT_HOST, else the first line of ~/.config/clip-to-remote/host
 (the same machine-local file clip-to-remote reads; not managed by chezmoi).
@@ -49,6 +52,24 @@ fi
 if [[ ! "$session" =~ ^[A-Za-z0-9_.-]+$ || ! "$host" =~ ^[A-Za-z0-9_.@-]+$ ]]; then
   echo "rt: host and session must be plain names" >&2
   exit 1
+fi
+
+cmux_cli=/Applications/cmux.app/Contents/Resources/bin/cmux
+if [[ (! -t 0 || ! -t 1) && "${RT_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
+  open -a cmux
+  for _ in {1..20}; do
+    "$cmux_cli" ping >/dev/null 2>&1 && break
+    sleep 0.5
+  done
+  # Sessions become cmux workspaces and windows tabs; closing a mirrored tab
+  # closes that tmux window on the host. Sessions are created from a login
+  # shell so the tmux server gets Homebrew's PATH.
+  if [[ -n "${1:-}" ]]; then
+    ssh "$host" "exec \"\$SHELL\" -lc 'tmux has-session -t $session 2>/dev/null || tmux new-session -d -s $session'"
+    exec "$cmux_cli" ssh-tmux "$host" attach "$session"
+  fi
+  ssh "$host" "exec \"\$SHELL\" -lc 'tmux has-session 2>/dev/null || tmux new-session -d -s main'"
+  exec "$cmux_cli" ssh-tmux "$host"
 fi
 
 if [[ ! -t 0 || ! -t 1 ]]; then
