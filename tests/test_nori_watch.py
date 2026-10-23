@@ -17,14 +17,16 @@ HEALTHY = {'running': True, 'schedule_enabled': True, 'maintenance_required': Fa
 
 
 def serve(test, code):
-    """A local server answering every GET/POST with `code`; returns its base URL and the request log."""
+    """A local server answering GET/POST with `code` (or, for a list, its codes in turn, then the last one
+    forever); returns its base URL and the request log."""
     log = []
+    codes = list(code) if isinstance(code, list) else [code]
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def answer(self):
             length = int(self.headers.get('Content-Length') or 0)
             log.append((self.command, self.path, self.rfile.read(length)))
-            self.send_response(code)
+            self.send_response(codes.pop(0) if len(codes) > 1 else codes[0])
             self.send_header('Content-Length', '0')
             self.end_headers()
         do_GET = do_POST = answer
@@ -60,7 +62,8 @@ class NoriWatch(unittest.TestCase):
 
     def run_watch(self, *extra, proxy=None):
         env = dict(os.environ, NORI_WATCH_NORI=str(self.nori), NORI_WATCH_BARK=str(self.dir / 'bark.url'),
-                   NORI_WATCH_STATE=str(self.dir / 'state/state.json'), HOME=self.tmp.name)
+                   NORI_WATCH_STATE=str(self.dir / 'state/state.json'), NORI_WATCH_RETRY_PAUSES='0 0',
+                   HOME=self.tmp.name)
         for key in ('http_proxy', 'https_proxy', 'all_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY'):
             env.pop(key, None)  # the GUI proxy agent sets these for the login session; the script must not need them
         args = [sys.executable, str(SCRIPT), '--config', '~/nori.yaml', '--name', 'mac',
@@ -90,6 +93,14 @@ class NoriWatch(unittest.TestCase):
         self.assertEqual(self.printed(proxy=closed), ['request through the proxy failed: URLError'])
         self.direct = closed
         self.assertEqual(self.printed(proxy=closed), ['ok'])  # offline: no proxy verdict
+
+    def test_proxy_hiccup_is_retried_before_it_counts(self):
+        flaky, log = serve(self, [503, 503, 204])
+        self.assertEqual(self.printed(proxy=flaky), ['ok'])
+        self.assertEqual(len(log), 3)
+        down, log = serve(self, 503)
+        self.assertEqual(self.printed(proxy=down), ['request through the proxy failed: 503'])
+        self.assertEqual(len(log), 3)
 
     def test_only_changes_are_pushed_directly_to_bark(self):
         self.status(running=False)
