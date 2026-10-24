@@ -103,7 +103,7 @@ full 只选择功能，不复制身份、SSH 密钥、公司连接或其他机�
 Jedi 的 Jedi/Parso 子模块及 Jedi 的 typeshed、django-stubs 递归依赖，分别固定到父项目所引用的 commit；Yazi smart-enter 由锁定归档提供。
 ALE 从同一锁定 amix 归档单独提取到 `.vim/bundle/ale`，避免依赖旧机自管目录。
 Vim 的 `.vimrc` 和 Tmux 的 `.tmux.conf` 现在是可 diff 的目标；不再运行上游安装器或 `ln -sf`。
-`~/.tmux.conf.local` 保持用户自管。full 配置建议先应用 externals，避免缺少插件或产生临时悬空链接。
+`~/.tmux.conf.local` 由仓库托管，加载上游模板后追加本地覆盖。full 配置建议先应用 externals，避免缺少插件或产生临时悬空链接。
 
 ## 软件安装和升级：单独执行
 
