@@ -6,13 +6,18 @@
     "sendAnonymousTelemetry": false
   },
 
+  "sidebar": {
+    "showBranchDirectory": false
+  },
+
   "remoteTmux": {
     "beta": {
       "enabled": true,
       "newWorkspaceOnHost": { "enabled": true },
       "originColors": { "enabled": true },
       "originHostTitles": { "enabled": true }
-    }
+    },
+    "multiplexer": { "beta": { "enabled": true } }
   },
 
   "terminal": {

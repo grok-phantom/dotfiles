@@ -66,7 +66,8 @@ C/C++ 的 clang-tidy/clang-format 由项目环境提供；Tagbar 依赖 Ctags，
 
 Tmux 使用锁定的 `gpakosz/.tmux`，`~/.tmux.conf` 是托管链接，
 `~/.tmux.conf.local` 也由仓库托管：先加载上游模板，再追加本地覆盖
-（例如用 Claude Code 的标题给窗口命名）。Yazi 的 smart-enter 同样来自锁定归档。
+（例如用 Claude Code 的标题给窗口命名）。cmux 新建的 `cmux-new-*` 会话在 shell
+第一次进入目录时改名为该目录名，侧边栏显示项目名。Yazi 的 smart-enter 同样来自锁定归档。
 外部目录有 `exact` 管理，额外文件可能被删除；自有配置放在外部目录之外。
 
 macOS full 管理 iTerm2 的 `wizplus` Dynamic Profile 和 Ghostty 配置，不自动切换
