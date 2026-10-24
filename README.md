@@ -194,6 +194,11 @@ apply 会把这两种包装里的 roost 都拿掉。Codex 第一次看到新的�
 结果记在 `config.toml` 的 `[hooks.state]`。手写的 hooks 不受影响；设为 `false` 再 apply 会清理仍在托管范围内的对应条目，详见[关闭功能时的行为](docs/configuration.md#关闭功能时的行为)。
 没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 应用仓库另行安装。
 
+`data.tmux_agent_notify = true` 用在被 cmux 远程镜像 tmux 的主机上：给 `~/.claude/settings.json` 的
+`Notification` 和 `Stop` 各加一条 `~/bin/tmux-agent-notify`。在 tmux 里时它把消息（或 Claude 最后的回复）
+作为 OSC 777 通知写进 agent 所在 pane，cmux 显示成该工作区的通知；cmux 自带的远程钩子只传运行状态。
+需要 `jq`；不在 tmux 里时什么都不做。设为 `false` 再 apply 会移除这两条。
+
 macOS 偏好通过 `scripts/manual/macos-defaults.sh` 手动管理，需要已有 Python 3.9+。
 先用 `--check` 预览；`--apply` 会在仓库外备份托管键的原值，再写入、回读并重启相关桌面进程。
 `--restore /path/to/backup.json` 只恢复这些键，并再次备份恢复前状态；无差异时不写入或重启。

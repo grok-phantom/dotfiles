@@ -124,6 +124,22 @@ class LocalChoicesTests(base.Fixture):
         self.assertEqual(off['hooks'], {'Stop': [mine]})
         self.assertIsNone(self.render_claude({'claude_proxy': False}, '{}'))
 
+    def test_tmux_agent_notify_hooks_only_notification_and_stop(self):
+        command = f'{self.target}/bin/tmux-agent-notify'
+        mine = {'hooks': [{'type': 'command', 'command': 'say done'}]}
+        current = json.dumps({'hooks': {'Stop': [mine]}})
+        on = self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True}, current)
+        merged = json.loads(on)
+        self.assertEqual(sorted(merged['hooks']), ['Notification', 'Stop'])
+        self.assertEqual(merged['hooks']['Stop'][0], mine)
+        for event in ('Notification', 'Stop'):
+            self.assertEqual(merged['hooks'][event][-1], {'hooks': [{'type': 'command', 'command': command, 'timeout': 5}]})
+        # Next to roost's entries, both stay put on a second apply.
+        both = self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True, 'roost_hooks': True}, on)
+        self.assertEqual(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True, 'roost_hooks': True}, both), both)
+        off = json.loads(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': False, 'automation_git': True}, on))
+        self.assertEqual(off['hooks'], {'Stop': [mine]})
+
     def render_codex(self, data, content, name='config.toml'):
         self.config.write_text(json.dumps({'data': dict(profile='full', ephemeral=False, claude_proxy=False, **data)}))
         (self.target/'.codex').mkdir(exist_ok=True)

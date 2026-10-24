@@ -38,34 +38,41 @@
 {{-   end -}}
 {{- end -}}
 {{- $changed := false -}}
-{{- /* roost_hooks: report agent state to roost (tmux pane options and phone pushes, see the roost repo).
-       Its entries are recognised by their command, so hooks added by hand are left alone. */ -}}
-{{- $roostOn := get . "roost_hooks" -}}
-{{- $roostCommand := printf "%s/bin/roost hook claude" .chezmoi.homeDir -}}
-{{- $roostGroup := dict "hooks" (list (dict "type" "command" "command" $roostCommand "timeout" 10)) -}}
+{{- /* Managed hook groups, recognised by their command so hooks added by hand are left alone.
+       roost_hooks: report agent state to roost (tmux pane options and phone pushes, see the roost repo).
+       tmux_agent_notify: inside tmux, turn Notification/Stop into OSC 777 notifications, which cmux's
+       remote tmux mirror shows per workspace (its own remote hooks carry only the agent state). */ -}}
+{{- $allEvents := list "SessionStart" "UserPromptSubmit" "PreToolUse" "PostToolUse" "PostToolUseFailure" "PermissionRequest" "PermissionDenied" "Notification" "Stop" "StopFailure" "SessionEnd" -}}
+{{- $managed := list
+      (dict "command" (printf "%s/bin/roost hook claude" .chezmoi.homeDir) "timeout" 10 "events" $allEvents "on" (get . "roost_hooks"))
+      (dict "command" (printf "%s/bin/tmux-agent-notify" .chezmoi.homeDir) "timeout" 5 "events" (list "Notification" "Stop") "on" (get . "tmux_agent_notify")) -}}
 {{- if and (hasKey $settings "hooks") (not (kindIs "map" (get $settings "hooks"))) -}}
 {{-   fail "Claude settings.json hooks must contain a JSON object" -}}
 {{- end -}}
 {{- $hooks := get $settings "hooks" | default (dict) -}}
 {{- $hooksChanged := false -}}
-{{- range $event := list "SessionStart" "UserPromptSubmit" "PreToolUse" "PostToolUse" "PostToolUseFailure" "PermissionRequest" "PermissionDenied" "Notification" "Stop" "StopFailure" "SessionEnd" -}}
-{{-   $kept := list -}}
-{{-   $ours := list -}}
-{{-   range $group := get $hooks $event | default (list) -}}
-{{-     $mine := false -}}
-{{-     range $hook := get $group "hooks" | default (list) -}}
-{{-       if eq (toString (get $hook "command")) $roostCommand -}}{{- $mine = true -}}{{- end -}}
+{{- range $m := $managed -}}
+{{-   $command := $m.command -}}
+{{-   $wantedGroup := dict "hooks" (list (dict "type" "command" "command" $command "timeout" $m.timeout)) -}}
+{{-   range $event := $allEvents -}}
+{{-     $kept := list -}}
+{{-     $ours := list -}}
+{{-     range $group := get $hooks $event | default (list) -}}
+{{-       $mine := false -}}
+{{-       range $hook := get $group "hooks" | default (list) -}}
+{{-         if eq (toString (get $hook "command")) $command -}}{{- $mine = true -}}{{- end -}}
+{{-       end -}}
+{{-       if $mine -}}{{- $ours = append $ours $group -}}{{- else -}}{{- $kept = append $kept $group -}}{{- end -}}
 {{-     end -}}
-{{-     if $mine -}}{{- $ours = append $ours $group -}}{{- else -}}{{- $kept = append $kept $group -}}{{- end -}}
-{{-   end -}}
-{{-   if $roostOn -}}
-{{-     if not (and (eq (len $ours) 1) (eq (index $ours 0 | toJson) ($roostGroup | toJson))) -}}
+{{-     if and $m.on (has $event $m.events) -}}
+{{-       if not (and (eq (len $ours) 1) (eq (index $ours 0 | toJson) ($wantedGroup | toJson))) -}}
+{{-         $hooksChanged = true -}}
+{{-         $_ := set $hooks $event (append $kept $wantedGroup) -}}
+{{-       end -}}
+{{-     else if $ours -}}
 {{-       $hooksChanged = true -}}
-{{-       $_ := set $hooks $event (append $kept $roostGroup) -}}
+{{-       if $kept -}}{{- $_ := set $hooks $event $kept -}}{{- else -}}{{- $_ := unset $hooks $event -}}{{- end -}}
 {{-     end -}}
-{{-   else if $ours -}}
-{{-     $hooksChanged = true -}}
-{{-     if $kept -}}{{- $_ := set $hooks $event $kept -}}{{- else -}}{{- $_ := unset $hooks $event -}}{{- end -}}
 {{-   end -}}
 {{- end -}}
 {{- if $hooksChanged -}}

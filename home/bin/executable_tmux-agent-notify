@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Claude Code hook (Notification, Stop). Inside tmux, writes the message to the
+# agent's pane as an OSC 777 notification: cmux's remote tmux mirror shows it
+# as that workspace's notification, which its own remote hooks don't carry.
+# Elsewhere it does nothing. Never fails the hook.
+set -eufo pipefail
+
+notify() {
+  [[ -n "${TMUX_PANE:-}" ]] || return 0
+  command -v jq >/dev/null && command -v tmux >/dev/null || return 0
+  local line tty
+  # Notification carries message; Stop carries Claude's last reply. One line,
+  # no control bytes, and no ; in the title (it separates title from body).
+  line="$(jq -r '
+    def clean: explode | map(if . < 32 or . == 127 then 32 else . end) | implode;
+    (if .hook_event_name == "Stop" then "完成：" + (.last_assistant_message // "本轮结束")
+     else .message // empty end) as $body
+    | select($body != "")
+    | "Claude Code · " + ((.cwd // "") | split("/") | map(select(. != "")) | last // "~") as $title
+    | ($title | clean | gsub(";"; ",")) + ";" + ($body | clean | .[:200])
+  ')"
+  [[ -n "$line" ]] || return 0
+  tty="$(tmux display-message -p -t "$TMUX_PANE" '#{pane_tty}')"
+  [[ -w "$tty" ]] || return 0
+  printf '\033]777;notify;%s\a' "$line" >"$tty"
+}
+
+notify 2>/dev/null || true
