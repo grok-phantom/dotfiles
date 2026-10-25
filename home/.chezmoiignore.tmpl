@@ -26,7 +26,8 @@ workspace
 {{-   $claudeProxy = and (eq .chezmoi.os "darwin") (not (get . "ephemeral")) }}
 {{- end }}
 {{ if not $claudeProxy }}
-{{   if not (or (get . "automation_git") (get . "roost_hooks") (get . "tmux_agent_notify")) }}
+{{- /* Set at all (true or false), so switching one off still removes its entries. */}}
+{{   if not (or (hasKey . "automation_git") (hasKey . "roost_hooks") (hasKey . "tmux_agent_notify")) }}
 .claude/settings.json
 {{   end }}
 Library/LaunchAgents/local.dotfiles.gui-proxy.plist

@@ -96,6 +96,9 @@ class LocalChoicesTests(base.Fixture):
             'proxy_http_port': '18080'}, json.dumps(merged)))
         self.assertFalse([key for key in off['env'] if key.startswith('GIT_CONFIG_')])
         self.assertEqual(off['env']['KEEP'], '1')
+        # Off without the proxy (nothing else managed) still removes them.
+        bare = json.loads(self.render_claude({'claude_proxy': False, 'automation_git': False}, json.dumps(merged)))
+        self.assertEqual(bare['env'], {'KEEP': '1'})
         # A GIT_CONFIG_* set by hand is left alone.
         manual = '{"env":{"GIT_CONFIG_COUNT":"1","GIT_CONFIG_KEY_0":"core.pager","GIT_CONFIG_VALUE_0":"cat"}}'
         kept = json.loads(self.render_claude({'claude_proxy': True, 'proxy_host': '127.0.0.1',
@@ -120,7 +123,8 @@ class LocalChoicesTests(base.Fixture):
         # Already applied: passes through byte for byte.
         self.assertEqual(self.render_claude({'claude_proxy': False, 'roost_hooks': True}, on), on)
         # Off keeps the hand-written hook and drops events that only had roost's.
-        off = json.loads(self.render_claude({'claude_proxy': False, 'roost_hooks': False, 'automation_git': True}, on))
+        # This works with no other switch set, so nothing is left behind on proxy-less hosts.
+        off = json.loads(self.render_claude({'claude_proxy': False, 'roost_hooks': False}, on))
         self.assertEqual(off['hooks'], {'Stop': [mine]})
         self.assertIsNone(self.render_claude({'claude_proxy': False}, '{}'))
 
@@ -137,7 +141,7 @@ class LocalChoicesTests(base.Fixture):
         # Next to roost's entries, both stay put on a second apply.
         both = self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True, 'roost_hooks': True}, on)
         self.assertEqual(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True, 'roost_hooks': True}, both), both)
-        off = json.loads(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': False, 'automation_git': True}, on))
+        off = json.loads(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': False}, on))
         self.assertEqual(off['hooks'], {'Stop': [mine]})
 
     def render_codex(self, data, content, name='config.toml'):
@@ -283,6 +287,23 @@ class LocalChoicesTests(base.Fixture):
         self.assertEqual(self.cmd(command, env=dict(self.env,DOTFILES_CONDA_INIT='hook')).stdout.strip(), 'hook')
         script.unlink()
         self.assertEqual(self.cmd(command).stdout.strip(), 'hook')
+
+    def test_proxy_wrappers_survive_shell_snapshot_without_underscore_functions(self):
+        # Claude Code's shell snapshot keeps chezmoi()/brew() but drops _-prefixed functions.
+        rendered = self.cmd(['chezmoi', '--source', self.repo, '--destination', self.target,
+                    '--config', self.config, '--override-data',
+                    '{"proxy_host":"127.0.0.1","proxy_http_port":"18080","proxy_socks_port":"18081"}',
+                    'execute-template', '--file', self.repo/'home/private_dot_config/zsh/conf.d/40-proxy.zsh.tmpl']).stdout
+        proxy = self.target/'40-proxy.zsh'
+        proxy.write_text(rendered)
+        fake = self.target/'fake-bin'
+        fake.mkdir()
+        (fake/'chezmoi').write_text('#!/bin/sh\necho "${HTTPS_PROXY:-direct}"\n')
+        (fake/'chezmoi').chmod(0o755)
+        env = dict(self.env, PATH=os.pathsep.join([str(fake), self.env.get('PATH', os.defpath)]))
+        output = self.cmd(['zsh', '-f', '-c', f'source {proxy}; unfunction -m "_*" 2>/dev/null; '
+                           'chezmoi; DOTFILES_PROXY_MODE=on chezmoi'], env=env).stdout.split()
+        self.assertEqual(output, ['direct', 'http://127.0.0.1:18080'])
 
 
 class CaskChoicesTests(unittest.TestCase):

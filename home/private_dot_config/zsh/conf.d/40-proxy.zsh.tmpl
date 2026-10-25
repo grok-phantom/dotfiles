@@ -22,15 +22,17 @@ proxyon() {
   export NO_PROXY="$no_proxy"
 }
 
+# Helpers called by other functions take no leading _: Claude Code's shell
+# snapshot drops _-prefixed functions, which would break their callers there.
 # Sets remote_http_port/remote_socks_port in the caller, which declares them local.
-_dotfiles_remote_proxy_ports() {
+dotfiles_remote_proxy_ports() {
   remote_http_port="${SSH_PROXY_REMOTE_HTTP_PORT:-7890}"
   remote_socks_port="${SSH_PROXY_REMOTE_SOCKS_PORT:-7891}"
 }
 
 proxyon-ssh() {
   local remote_http_port remote_socks_port
-  _dotfiles_remote_proxy_ports
+  dotfiles_remote_proxy_ports
   export http_proxy="http://127.0.0.1:${remote_http_port}"
   export https_proxy="$http_proxy"
   export all_proxy="socks5://127.0.0.1:${remote_socks_port}"
@@ -84,7 +86,7 @@ sshproxy() {
   fi
 
   local remote_http_port remote_socks_port
-  _dotfiles_remote_proxy_ports
+  dotfiles_remote_proxy_ports
   command ssh \
     -o ExitOnForwardFailure=yes \
     -R "${remote_http_port}:${proxy_host}:${proxy_http_port}" \
@@ -102,7 +104,7 @@ sshproxy-tunnel() {
 }
 
 # Run a command direct by default, or through the proxy with DOTFILES_PROXY_MODE=on.
-_dotfiles_proxy_mode() {
+dotfiles_proxy_mode() {
   local name="$1"
   shift
   case "${DOTFILES_PROXY_MODE:-off}" in
@@ -121,11 +123,11 @@ _dotfiles_proxy_mode() {
 }
 
 if command -v chezmoi >/dev/null 2>&1; then
-  chezmoi() { _dotfiles_proxy_mode chezmoi "$@"; }
+  chezmoi() { dotfiles_proxy_mode chezmoi "$@"; }
 fi
 {{- if eq .chezmoi.os "darwin" }}
 if command -v brew >/dev/null 2>&1; then
-  brew() { _dotfiles_proxy_mode brew "$@"; }
+  brew() { dotfiles_proxy_mode brew "$@"; }
 fi
 {{- end }}
 {{- end }}
