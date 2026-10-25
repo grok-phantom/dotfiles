@@ -87,6 +87,8 @@ agent 转发并启用连接复用。转发应在特定主机块中按需设置�
 管理，单独使用 `known_hosts.temp`；清单中的到期项在后续命令运行时清理。
 
 `rt` 连接或创建远程 tmux 会话，可用于运行 Codex；它不依赖 Claude Remote Control。
+在 cmux 里重跑 `rt` 时，若本机 cmux 与该主机的镜像连接已断（窗口冻结），会先分离旧镜像
+（远端会话保留）再重新镜像，不必手动关掉冻结的窗口。
 `clip-to-remote` / `shot-to-remote` 上传图片并
 复制远端路径，上传时清理远端缓存中超过 7 天的文件。主机名保存在本机配置中。
 三个命令可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。

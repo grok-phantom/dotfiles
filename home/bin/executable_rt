@@ -21,6 +21,8 @@ running on the remote host.
 Without a terminal (e.g. from Raycast), mirrors into cmux when it is installed
 (RT_APP=ghostty to skip): the named session, or every session on the host when
 none is named. Otherwise it opens a new Ghostty tab and runs rt there instead.
+If cmux's mirror of the host has lost its connection (frozen workspaces), rt
+detaches it first so the mirror starts fresh; remote sessions keep running.
 Reaching cmux from outside it needs its socket in password mode
 (Settings > Automation); the cmux CLI reads the password saved there.
 
@@ -65,10 +67,37 @@ if [[ (! -t 0 || ! -t 1) && "${RT_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
   # closes that tmux window on the host. Sessions are created from a login
   # shell so the tmux server gets Homebrew's PATH.
   if [[ -n "${1:-}" ]]; then
-    ssh "$host" "exec \"\$SHELL\" -lc 'tmux has-session -t $session 2>/dev/null || tmux new-session -d -s $session'"
+    ensure="tmux has-session -t '=$session' 2>/dev/null || tmux new-session -d -s '$session'"
+  else
+    ensure="tmux has-session 2>/dev/null || tmux new-session -d -s main"
+  fi
+  # cmux mirrors a host through one hidden tmux session tagged with this
+  # install's owner id. After a dropped connection its workspaces can stay
+  # frozen, and ssh-tmux only refocuses them. So ask the host whether that
+  # stream is still attached; if not, detach every session here (the remote
+  # sessions keep running), which drops the dead mirror so ssh-tmux starts a
+  # fresh one. A fresh ssh connection avoids a stale ControlMaster.
+  owner="$(defaults read com.cmuxterm.app remoteTmux.multiplexer.ownerId 2>/dev/null || true)"
+  [[ "$owner" =~ ^[A-Za-z0-9-]+$ ]] || owner=""
+  probe="$(ssh -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=10 "$host" 'exec "$SHELL" -l' <<EOF
+$ensure
+if tmux list-clients -F '#{client_control_mode} #{@cmux_view_owner}' 2>/dev/null | grep -qx '1 $owner'; then
+  echo rt-mirror:live
+else
+  echo rt-mirror:stale
+fi
+tmux list-sessions -F 'rt-session:#{session_name}' 2>/dev/null | grep -v '^rt-session:cmux-view-' || true
+EOF
+)"
+  if [[ -n "$owner" ]] && grep -qx rt-mirror:stale <<<"$probe"; then
+    while IFS= read -r name; do
+      [[ "$name" =~ ^[A-Za-z0-9_.-]+$ ]] || continue
+      "$cmux_cli" rpc remote.tmux.detach "{\"host\":\"$host\",\"session\":\"$name\"}" >/dev/null 2>&1 || true
+    done < <(sed -n 's/^rt-session://p' <<<"$probe")
+  fi
+  if [[ -n "${1:-}" ]]; then
     exec "$cmux_cli" ssh-tmux "$host" attach "$session"
   fi
-  ssh "$host" "exec \"\$SHELL\" -lc 'tmux has-session 2>/dev/null || tmux new-session -d -s main'"
   exec "$cmux_cli" ssh-tmux "$host"
 fi
 
