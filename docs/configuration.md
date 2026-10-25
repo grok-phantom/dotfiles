@@ -55,6 +55,7 @@
 | `proxy_socks_port` | macOS 6153；其他平台 7890 | SOCKS 代理端口 |
 | `claude_proxy` | 非 ephemeral macOS 默认 true，其他默认 false | 合并 Claude 代理 env；macOS full 同时管理 GUI 代理 LaunchAgent |
 | `automation_git` | 默认关闭 | Claude 子进程 Git 使用 gh HTTPS 凭据和本机 `~/.ssh/automation-signing` |
+| `automation_git_global` | 默认关闭 | 把 `automation_git` 的做法用到这台机器上所有 git（终端、Codex 等）：写进 `~/.config/git/config` 末尾，个人目录也用本机签名钥；适合无人值守的远程开发主机 |
 | `automation_signing_pubkey` | 默认空 | 与 `personal_email` 一起增加本地 Git allowed signer；不生成私钥 |
 | `roost_hooks` | 未设置时忽略 Codex；true 开启，显式 false 用于清理 | Claude/Codex 生命周期 hooks，并清理旧 Codex notify 包装；需已安装 `~/bin/roost` |
 | `tmux_agent_notify` | 默认关闭 | Claude 的 Notification/Stop 在 tmux 里写成 OSC 777 通知，供 cmux 远程镜像显示；需 `jq` |
@@ -98,7 +99,8 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 | `SERVE_HERE_BIND` | 127.0.0.1；HTTP 文件服务监听地址 |
 | `WORKSPACE_ROOT` / `WORKSPACE_VOLUME_UUID` / `WORKSPACE_COMPANY` | 覆盖命令的 workspace 根目录、卷校验值和公司目录选择；不改变 chezmoi 符号链接目标 |
 | `~/.config/workspace/repos.tsv` | workspace clone 默认清单；使用自定义 XDG_CONFIG_HOME 时随之改变 |
-| `RT_HOST` / `CLIP_REMOTE_HOST` | 远程 tmux / 图片上传的主机，低于命令行 `-H` 的优先级 |
+| `RT_HOST` / `CLIP_REMOTE_HOST` | 远程 tmux（含 `rtunnel`）/ 图片上传的主机，低于命令行 `-H` 的优先级 |
+| `RTUNNEL_PORT` | 2222；`rtunnel` 在远端 127.0.0.1 上监听的端口 |
 | `~/.config/clip-to-remote/host` | 上述变量和 `-H` 均未指定时，取第一行 |
 | `SSHTMP_FILE` | 默认 `~/.ssh/config.d/temp.conf`；测试可用 `SSHTMP_TODAY` 固定日期 |
 | `NORI_WATCH_NORI` | 默认 `~/.local/bin/nori` |

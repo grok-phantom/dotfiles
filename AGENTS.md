@@ -24,13 +24,20 @@ source tree，而不是通用软件项目。
 - `home/.chezmoidata/packages.yaml` 是受支持平台的软件包清单。
 - `home/.chezmoiexternal.toml.tmpl` 声明外部获取的 archives、repositories、
   fonts 和 plugins。
-- `home/.chezmoiignore.tmpl` 控制不同平台下哪些目标文件会被忽略。
+- `home/.chezmoiignore.tmpl` 控制不同平台、profile 和本机开关下哪些目标被忽略；
+  按机器开启的功能（SSH、Claude、Codex、nori）都在这里守卫。
+- `home/.chezmoitemplates/` 放多个目标共用的模板（代理地址、nori 配置）。
 - `scripts/dotfiles` 管理配置更新；`scripts/software` 管理显式软件操作。
 - `scripts/manual/` 保存单独审查执行的系统偏好；不恢复自动安装脚本。
-- `home/dot_zshrc.tmpl`、`home/dot_zprofile.tmpl` 及相关 shell 文件定义交互式
-  shell 行为。
+- `home/dot_zshrc.tmpl`、`home/dot_zprofile.tmpl` 和
+  `home/private_dot_config/zsh/conf.d/` 定义交互式 shell 行为。
 - `home/private_dot_config/` 映射到 `~/.config/` 下的 private files。
+- `home/bin/` 映射到 `~/bin`：远程开发（`rt`、`clip-to-remote`、`shot-to-remote`）、
+  SSH 临时主机、workspace、agent 通知和检查脚本。
+- `home/private_dot_claude/`、`home/dot_codex/` 是 Claude Code / Codex 的
+  `modify_` 模板，只合并本仓库自有的键和 hooks。
 - `home/Library/` 是 macOS-specific target content。
+- `docs/` 是用户文档，`README.md` 是导航；`tests/` 由 `./scripts/test all` 运行。
 
 ## 命名与结构
 
@@ -39,6 +46,9 @@ source tree，而不是通用软件项目。
   - `private_foo` 渲染为 private permissions。
   - `exact_foo` 管理 exact directory。
   - `*.tmpl` 文件是由 chezmoi 渲染的 Go templates。
+  - `executable_`、`symlink_` 分别生成可执行文件和符号链接。
+  - `modify_` 读取目标现有内容再输出新内容，用于应用自己也会写的文件；
+    不加 `.tmpl` 也会按模板渲染。
 - 新增托管文件时，放在 `home/` 下，并用文件名编码目标路径。
 - 平台特定行为优先放在 template 条件或平台特定脚本目录中，不要复制整份文件。
 - 软件包变更集中放在 `home/.chezmoidata/packages.yaml`，除非该包确实属于外部资源
@@ -62,6 +72,19 @@ source tree，而不是通用软件项目。
 - 在加入会安装、删除、覆盖或获取资源的命令前，尽量让它们具备条件判断和幂等性。
 - 避免在脚本里加入交互式 prompt，除非该脚本明确用于 chezmoi 初始化阶段提问。
 
+## 远程开发与 agent 集成
+
+- 远程主机名只放本机：`-H`、环境变量或 `~/.config/clip-to-remote/host`；
+  脚本和文档里不写具体主机名或地址。
+- 远端登回本机只用 `rtunnel` 按需打开，不做常驻隧道。
+- `~/bin` 下的远程工具要同时能在终端和 Raycast（无 TTY）里运行，保留 Raycast 头。
+- 在远端执行的命令走登录 shell（`"$SHELL" -l`），否则拿不到 Homebrew 的 PATH。
+- 远端不能有需要在它屏幕上点的确认：SSH 会话里的签名、push 走转发 agent，
+  Claude 自己跑的 git 用 `automation_git`，整台远端主机用 `automation_git_global`。
+- agent hooks 由本机 data 开关逐机启用；缺工具时静默跳过并返回 0，绝不让 agent 失败；
+  合并时保留用户手写的 hooks，关闭开关再 apply 能清理自己加的条目。
+- tmux 一个项目一个会话（cmux 侧边栏一行对应一个会话），不要再合并成单个大会话。
+
 ## 验证
 
 使用能证明改动的最小验证方式：
@@ -72,6 +95,8 @@ source tree，而不是通用软件项目。
 - 对 shell scripts，运行 `bash -n <script>` 或对应 shell 的语法检查。
 - 对 JSON、TOML、YAML，使用可用的 parser 或 formatter check。
 - 对 Git 配置变更，在声称行为正确前，先检查渲染后的文件。
+- 提交前运行 `./scripts/test all`；新增 data 开关时同时更新 `home/.chezmoi.toml.tmpl`
+  的保留列表、`docs/configuration.md` 和 `docs/features.md`，并补测试。
 
 如果某个命令不可用，或验证会对真实机器产生非平凡影响，最终回复里必须明确说明。
 

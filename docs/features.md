@@ -86,12 +86,14 @@ agent 转发并启用连接复用。转发应在特定主机块中按需设置�
 登录时维护稳定的 agent socket 链接供长寿命 tmux 会话使用。临时主机由 `sshtmp`
 管理，单独使用 `known_hosts.temp`；清单中的到期项在后续命令运行时清理。
 
-`rt` 连接或创建远程 tmux 会话，可用于运行 Codex；它不依赖 Claude Remote Control。
+`rt` 连接或创建远程 tmux 会话，可用于运行 Claude Code 或 Codex。
 在 cmux 里重跑 `rt` 时，若本机 cmux 与该主机的镜像连接已断（窗口冻结），会先分离旧镜像
 （远端会话保留）再重新镜像，不必手动关掉冻结的窗口。
 `clip-to-remote` / `shot-to-remote` 上传图片并
 复制远端路径，上传时清理远端缓存中超过 7 天的文件。主机名保存在本机配置中。
-三个命令可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。
+`rtunnel` 按需打开反向隧道，让远端登回本机，默认 2 小时后自动关闭。
+这几个命令都可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。
+`automation_git_global` 让无人值守的远程主机上所有 git 都不等 1Password 批准。
 
 ## 代理、AI 工具与 nori
 
@@ -144,14 +146,3 @@ Claude Code 不在清单中，用官方安装命令（`curl -fsSL https://claude
 `scripts/test all` 运行 unit + static；cached-externals、runtime、终端检查、
 VM 验收是其他独立范围。CI 在 Linux/macOS 运行离线套件，另有 Gitleaks 秘密扫描
 和每月 GitHub Actions Dependabot 更新；详情见[测试说明](testing.md)。
-
-## 已退役的集成
-
-Claude 跨 Mac 记忆同步和 Remote Control 已于 2026-10-21 退役，
-对应 [PR #17](https://github.com/grok-phantom/dotfiles/pull/17) 已关闭而未合并。
-仓库不提供 `claude-memory-link`、`claude-rc` 或其定时守护，也不管理
-`claude_rc` / `claude_rc_dirs` 数据项。
-
-曾从该分支安装的主机需单独停止定时器和专用会话、移除旧工具与本机数据项；
-记忆链接应先复制并校验为本地内容，保留共享目录原件和恢复备份。
-切换分支不会自动清理这些目标。通用 `rt`、截图上传和上述 Claude/Codex 配置继续保留。

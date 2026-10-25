@@ -83,7 +83,7 @@
 {{ if hasKey . "personal_git_dir" }}
     personal_git_dir = {{ .personal_git_dir | quote }}
 {{ end }}
-{{ range $key := list "ssh_managed" "ssh_1password_agent" "personal_git_signing" "nori_watch" "automation_git" "roost_hooks" "tmux_agent_notify" }}
+{{ range $key := list "ssh_managed" "ssh_1password_agent" "personal_git_signing" "nori_watch" "automation_git" "automation_git_global" "roost_hooks" "tmux_agent_notify" }}
 {{   if hasKey $ $key }}
     {{ $key }} = {{ get $ $key }}
 {{   end }}

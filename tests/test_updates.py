@@ -647,6 +647,23 @@ class TemplateTests(Fixture):
             self.repo/'home/private_dot_config/git/personal.conf.tmpl',extra={'email':'work@example.invalid'}).stdout
         self.assertEqual(empty.strip(),'')
 
+    def test_automation_git_global_overrides_personal_signing_last(self):
+        path = self.repo/'home/private_dot_config/git/config.tmpl'
+        extra = {'personal_email':'me@example.invalid'}
+        self.assertNotIn('automation-signing', self.chezmoi('core','config','execute-template','--file',path,
+            extra=extra).stdout)
+        config = self.chezmoi('core','config','execute-template','--file',path,
+            extra=dict(extra, automation_git_global=True)).stdout
+        self.assertLess(config.index('personal.conf'), config.index('automation-signing'))
+        gitconfig = self.root/'automation.gitconfig'
+        gitconfig.write_text(config)
+        def get(key):
+            return self.cmd(['git', 'config', '--file', gitconfig, '--get-all', key]).stdout.split('\n')[:-1]
+        self.assertEqual(get('url.https://github.com/.insteadof'), ['git@github.com:', 'ssh://git@github.com/'])
+        self.assertEqual(get('credential.https://github.com.helper')[0], '')
+        self.assertTrue(get('credential.https://github.com.helper')[1].endswith('auth git-credential'))
+        self.assertEqual(get('gpg.ssh.program'), ['ssh-keygen'])
+
 
 if __name__ == '__main__':
     unittest.main()

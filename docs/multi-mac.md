@@ -95,6 +95,7 @@ sshtmp prune
     ```
     把公钥加到 GitHub → Settings → SSH and GPG keys → **Signing key**（不要加成 Authentication key），并写进本机 data `automation_signing_pubkey`，`allowed_signers` 会多一行用于本地验证。
   - 关掉开关再 apply，只删除这组由它写入的 `GIT_CONFIG_*`；重启 Claude Code 后生效。连服务器的 SSH 仍走 1Password，写主机的操作照旧要人批准。
+  - 无人值守的远程开发主机再设 `automation_git_global = true`：同样的设置写进 `~/.config/git/config` 末尾，终端、Codex 等所有 git 都不再等 1Password（否则 SSH 会话里的 push 和签名每次都要在你面前的 Mac 上批准，人不在就卡住）。代价是这台机器上任何进程都能用 gh 令牌推送、用本机钥签名，所以 gh 令牌要限定到个人仓库。
 - 主机清单很少变，改完 1Password 里的文档后再 `chezmoi apply ~/.ssh/config.d/personal.conf` 即可。
 
 切换前后用 `ssh -G <alias>` 逐个核对 hostname/user/port/proxyjump/identityfile；`ssh -G` 成功不代表能登录。
@@ -105,13 +106,14 @@ sshtmp prune
 
 常用的远程开发主机名写在本机 `~/.config/clip-to-remote/host`（第一行，不进 Git），下面几个命令共用。它们都带 Raycast 头，在 Raycast → Settings → Extensions → Script Commands 里 Add Directories 选 `~/bin`，再给各自绑全局快捷键：
 
-- `rt [session]`（Remote tmux）：`ssh -t` 后直接 `tmux new-session -A -s <session>`（默认 `main`），断线或 detach 后会话仍在远端。远端缺 Ghostty terminfo 时回退到 `xterm-256color`。从 Raycast 运行时在 Ghostty 新开标签页执行 `rt`。
+- `rt [session]`（Remote tmux）：`ssh -t` 后直接 `tmux new-session -A -s <session>`（默认 `main`），断线或 detach 后会话仍在远端。远端缺 Ghostty terminfo 时回退到 `xterm-256color`。从 Raycast 运行时，装了 cmux 就把会话镜像进 cmux（不填会话名则镜像远端全部会话，每个会话是侧边栏一行），否则在 Ghostty 新开标签页执行 `rt`；`RT_APP=ghostty` 强制用 Ghostty。cmux 里可以直接粘贴图片到远端，不需要 `clip-to-remote`。
 - `shot-to-remote`（Screenshot to Remote）：框选截图 → 上传到远端 `~/.cache/clip/` → 远端路径进剪贴板；Ghostty 在前台时直接把路径输入到当前终端，正在远端跑的 Claude Code / Codex 输入框里就有了。
 - `clip-to-remote`（Clip Image to Remote）：同上，但上传剪贴板里已有的图片，或命令行给出的文件；`-s` 等同 `shot-to-remote`。
+- `rtunnel`（Reverse SSH Tunnel）：反方向，让远端能 `ssh -p 2222 127.0.0.1` 登回你面前这台 Mac（本机要开远程登录），例如让远端的 agent 在这台 Mac 上同步配置或测试。Raycast 里选 Toggle 开关；终端里 `rtunnel` 看状态，`rtunnel on 4` 开 4 小时，`rtunnel off` 关。默认 2 小时后自动关闭，开和关都会弹系统通知。端口只监听在远端的 127.0.0.1，但远端上任何进程都能用它，所以只在需要时打开；端口用 `RTUNNEL_PORT` 改。
 
 用 Codex 远程开发时，在本机执行 `rt codex`，进入远端会话后再执行 `codex`。
 远端需已安装 Codex；`rt` 使用登录 shell 查找工具，会话名本身不会自动启动程序。
-再次执行 `rt codex` 可接回同一会话。此流程不依赖已退役的 Claude Remote Control。
+再次执行 `rt codex` 可接回同一会话。
 
 Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着 SSH 和 tmux 也一样；zsh 里是在命令行中插入换行。Codex 也可用 Ctrl+J。
 

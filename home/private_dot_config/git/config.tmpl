@@ -35,4 +35,21 @@
 [includeIf "gitdir:{{ $personalDir }}"]
     path = ~/.config/git/personal.conf
 {{ end -}}
+{{ if get . "automation_git_global" -}}
+{{- $gh := "gh" -}}
+{{- if lookPath "gh" -}}{{- $gh = lookPath "gh" -}}{{- end -}}
+# automation_git_global: all git on this host runs unattended, like automation_git does for
+# Claude Code: GitHub over HTTPS with gh's token, commits signed with this machine's own key.
+# Last in the file so it wins over the 1Password signer set in personal.conf.
+[credential "https://github.com"]
+    helper =
+    helper = !{{ $gh }} auth git-credential
+[url "https://github.com/"]
+    insteadOf = git@github.com:
+    insteadOf = ssh://git@github.com/
+[gpg "ssh"]
+    program = ssh-keygen
+[user]
+    signingkey = {{ joinPath .chezmoi.homeDir ".ssh/automation-signing" }}
+{{ end -}}
 {{/* vim: set filetype=gitconfig: */}}

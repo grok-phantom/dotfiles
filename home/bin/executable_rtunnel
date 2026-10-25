@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title Reverse SSH Tunnel
+# @raycast.mode compact
+# Optional parameters:
+# @raycast.icon 🔁
+# @raycast.packageName Dotfiles
+# @raycast.description Let the remote dev host SSH back into this Mac for a few hours.
+# @raycast.argument1 { "type": "dropdown", "placeholder": "action", "data": [{"title": "Toggle", "value": "toggle"}, {"title": "On", "value": "on"}, {"title": "Off", "value": "off"}, {"title": "Status", "value": "status"}] }
+set -eufo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: rtunnel [-H host] [status | on [hours] | off | toggle]
+
+Open a reverse tunnel so the remote dev host can `ssh -p PORT 127.0.0.1` back
+into this Mac (needs Remote Login on here). Only processes on that host can
+use it, but any of them can, so keep it open only while needed: it closes by
+itself after HOURS (default 2). A notification shows when it opens and closes.
+
+Without an action: status in a terminal, toggle elsewhere (e.g. Raycast).
+Port: $RTUNNEL_PORT, default 2222. Host: -H, else $RT_HOST, else the first
+line of ~/.config/clip-to-remote/host (the same file rt reads).
+EOF
+}
+
+host="${RT_HOST:-}"
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+if [[ "${1:-}" == "-H" ]]; then
+  host="${2:?rtunnel: -H needs a host}"
+  shift 2
+fi
+if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+fi
+port="${RTUNNEL_PORT:-2222}"
+if [[ ! "$host" =~ ^[A-Za-z0-9_.@-]+$ || ! "$port" =~ ^[0-9]+$ ]]; then
+  echo "rtunnel: no usable host or port; use -H, RT_HOST or ~/.config/clip-to-remote/host" >&2
+  exit 1
+fi
+state="${XDG_STATE_HOME:-$HOME/.local/state}/rtunnel"
+self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+notify() {
+  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "反向隧道"' \
+    -e 'end run' "$1" >/dev/null 2>&1 || true
+}
+
+# The ssh pid when the tunnel is up; cleans up after one that died.
+live_pid() {
+  local pid
+  pid="$(cat "$state/ssh" 2>/dev/null)" || return 1
+  if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+    echo "$pid"
+    return 0
+  fi
+  rm -f "$state/ssh" "$state/until" "$state/up"
+  return 1
+}
+
+until_time() {
+  date -r "$(cat "$state/until" 2>/dev/null || date +%s)" +%H:%M
+}
+
+status() {
+  if live_pid >/dev/null; then
+    echo "开着（$host:$port → 本机），$(until_time) 自动关闭"
+  else
+    echo "关着"
+  fi
+}
+
+# Runs detached: holds the ssh connection, closes it after $1 seconds.
+run() {
+  local secs="$1" pid timer
+  trap 'rm -f "$state/ssh" "$state/until" "$state/up"; notify "已关闭"' EXIT
+  # A connection of its own (not a shared ControlMaster), so closing it closes
+  # only the tunnel. LocalCommand marks the moment the login succeeded.
+  ssh -N -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=15 \
+    -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
+    -o PermitLocalCommand=yes -o "LocalCommand=touch $state/up" \
+    -R "127.0.0.1:$port:localhost:22" "$host" </dev/null &
+  pid=$!
+  echo "$pid" >"$state/ssh"
+  echo $(($(date +%s) + secs)) >"$state/until"
+  { sleep "$secs"; kill "$pid" 2>/dev/null; } &
+  timer=$!
+  wait "$pid" || true
+  pkill -P "$timer" 2>/dev/null || true
+  kill "$timer" 2>/dev/null || true
+}
+
+on() {
+  local hours="${1:-2}" secs
+  if live_pid >/dev/null; then
+    echo "已经开着，$(until_time) 自动关闭"
+    return 0
+  fi
+  if [[ ! "$hours" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "rtunnel: hours must be a number" >&2
+    return 1
+  fi
+  secs="$(awk -v h="$hours" 'BEGIN { printf "%d", h * 3600 }')"
+  ((secs > 0)) || secs=60
+  mkdir -p "$state"
+  rm -f "$state/up"
+  # A new session, so closing the terminal or Raycast finishing does not end it.
+  if command -v perl >/dev/null; then
+    perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' "$self" -H "$host" _run "$secs" >/dev/null 2>&1 &
+  else
+    nohup "$self" -H "$host" _run "$secs" >/dev/null 2>&1 &
+  fi
+  # Allow time for a 1Password approval; then make sure the forward held.
+  for _ in {1..120}; do
+    [[ -e "$state/up" ]] && break
+    sleep 0.5
+  done
+  sleep 2
+  if [[ -e "$state/up" ]] && live_pid >/dev/null; then
+    notify "已打开，$(until_time) 自动关闭"
+    echo "已打开，$(until_time) 自动关闭"
+  else
+    off >/dev/null
+    echo "rtunnel: 没能打开（登录失败，或远端端口 $port 已被占用）" >&2
+    return 1
+  fi
+}
+
+off() {
+  local pid
+  if pid="$(live_pid)"; then
+    kill "$pid"
+    echo "已关闭"
+  else
+    echo "本来就关着"
+  fi
+}
+
+action="${1:-}"
+[[ -n "$action" ]] || { [[ -t 1 ]] && action=status || action=toggle; }
+case "$action" in
+  status) status ;;
+  on) on "${2:-}" ;;
+  off) off ;;
+  toggle) if live_pid >/dev/null; then off; else on; fi ;;
+  _run) run "${2:?}" ;;
+  *) usage >&2; exit 2 ;;
+esac
