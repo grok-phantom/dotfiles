@@ -36,6 +36,9 @@ source tree，而不是通用软件项目。
   SSH 临时主机、workspace、agent 通知和检查脚本。
 - `home/private_dot_claude/`、`home/dot_codex/` 是 Claude Code / Codex 的
   `modify_` 模板，只合并本仓库自有的键和 hooks。
+- `home/dot_agents/skills/` 是两者共用的 skill 正本，`home/private_dot_claude/skills/`
+  是指向它的软链接；大型上游 skill 集合在 external lock 里，见 `docs/agent-skills.md`。
+  只放可公开再分发、不含个人路径的 skill。
 - `home/Library/` 是 macOS-specific target content。
 - `docs/` 是用户文档，`README.md` 是导航；`tests/` 由 `./scripts/test all` 运行。
 

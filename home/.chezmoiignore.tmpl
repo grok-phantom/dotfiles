@@ -94,6 +94,17 @@ Library/LaunchAgents/local.dotfiles.nori-watch.plist
 .config/nori-watch/bark.url
 {{ end }}
 
+{{- /* Claude links to externally locked skills only once that external is applied (full + externals,
+       with the CLI the skills drive), so config-only runs never leave dangling links. */}}
+{{- $externals := and (eq $profile "full") (eq ((get . "update_component") | default "config") "externals") }}
+{{- range (get . "external_lock") | default list }}
+{{-   if and (eq .kind "skills") (not (and $externals (lookPath .requires))) }}
+{{-     range .skills }}
+.claude/skills/{{ . }}
+{{-     end }}
+{{-   end }}
+{{- end }}
+
 {{/* Codex's config is only touched once roost_hooks is set (true or false, so switching it off unwraps). */}}
 {{ if not (hasKey . "roost_hooks") }}
 .codex

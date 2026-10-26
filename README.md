@@ -17,6 +17,7 @@
 | 本地测试、CI、缓存与运行时检查 | [测试说明](docs/testing.md) |
 | 完整安装与系统偏好验收范围 | [macOS VM 验收计划](docs/macos-vm-acceptance.md) |
 | 外部插件、字体和 Miniforge 的版本来源 | [依赖锁](locks/README.md) |
+| Claude Code / Codex 共用的 skill 如何同步 | [Agent skills](docs/agent-skills.md) |
 | 分支合并状态、worktree 和清理判断 | [分支维护](docs/branches.md) |
 
 功能包括 Git 身份与签名、Zsh/历史/代理、Vim/Tmux/Yazi、终端与字体、

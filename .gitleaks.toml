@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+# File SHA-256 values keyed by names such as "latest-apis.md" match generic-api-key.
+[[allowlists]]
+description = "Provenance hashes in a vendored agent skill"
+paths = ['''^home/dot_agents/skills/swiftui-expert-skill/SOURCE\.json$''']

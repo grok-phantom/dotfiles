@@ -45,3 +45,14 @@ The ALE entry extracts `sources_non_forked/ale` from the same reviewed amix
 archive and checksum as `.vim_runtime`. Its explicit target is `.vim/bundle/ale`
 because `.vim_runtime/sources_non_forked` remains locally managed and ignored.
 This adds no upstream version change and does not take over the local directory.
+
+Agent skill archives were added on 2026-10-26 as `kind: skills` entries. Each
+commit is the one whose `skills/<name>` git tree hashes equal the skills already
+installed on the maintainer's Mac, so taking them over changed no files:
+
+- rorkai/app-store-connect-cli-skills: `a5702a60eed35ca16f106c56439b60980ede080d` (26 `asc-*` skills)
+- larksuite/cli: `017b19a793ad71794a02887ede04757f3d82e10d` (28 `lark-*` skills)
+- larksuite/meegle-cli: `e690ee5453356f17abdad9ad7827a2d38e5f396c` (`meegle`)
+
+The fixed commit archives were downloaded twice and SHA-256 hashed using the
+procedure above. All three upstreams are MIT. See [agent skills](../docs/agent-skills.md).

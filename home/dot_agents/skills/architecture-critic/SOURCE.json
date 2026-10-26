@@ -1,0 +1,15 @@
+{
+  "name": "architecture-critic",
+  "upstream_repo": "https://github.com/anthropics/claude-plugins-official",
+  "upstream_commit": "d1adba47161a271799de7b548225d929310046bd",
+  "upstream_path": "plugins/code-modernization/agents/architecture-critic.md",
+  "upstream_sha256": "a1de2a6a3d5a208a5722dd3902dcb2488ff9a879a5494f34a170518126495065",
+  "local_version": "local-adapter.1",
+  "reviewed_at": "2026-10-21",
+  "changes": [
+    "Converted agent frontmatter to a standalone Skill.",
+    "Kept read-only review, evidence, secret masking, and over-engineering checks.",
+    "Removed reliance on an orchestrator writing committed notes."
+  ],
+  "update_policy": "Pinned local adaptation. Re-audit before updating; do not replace via a whole-plugin installer."
+}

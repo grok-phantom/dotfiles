@@ -1,0 +1,7 @@
+interface:
+  display_name: "PPT Style Director"
+  short_description: "指导产品发布感与技术架构清爽感的PPT视觉风格优化"
+  brand_color: "#94D2BD"
+  default_prompt: "Use $ppt-style-director to先定PPT视觉风格，再生成或优化PPTX。"
+policy:
+  allow_implicit_invocation: true

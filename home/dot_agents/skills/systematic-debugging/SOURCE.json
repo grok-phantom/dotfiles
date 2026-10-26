@@ -1,0 +1,16 @@
+{
+  "name": "systematic-debugging",
+  "upstream_repo": "https://github.com/obra/superpowers",
+  "upstream_commit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+  "upstream_path": "skills/systematic-debugging/SKILL.md",
+  "upstream_sha256": "51c6435d98c83c42c96ba7c35725a0b2c376cd487fb1a4e6bd0ddbe7e33ef202",
+  "local_version": "local-adapter.1",
+  "reviewed_at": "2026-10-21",
+  "changes": [
+    "Extracted a concise standalone four-phase method.",
+    "Removed test-driven-development and verification-before-completion Skill dependencies.",
+    "Excluded find-polluter.sh, test fixtures, creation logs, and TypeScript helper.",
+    "Removed unconditional test creation, numerical claims, and mandatory stop/permission after three attempts."
+  ],
+  "update_policy": "Pinned local adaptation. Re-audit before updating; do not replace via a whole-plugin installer."
+}
