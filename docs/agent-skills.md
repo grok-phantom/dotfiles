@@ -30,16 +30,20 @@ Claude Code 和 Codex 共用一份 skill：正本在 `~/.agents/skills/<name>`�
 ## 用官方安装器
 
 这些 skill 和上游一致，直接安装、更新，不进仓库。`npx skills add -g` 会装到
-`~/.agents/skills`，并自动给 Claude Code 建链接；之后用 `npx skills update -g` 更新。
+`~/.agents/skills`（Codex 直接读取），并给 Claude Code 建链接；之后用 `npx skills update -g` 更新。
+
+安装时始终加 `-a codex claude-code`，只装给这两个 agent。不加的话 CLI 会沿用上次选过的
+agent 列表，给 Cursor、Gemini、Copilot 等各建一份 `~/.<agent>/skills`。`-a` 会吞掉后面所有
+不以 `-` 开头的参数，所以仓库名要写在它前面。
 
 | Skill | 安装 |
 | --- | --- |
-| asc-*（App Store Connect，需要 `asc`） | `npx skills add rorkai/app-store-connect-cli-skills -g` |
-| lark-*（飞书，需要 `lark-cli`） | `npx skills add larksuite/cli -g` |
-| meegle（飞书项目） | `npx skills add larksuite/meegle-cli -g --skill meegle` |
-| defuddle、json-canvas、obsidian-bases、obsidian-cli、obsidian-markdown | `npx skills add kepano/obsidian-skills -g` |
-| swift-concurrency-expert | `npx skills add Dimillian/Skills -g --skill swift-concurrency-expert` |
-| find-skills | `npx skills add vercel-labs/skills -g --skill find-skills` |
+| asc-*（App Store Connect，需要 `asc`） | `npx skills add rorkai/app-store-connect-cli-skills -g -a codex claude-code` |
+| lark-*（飞书，需要 `lark-cli`） | `npx skills add larksuite/cli -g -a codex claude-code` |
+| meegle（飞书项目） | `npx skills add larksuite/meegle-cli -g -a codex claude-code --skill meegle` |
+| defuddle、json-canvas、obsidian-bases、obsidian-cli、obsidian-markdown | `npx skills add kepano/obsidian-skills -g -a codex claude-code` |
+| swift-concurrency-expert | `npx skills add Dimillian/Skills -g -a codex claude-code --skill swift-concurrency-expert` |
+| find-skills | `npx skills add vercel-labs/skills -g -a codex claude-code --skill find-skills` |
 | playwright | 在 Codex 里用自带的 `skill-installer` 安装（装到 `~/.codex/skills`） |
 
 不加 `--skill` 时会列出仓库里所有 skill 让你选。
