@@ -1,9 +1,17 @@
-{{- /* Personal hosts live in a 1Password document so the public repo never sees them. Only rendered when
-       data.ssh_personal_document names that document (optionally with data.ssh_personal_vault); otherwise
-       .chezmoiignore leaves any local ~/.ssh/config.d/personal.conf alone. */ -}}
+{{- /* Personal hosts never live in the public repo. Two sources, first match wins:
+       data.ssh_personal_fleet: absolute path of a local checkout of the private infra repo; its
+         scripts/fleet.py prints this file from fleet.json (no 1Password prompt, works unattended).
+       data.ssh_personal_document: a 1Password document (optionally in data.ssh_personal_vault),
+         for machines without that checkout.
+       .chezmoiignore leaves a local ~/.ssh/config.d/personal.conf alone when neither applies. */ -}}
+{{ if get . "ssh_personal_fleet" -}}
+# Managed by chezmoi from fleet.json in {{ .ssh_personal_fleet }}. Edit it there.
+{{ output "python3" (joinPath .ssh_personal_fleet "scripts/fleet.py") "ssh" }}
+{{- else -}}
 # Managed by chezmoi from the 1Password document {{ .ssh_personal_document | quote }}. Edit it there.
 {{ if get . "ssh_personal_vault" -}}
 {{ onepasswordDocument .ssh_personal_document .ssh_personal_vault }}
 {{- else -}}
 {{ onepasswordDocument .ssh_personal_document }}
+{{- end }}
 {{- end }}

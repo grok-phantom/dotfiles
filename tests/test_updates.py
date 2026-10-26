@@ -609,6 +609,25 @@ class TemplateTests(Fixture):
         self.assertIn('.ssh/config.d/personal.conf',
             managed({'ssh_managed':True,'ssh_personal_document':'SSH hosts'}))
 
+    def test_personal_hosts_from_a_local_fleet_checkout(self):
+        def managed(extra):
+            out = self.chezmoi('core','config','managed','--include','files',extra=extra).stdout.split()
+            return '.ssh/config.d/personal.conf' in out
+        fleet = self.root/'infra'
+        (fleet/'scripts').mkdir(parents=True)
+        (fleet/'fleet.json').write_text('{}')
+        (fleet/'scripts/fleet.py').write_text('import sys\nassert sys.argv[1:] == ["ssh"]\nprint("Host demo\\n    HostName 192.0.2.7")\n')
+        data = {'ssh_managed': True, 'ssh_personal_fleet': str(fleet), 'ssh_personal_document': 'SSH hosts'}
+        self.assertTrue(managed(data))
+        rendered = self.chezmoi('core','config','execute-template','--file',
+            self.repo/'home/private_dot_ssh/private_config.d/private_personal.conf.tmpl', extra=data).stdout
+        self.assertIn(f'from fleet.json in {fleet}', rendered)
+        self.assertIn('Host demo\n    HostName 192.0.2.7', rendered)
+        self.assertNotIn('1Password', rendered)
+        # Checkout missing (e.g. external disk unmounted): skip the file, never fall back to 1Password.
+        (fleet/'fleet.json').unlink()
+        self.assertFalse(managed(data))
+
     def test_ssh_config_orders_categories_before_defaults_and_parses(self):
         agent = 'IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'
         path = self.repo/'home/private_dot_ssh/private_config.tmpl'

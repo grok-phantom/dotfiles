@@ -61,7 +61,7 @@ Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关
 
 | 文件 | 类别 | 来源 |
 | --- | --- | --- |
-| `personal.conf` | 自己的机器和服务器 | 设了 `ssh_personal_document` 时从 1Password 文档渲染（可选 `ssh_personal_vault`）；否则本机手写，chezmoi 不动 |
+| `personal.conf` | 自己的机器和服务器 | 设了 `ssh_personal_fleet` 时由本机 infra 仓库的 `fleet.json` 生成；否则设了 `ssh_personal_document` 时从 1Password 文档渲染（可选 `ssh_personal_vault`）；都没设则本机手写，chezmoi 不动 |
 | `work.conf` | 公司主机 | 只在获准的机器上本机手写，永远不进 Git、不进个人 1Password |
 | `temp.conf` | 临时主机 | `sshtmp` 维护，每条带到期日 |
 | `*.local.conf` | 本机其他 | 本机手写 |
@@ -90,7 +90,8 @@ sshtmp prune
 ### 1Password
 
 - **私钥**：放在 1Password，由 SSH agent 签名，不渲染到磁盘。把它的公钥写进本机 data `ssh_personal_pubkey`，chezmoi 生成 `~/.ssh/personal-1password.pub`；个人主机写 `IdentityFile ~/.ssh/personal-1password.pub`，开了 agent 后默认 `IdentitiesOnly yes`，只出示主机指定的那把钥。1Password → Settings → Developer → Use the SSH agent；导入或新建密钥后，删除磁盘上的旧私钥，并把对应公钥更新到各服务器的 `authorized_keys`。公司密钥不放个人 vault。
-- **个人主机清单**：在 1Password 建一个 Document（例如名为 `SSH hosts`），内容就是 `personal.conf`。本机设 `ssh_personal_document = "SSH hosts"`，需要 `op` 命令行（`1password-cli`，已在软件清单）并在 1Password 设置里打开 Integrate with 1Password CLI。只有渲染 `personal.conf` 时才读 1Password，`status`/`plan` 也会触发一次读取授权。
+- **个人主机清单**：主机统一写在私有 infra 仓库的 `fleet.json`。有这个仓库的机器设 `ssh_personal_fleet = "/绝对路径/infra"`，直接生成，不经 1Password；没有的机器（例如只装了 1Password 的新 Mac）用下面的 1Password 文档，由 infra 的 `scripts/fleet ssh --publish` 更新，不要手改。
+- **1Password 文档（备用来源）**：在 1Password 建一个 Document（例如名为 `SSH hosts`），内容就是 `personal.conf`。本机设 `ssh_personal_document = "SSH hosts"`，需要 `op` 命令行（`1password-cli`，已在软件清单）并在 1Password 设置里打开 Integrate with 1Password CLI。只有渲染 `personal.conf` 时才读 1Password，`status`/`plan` 也会触发一次读取授权。
 - **提交签名**：再设 `personal_git_signing = true`（需要 `personal_email` 和 `ssh_personal_pubkey`），个人目录下的提交和 tag 由 1Password 签名（`op-ssh-sign`），并生成 `~/.config/git/allowed_signers` 供本地验证。把同一把公钥作为 Signing key 加到 GitHub，提交会显示 Verified。
 - **无人值守的 git（`automation_git`）**：1Password 每次连 GitHub、每次签名都要人点批准，锁屏后直接失败，Claude Code 自动跑的 git 就会卡住。在需要的机器上设 `automation_git = true`，chezmoi 往 `~/.claude/settings.json` 的 `env` 写一组 `GIT_CONFIG_*`，只影响 Claude Code 启动的 git，你自己终端里的 git 不变：
   - GitHub 改走 HTTPS，凭据用 `gh auth git-credential`（`gh auth login` 已登录的 token；建议用只授权个人仓库的 fine-grained PAT）；
@@ -121,6 +122,21 @@ sshtmp prune
 再次执行 `rt codex` 可接回同一会话。
 
 Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着 SSH 和 tmux 也一样；zsh 里是在命令行中插入换行。Codex 也可用 Ctrl+J。
+
+### Tailscale
+
+Mac 之间（以及家里主机）走 Tailscale，SSH 别名直接指向对方的 Tailscale 地址，不再需要跳板、在家/在外条件块或 Transmit 专用路线。主机清单仍在 infra 的 `fleet.json`。
+
+- 有人用的 Mac：`tailscale-app`（软件清单里的 cask，带菜单栏界面）。首次打开时允许网络扩展，登录后在菜单里取消 Use Tailscale DNS（DNS 交给 Surge）。
+- 无人值守的主机：不装 cask（本机 data `package_cask_exclude = ["tailscale-app"]`），改用命令行版，免去屏幕上的确认：
+  ```sh
+  brew install tailscale
+  sudo brew services start tailscale
+  sudo tailscale up --hostname=<名字> --accept-dns=false   # 打印的链接在另一台机器上打开授权
+  ```
+  然后在管理后台对这台机器 Disable key expiry，否则约半年后掉线且无法在本机重新登录。
+- 和 Surge 增强模式共存：基础配置的 `[Rule]` 里让 `tailscale.com` 走代理、Tailscale 进程（`tailscaled`、`io.tailscale.ipn.macsys.network-extension`）和 `100.64.0.0/10` 直连。**不要**加 `tun-excluded-routes = 100.64.0.0/10`：它会让这段地址经物理网关发出，并挡住 Tailscale 自己的路由，结果 `tailscale ping` 通而 SSH 超时。核对：`netstat -rn -f inet | grep '^100\.64'` 应指向某个 `utun`，不是 `en0`。
+- 中继：国内到官方中继延迟高，私有 infra 在自己的服务器上跑了中继（`derper`），登记在管理后台的 `derpMap`。`tailscale ping <主机>` 显示 `via DERP(…)` 为中继、`via <IP>:<端口>` 为直连；中继速度受那台服务器的出口带宽限制。
 
 ### 远端不弹窗
 

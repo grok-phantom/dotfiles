@@ -37,7 +37,8 @@
 | `git_hooks_path` | 未设置时不写 | 保留本机管理工具要求的 `core.hooksPath`，不安装 hooks |
 | `ssh_managed` | 默认关闭 | 管理 `~/.ssh/config`、分类 include 和连接复用目录 |
 | `ssh_1password_agent` | 默认关闭；macOS | 使用 1Password SSH agent；需已启用 SSH 管理和本机 App 的 agent |
-| `ssh_personal_document` / `ssh_personal_vault` | document 未设置时忽略 personal.conf；vault 可选 | 从 1Password 文档渲染个人主机清单 |
+| `ssh_personal_fleet` | 未设置时看 document | 本机私有 infra 仓库的绝对路径；用其 `scripts/fleet.py ssh` 从 `fleet.json` 生成 personal.conf，不读 1Password、可无人值守；路径下没有 `fleet.json`（如外置盘未挂载）时跳过该文件 |
+| `ssh_personal_document` / `ssh_personal_vault` | document 未设置时忽略 personal.conf；vault 可选 | 没有 infra 仓库的机器从 1Password 文档渲染个人主机清单 |
 | `ssh_personal_pubkey` | 默认空 | 渲染公钥文件，供主机选钥及个人 Git 签名使用；不渲染私钥 |
 | `workspace_root` | 未设置时忽略 `~/workspace` 目标 | 把 `~/workspace` 管为指向指定目录的符号链接 |
 | `workspace_volume_uuid` | 可选 | workspace 命令检查 macOS 外置卷身份，避免写到错误卷 |

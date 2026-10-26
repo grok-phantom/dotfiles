@@ -56,11 +56,14 @@ Library/**
 .local/share/fonts/**
 {{ end }}
 
-{{- /* SSH is opt-in per machine (data.ssh_managed); personal hosts render only from 1Password. */}}
+{{- /* SSH is opt-in per machine (data.ssh_managed); personal hosts render from the infra checkout's
+       fleet.json (skipped while it is missing, e.g. its disk is unmounted) or from 1Password. */}}
+{{- $fleet := get . "ssh_personal_fleet" | default "" }}
+{{- $fleetReady := and $fleet (stat (joinPath $fleet "fleet.json")) }}
 {{ if not (get . "ssh_managed") }}
 .ssh/**
 {{ else }}
-{{   if not (get . "ssh_personal_document") }}
+{{   if not (or $fleetReady (and (not $fleet) (get . "ssh_personal_document"))) }}
 .ssh/config.d/personal.conf
 {{   end }}
 {{   if not (get . "ssh_personal_pubkey") }}

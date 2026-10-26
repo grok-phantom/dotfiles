@@ -54,6 +54,7 @@ packages:
       - obsidian
       - raycast
       - rustdesk
+      - tailscale-app
       - transmit
       - typora
       - visual-studio-code
