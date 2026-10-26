@@ -140,7 +140,7 @@ Mac 之间（以及家里主机）走 Tailscale，SSH 别名直接指向对方�
   sudo tailscale up --hostname=<名字> --accept-dns=false   # 打印的链接在另一台机器上打开授权
   ```
   然后在管理后台对这台机器 Disable key expiry，否则约半年后掉线且无法在本机重新登录。
-- 和 Surge 增强模式共存：基础配置的 `[Rule]` 里让 `tailscale.com` 走代理、Tailscale 进程（`tailscaled`、`io.tailscale.ipn.macsys.network-extension`）和 `100.64.0.0/10` 直连。**不要**加 `tun-excluded-routes = 100.64.0.0/10`：它会让这段地址经物理网关发出，并挡住 Tailscale 自己的路由，结果 `tailscale ping` 通而 SSH 超时。核对：`netstat -rn -f inet | grep '^100\.64'` 应指向某个 `utun`，不是 `en0`。
+- 和 Surge 增强模式共存：基础配置的 `[Rule]` 里让 `tailscale.com` 走代理、Tailscale 进程（`tailscaled`、`io.tailscale.ipn.macsys.network-extension`）和 `100.64.0.0/10` 直连。命令行工具也加直连（Homebrew 版进程名 `tailscale`，Tailscale.app 里的是大写 `Tailscale`，两条都写），否则 `tailscale netcheck` 自己的探测会被 `tailscale.com` 的代理规则带走，显示自建中继很慢、最近的是香港，和后台进程实际走的路线不一致。**不要**加 `tun-excluded-routes = 100.64.0.0/10`：它会让这段地址经物理网关发出，并挡住 Tailscale 自己的路由，结果 `tailscale ping` 通而 SSH 超时。核对：`netstat -rn -f inet | grep '^100\.64'` 应指向某个 `utun`，不是 `en0`。
 - 中继：国内到官方中继延迟高，私有 infra 在自己的服务器上跑了中继（`derper`），登记在管理后台的 `derpMap`。`tailscale ping <主机>` 显示 `via DERP(…)` 为中继、`via <IP>:<端口>` 为直连；中继速度受那台服务器的出口带宽限制。
 
 ### 远端不弹窗
@@ -155,6 +155,12 @@ Mac 之间（以及家里主机）走 Tailscale，SSH 别名直接指向对方�
 仍会在远端弹窗的：远端执行 `op` / 需要 1Password 的 `chezmoi apply`（1Password CLI 走远端的桌面 App），以及 macOS 钥匙串访问确认（例如 Claude Code 升级后首次读取登录凭据）。这些在远端本机处理一次即可，或在远端选“始终允许”。
 
 这几个命令每次都是新的 `ssh` 进程，主机块里关掉 `ControlMaster` 时每次都要走一遍 1Password 确认（有 ProxyJump 时是两次）；让该主机沿用默认的 `ControlMaster auto` 后，8 小时内的后续连接复用同一条连接，不再询问。`mba` 探测和 `mba-tunnel` 需要独立连接，命令里已自带 `ControlMaster=no`。
+
+## 两台 Mac 共用 Surge 基础配置
+
+nori 的 `target.macos.surge_base_profile` 指向每台 Mac 自己的一个小入口文件，入口文件在 `[General]`、`[Proxy]`、`[Rule]` 里各用一行 `#!include` 引入 iCloud 里的共用文件；只属于某台机器的规则（例如固定某个节点的下载域名）写在它的入口文件里，`[Rule]` 中放在 include 之前。共用文件里不要写节点名，只引用两台都有的策略组名，否则另一台 stage 时会被 Surge 校验拒绝。nori 会忽略基础配置里的 `[Proxy Group]`。
+
+无人值守的 Mac 上 nori 的定时刷新由 launchd 运行，打开 iCloud 文件会一直卡住（没人在屏幕上授权，授权也绑在某个 nori 版本的程序路径上）。这类机器的入口文件 include 共用文件的本地副本，改完共用文件后在它的终端里先复制，再 `stage` / `apply`。验证方法：`launchctl submit -l test -o out -e err -- <部署固定的 nori 程序> --config <nori.yaml> stage --fetch`，几十秒内 `out` 里出现 `native_validated` 即可，之后 `launchctl remove test`。
 
 ## nori 定时检查
 
