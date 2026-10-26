@@ -1,0 +1,13 @@
+{
+  "name": "dotfiles-local",
+  "owner": {
+    "name": "dotfiles"
+  },
+  "plugins": [
+    {
+      "name": "mattpocock-skills",
+      "source": "./",
+      "description": "Matt Pocock Skills with scoped local discovery; ordinary coding uses the five minimal Skills."
+    }
+  ]
+}

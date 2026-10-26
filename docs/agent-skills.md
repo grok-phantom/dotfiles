@@ -48,7 +48,25 @@ Claude Code 和 Codex 共用一份 skill：正本在 `~/.agents/skills/<name>`�
 - Claude.ai 账号同步的 skill（docx、pptx、xlsx、pdf、computer-use 等）：许可证不允许再分发，由账号同步维护。
 - 带个人路径的 skill（例如指向本机 Obsidian 库的研究项目 skill）。
 - 来源不明的工具附带 skill（`meegle-plugin*`）。
-- Matt Pocock 的 Codex 插件源（`~/.agents/skill-sources/mattpocock`）：它的 marketplace 名称带本机标识，公开前需要先改名，并同步修改各 Mac 的 Codex 配置。
+
+## Matt Pocock 插件（Codex）
+
+[`home/dot_agents/skill-sources/mattpocock/`](../home/dot_agents/skill-sources/mattpocock) 是
+mattpocock/skills 1.3.1 的本地改编版（MIT，见其 SOURCE.json），作为 Codex 本地 marketplace
+`dotfiles-local` 提供插件 `mattpocock-skills`。chezmoi 只同步插件源文件；在 Codex 里注册
+marketplace、安装插件仍用 Codex 自己的命令，这样配置和插件缓存才能保持一致。
+
+每台 Mac 上做一次（apply 之后）：
+
+```sh
+codex plugin marketplace list            # 找出 source 指向 ~/.agents/skill-sources/mattpocock 的旧名称
+codex plugin remove mattpocock-skills@<旧名称>
+codex plugin marketplace remove <旧名称>
+codex plugin marketplace add ~/.agents/skill-sources/mattpocock
+codex plugin add mattpocock-skills@dotfiles-local
+```
+
+从没注册过的 Mac 只需要最后两行。插件源有更新时，重新运行 `codex plugin add mattpocock-skills@dotfiles-local` 刷新缓存。
 
 ## 更新
 

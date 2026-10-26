@@ -23,7 +23,7 @@
 | SSH | 可选托管、主机分类、1Password agent、公钥、连接复用、转发 agent、临时主机到期管理 | [SSH 模板](../home/private_dot_ssh/private_config.tmpl)、[sshtmp](../home/bin/executable_sshtmp)、[迁移说明](multi-mac.md#ssh-配置) |
 | 远程开发 | 远程 tmux、截图/剪贴板图片上传、Raycast 入口、SSH 内签名 | [远程开发说明](multi-mac.md#远程开发主机) |
 | Claude / Codex | Claude 代理、无人值守 Git、Roost 状态接入；按目标合并已有应用设置 | [Claude 模板](../home/private_dot_claude/modify_private_settings.json)、[Codex hooks](../home/dot_codex/modify_private_hooks.json)、[notify 迁移](../home/dot_codex/modify_private_config.toml) |
-| Agent skills | Claude Code 与 Codex 共用的通用 skill：自写和本地改编的提交在仓库里，大型上游集合按 commit 锁定，并且只在装了对应 CLI 时才启用 | [skill 正本](../home/dot_agents/skills)、[说明](agent-skills.md) |
+| Agent skills | Claude Code 与 Codex 共用的通用 skill：自写和本地改编的提交在仓库里，大型上游集合按 commit 锁定，并且只在装了对应 CLI 时才启用；另含 Matt Pocock 的 Codex 插件源 | [skill 正本](../home/dot_agents/skills)、[说明](agent-skills.md) |
 | nori | 从密码管理器合并共享策略与本机配置，渲染订阅；定时健康检查与 Bark 通知 | [共享模板](../home/.chezmoitemplates/nori.yaml.tmpl)、[nori-watch](../home/bin/executable_nori-watch)、[使用说明](multi-mac.md#nori-定时检查) |
 | macOS 偏好 | Karabiner 指定键盘映射；独立手动系统偏好脚本 | [Karabiner](../home/private_dot_config/private_karabiner/private_karabiner.json)、[macOS 脚本](../scripts/manual/macos-defaults.sh) |
 | 开发小工具 | JSON 格式化、TCP 监听检查、HTTP 文件服务、直连/代理比较 | [命令速查](commands.md#开发小工具) |
