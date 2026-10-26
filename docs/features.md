@@ -23,7 +23,7 @@
 | SSH | 可选托管、主机分类、1Password agent、公钥、连接复用、转发 agent、临时主机到期管理 | [SSH 模板](../home/private_dot_ssh/private_config.tmpl)、[sshtmp](../home/bin/executable_sshtmp)、[迁移说明](multi-mac.md#ssh-配置) |
 | 远程开发 | 远程 tmux、截图/剪贴板图片上传、Raycast 入口、SSH 内签名 | [远程开发说明](multi-mac.md#远程开发主机) |
 | Claude / Codex | Claude 代理、无人值守 Git、Roost 状态接入；按目标合并已有应用设置 | [Claude 模板](../home/private_dot_claude/modify_private_settings.json)、[Codex hooks](../home/dot_codex/modify_private_hooks.json)、[notify 迁移](../home/dot_codex/modify_private_config.toml) |
-| Agent skills | Claude Code 与 Codex 共用的通用 skill：自写和本地改编的提交在仓库里，大型上游集合按 commit 锁定，并且只在装了对应 CLI 时才启用；另含 Matt Pocock 的 Codex 插件源 | [skill 正本](../home/dot_agents/skills)、[说明](agent-skills.md) |
+| Agent skills | Claude Code 与 Codex 共用的通用 skill：自写和本地改编的提交在仓库里，与上游一致的列出官方安装命令；另含 Matt Pocock 的 Codex 插件源 | [skill 正本](../home/dot_agents/skills)、[说明](agent-skills.md) |
 | nori | 从密码管理器合并共享策略与本机配置，渲染订阅；定时健康检查与 Bark 通知 | [共享模板](../home/.chezmoitemplates/nori.yaml.tmpl)、[nori-watch](../home/bin/executable_nori-watch)、[使用说明](multi-mac.md#nori-定时检查) |
 | macOS 偏好 | Karabiner 指定键盘映射；独立手动系统偏好脚本 | [Karabiner](../home/private_dot_config/private_karabiner/private_karabiner.json)、[macOS 脚本](../scripts/manual/macos-defaults.sh) |
 | 开发小工具 | JSON 格式化、TCP 监听检查、HTTP 文件服务、直连/代理比较 | [命令速查](commands.md#开发小工具) |
@@ -39,7 +39,7 @@ CLI 默认 full，直接 chezmoi 使用本机 `data.profile`，未设置也回�
 | Git、基础 Zsh、Readline vi 模式、pip/uv、`~/bin` 工具 | 管理 | 管理 |
 | OMZ、Powerlevel10k、Vim、Tmux、Yazi、Conda 配置和初始化 | 跳过 | 管理；程序需另外安装 |
 | 锁定插件与字体 | 跳过 | 还需选择 `--component externals`；ephemeral 跳过字体 |
-| 仓库内的 agent skills | 管理 | 管理；锁定的 skill 集合同插件一样需要 externals，并且要求本机有对应 CLI |
+| 仓库内的 agent skills | 管理 | 管理 |
 | iTerm2、Ghostty、Karabiner、LaunchAgents | 跳过 | 仅 macOS |
 | SSH、Claude、Codex、nori 配置 | 由各自本机开关决定 | 由各自本机开关决定 |
 | `scripts/software` | 拒绝执行 | 显式 plan / install / upgrade / apply / verify |

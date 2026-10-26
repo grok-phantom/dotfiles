@@ -10,21 +10,6 @@
     url = {{ .url | quote }}
     checksum.sha256 = {{ .sha256 | quote }}
 {{- end }}
-{{- else if eq .kind "skills" }}
-{{- /* One upstream archive holds many agent skills; each lands in its own exact directory,
-       only where the CLI it drives is installed. */}}
-{{- if lookPath .requires }}
-{{- $item := . }}
-{{- range .skills }}
-[{{ joinPath $target . | quote }}]
-    type = "archive"
-    url = {{ $item.url | quote }}
-    checksum.sha256 = {{ $item.sha256 | quote }}
-    stripComponents = 3
-    exact = true
-    include = {{ list (printf "*/skills/%s/**" .) | toJson }}
-{{ end }}
-{{- end }}
 {{- else }}
 [{{ $target | quote }}]
     type = "archive"

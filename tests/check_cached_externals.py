@@ -45,18 +45,10 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-full-integration-') as directo
         path = target/'.vim/bundle/jedi-vim/pythonx/jedi/jedi/third_party'/file
         assert path.is_file(), path
     assert (target/'.tmux.conf').is_symlink()
-    # Agent skills apply only where the CLI they drive is on PATH.
-    skills = [item for item in lock['external_lock'] if item['kind'] == 'skills']
-    applied = [item for item in skills if shutil.which(item['requires'], path=env['PATH'])]
-    for item in skills:
-        for name in item['skills']:
-            present = (target/'.agents/skills'/name/'SKILL.md').is_file()
-            assert present == (item in applied), name
-            assert (target/'.claude/skills'/name).is_symlink() == present, name
     update('plan','--plan',root/'second.json')
     update('apply','--plan',root/'second.json','--yes')
     update('verify')
-    print(f'PASS: all {len(lock["external_lock"])} cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin, fonts and {len(applied)}/{len(skills)} agent skill sets present.')
+    print('PASS: all 24 cached upstream resources verified; full temporary plan/apply/verify and repeat passed; Jedi submodules, Yazi plugin and fonts present.')
 
     if args.runtime:
         from check_runtime import check, Blocked

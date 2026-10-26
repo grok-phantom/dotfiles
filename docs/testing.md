@@ -22,7 +22,7 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 | --- | --- | --- |
 | `unit` | Update, migration, diagnostics, recovery, upload and preference-backup cases, real chezmoi rendering and temporary target writes | Network/package managers/Miniforge installer and macOS preferences are mocks; no host software or settings changed |
 | `static` | Python/JSON/TOML parsing; discovered shell tools/configs; templates rendered for macOS/Linux × core/full before syntax checks; whitespace and lock format | No shell bodies executed, template apply, download, external checksum verification or system validation |
-| `cached-externals` | Verifies actual bytes of 27 supplied locked resources, temporary full apply/verify/repeat; agent skill sets checked where their CLI is on PATH | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
+| `cached-externals` | Verifies actual bytes of 24 supplied locked resources, temporary full apply/verify/repeat | Requires an existing cache; no downloads or installers; does not prove plugins work in a login session |
 | `runtime` | Full Zsh load/completion init, Vim Python/Jedi/fzf/Tagbar/ALE, dedicated Tmux session/config | Requires the locked cache and existing tools; synthetic config/HOME; no installers |
 | `all` | `unit` + `static` | Does not include cache integration, runtime, VM or live software installation |
 

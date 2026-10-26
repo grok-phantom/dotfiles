@@ -1,21 +1,16 @@
 # Agent skills
 
 Claude Code 和 Codex 共用一份 skill：正本在 `~/.agents/skills/<name>`（Codex 直接读取），
-`~/.claude/skills/<name>` 是指向正本的相对软链接。这里只管理通用、可公开再分发的 skill。
+`~/.claude/skills/<name>` 是指向正本的相对软链接。
 
-## 管理方式
+分工很简单：**自写或本地改过的 skill 由这个仓库管理；和上游一致的 skill 用官方安装器安装和更新。**
+仓库只管自己的那部分，`~/.agents/skills` 和 `~/.claude/skills` 都不是 exact 目录，其余 skill 原样保留。
 
-| 类别 | 来源 | 何时生效 |
-| --- | --- | --- |
-| 提交在仓库里 | [`home/dot_agents/skills/`](../home/dot_agents/skills)：自写的 skill，以及带本地改编或体积很小的 MIT / Apache-2.0 上游 skill，每个都附上游 LICENSE | 任意 profile 的普通 apply |
-| 锁定的上游归档 | [`external-lock.json`](../home/.chezmoidata/external-lock.json) 里 `kind: skills` 的条目：固定 commit 和 SHA-256，每个 skill 解压成一个 exact 目录 | `--profile full --component externals`，并且本机 PATH 上有该组 skill 依赖的 CLI（`requires`） |
-| Claude 软链接 | [`home/private_dot_claude/skills/`](../home/private_dot_claude/skills)，每个 skill 一个 `symlink_<name>` | 跟随对应的 skill；外部 skill 的链接只在 externals 运行中管理，平时只更新 config 时不会留下悬空链接 |
+## 由仓库管理
 
-`~/.agents/skills` 和 `~/.claude/skills` 都不是 exact 目录：没有纳入管理的 skill
-（Claude.ai 账号同步的、各工具自己安装的）原样保留。外部 skill 的目录是 exact 的，
-上游删掉的文件在下次 externals apply 时会被删除。
-
-## 提交在仓库里的 skill
+[`home/dot_agents/skills/`](../home/dot_agents/skills) 里每个 skill 一个目录，
+[`home/private_dot_claude/skills/`](../home/private_dot_claude/skills) 里对应一个
+`symlink_<name>`（`tests/test_updates.py` 会检查两者是否一致）。上游 skill 都附带了上游 LICENSE。
 
 | Skill | 上游 | 说明 |
 | --- | --- | --- |
@@ -27,27 +22,33 @@ Claude Code 和 Codex 共用一份 skill：正本在 `~/.agents/skills/<name>`�
 | swiftui-pro | twostraws/SwiftUI-Agent-Skill（MIT） | 本地改编 |
 | swift-testing-expert、swiftui-expert-skill | AvdLee（MIT） | 本地改编 |
 | app-store-changelog、project-skill-audit、review-and-simplify-changes | Dimillian/Skills（MIT） | 本地改编 |
-| swift-concurrency-expert | Dimillian/Skills `05ba982`（MIT） | 与上游一致 |
-| defuddle、json-canvas、obsidian-bases、obsidian-cli、obsidian-markdown | kepano/obsidian-skills（MIT） | 与上游一致，各自停在不同 commit |
-| playwright | openai/skills `.curated/playwright` `972cb86`（Apache-2.0） | 与上游一致 |
-| find-skills | vercel-labs/skills `773fb2c`（MIT） | 与上游一致 |
 
-## 锁定的上游归档
+改动流程：在 `~/.agents/skills` 改好并审阅后，用 `chezmoi re-add` 写回 source，再正常提交、plan/apply。
+新增 skill：放进 `home/dot_agents/skills/<name>`，并添加内容为 `../../.agents/skills/<name>` 的
+`home/private_dot_claude/skills/symlink_<name>`。只放可公开再分发、不含个人路径的 skill。
 
-| Skills | 上游 commit | requires |
-| --- | --- | --- |
-| `asc-*`（26 个） | rorkai/app-store-connect-cli-skills `a5702a6` | `asc` |
-| `lark-*`（28 个） | larksuite/cli `017b19a` | `lark-cli` |
-| `meegle` | larksuite/meegle-cli `e690ee5` | `lark-cli` |
+## 用官方安装器
 
-固定的 commit 是 2026-10-26 时与本机已安装内容的 git tree hash 完全一致的上游提交，
-接管前后文件没有变化。
+这些 skill 和上游一致，直接安装、更新，不进仓库。`npx skills add -g` 会装到
+`~/.agents/skills`，并自动给 Claude Code 建链接；之后用 `npx skills update -g` 更新。
+
+| Skill | 安装 |
+| --- | --- |
+| asc-*（App Store Connect，需要 `asc`） | `npx skills add rorkai/app-store-connect-cli-skills -g` |
+| lark-*（飞书，需要 `lark-cli`） | `npx skills add larksuite/cli -g` |
+| meegle（飞书项目） | `npx skills add larksuite/meegle-cli -g --skill meegle` |
+| defuddle、json-canvas、obsidian-bases、obsidian-cli、obsidian-markdown | `npx skills add kepano/obsidian-skills -g` |
+| swift-concurrency-expert | `npx skills add Dimillian/Skills -g --skill swift-concurrency-expert` |
+| find-skills | `npx skills add vercel-labs/skills -g --skill find-skills` |
+| playwright | 在 Codex 里用自带的 `skill-installer` 安装（装到 `~/.codex/skills`） |
+
+不加 `--skill` 时会列出仓库里所有 skill 让你选。
 
 ## 不在这里管理
 
 - Claude.ai 账号同步的 skill（docx、pptx、xlsx、pdf、computer-use 等）：许可证不允许再分发，由账号同步维护。
 - 带个人路径的 skill（例如指向本机 Obsidian 库的研究项目 skill）。
-- 来源不明的工具附带 skill（`meegle-plugin*`）。
+- 工具自己附带的 skill（例如 `meegle-plugin*`）。
 
 ## Matt Pocock 插件（Codex）
 
@@ -67,9 +68,3 @@ codex plugin add mattpocock-skills@dotfiles-local
 ```
 
 从没注册过的 Mac 只需要最后两行。插件源有更新时，重新运行 `codex plugin add mattpocock-skills@dotfiles-local` 刷新缓存。
-
-## 更新
-
-- 提交在仓库里的 skill：在 `~/.agents/skills` 审阅改动后，用 `chezmoi re-add` 或 `chezmoi add` 写回 source，再走正常的提交和 plan/apply 流程。
-- 锁定归档：按 [依赖锁](../locks/README.md) 的流程审阅上游差异，一起修改 `revision`、`url`、`sha256`；上游新增或删除 skill 时同步修改 `skills` 列表和 Claude 软链接（`tests/test_updates.py` 会检查两者是否一致）。不要再对这些 skill 运行 `npx skills update`，否则下次 externals apply 会把它们改回锁定版本。
-- 新增 skill：放进 `home/dot_agents/skills/<name>`，并添加 `home/private_dot_claude/skills/symlink_<name>`，内容为 `../../.agents/skills/<name>`。

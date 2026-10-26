@@ -455,36 +455,18 @@ class TemplateTests(Fixture):
         for profile, component in [('core','config'), ('full','config'), ('core','externals')]:
             output = self.chezmoi(profile, component, 'execute-template', '--file', path).stdout
             self.assertEqual(output.strip(), '')
-        # Skill archives expand per skill, only for CLIs found on PATH.
-        lock = json.loads((self.repo/'home/.chezmoidata/external-lock.json').read_text())['external_lock']
-        for tool in {e['requires'] for e in lock if e['kind'] == 'skills'}:
-            self.mock(tool, 'exit 0\n')
-        skills = sum(len(e['skills']) for e in lock if e['kind'] == 'skills')
         output = self.chezmoi('full','externals','execute-template','--file',path).stdout
-        self.assertEqual(output.count('checksum.sha256'),24+skills)
+        self.assertEqual(output.count('checksum.sha256'),24)
         self.assertNotIn('master', output)
         self.assertNotIn('latest', output)
         self.assertNotIn('168h', output)
 
     def test_agent_skills_have_claude_links(self):
         home = self.repo/'home'
-        lock = json.loads((home/'.chezmoidata/external-lock.json').read_text())['external_lock']
-        external = {n for e in lock if e['kind'] == 'skills' for n in e['skills']}
-        committed = {p.name for p in (home/'dot_agents/skills').iterdir() if p.is_dir()}
-        self.assertFalse(committed & external)
+        skills = {p.name for p in (home/'dot_agents/skills').iterdir() if p.is_dir()}
         links = {p.name.removeprefix('symlink_'): p.read_text().strip()
                  for p in (home/'private_dot_claude/skills').iterdir()}
-        self.assertEqual(links, {n: '../../.agents/skills/'+n for n in committed | external})
-        ignore = home/'.chezmoiignore.tmpl'
-        def ignored(component):
-            output = self.chezmoi('full', component, 'execute-template', '--file', ignore).stdout
-            return {line.removeprefix('.claude/skills/') for line in output.splitlines()
-                    if line.startswith('.claude/skills/')}
-        # Links to external skills wait for the externals run, and for the CLI they drive.
-        self.assertEqual(ignored('config'), external)
-        for tool in {e['requires'] for e in lock if e['kind'] == 'skills'}:
-            self.mock(tool, 'exit 0\n')
-        self.assertEqual(ignored('externals'), set())
+        self.assertEqual(links, {n: '../../.agents/skills/'+n for n in skills})
 
     def test_linux_template_platform_guards(self):
         extra = {'chezmoi': {'os':'linux','arch':'arm64','osRelease':{'id':'ubuntu'}}, 'osid':'linux-ubuntu'}
