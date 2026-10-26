@@ -1,0 +1,9 @@
+{
+  "upstream": "https://github.com/mattpocock/skills",
+  "upstream_version": "1.3.1",
+  "local_version": "1.3.1-local.1",
+  "source_path": "~/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1",
+  "scope": "27 original exports only; 16 explicit-only policies unchanged",
+  "changes": "Narrowed 11 descriptions; removed unnecessary confirmation and rigid-format requirements from selected ordinary-work paths.",
+  "update_policy": "Pinned local source; re-audit upstream changes before updating."
+}

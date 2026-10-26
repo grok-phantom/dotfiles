@@ -1,0 +1,15 @@
+{
+  "name": "code-simplify",
+  "upstream_repo": "https://github.com/anthropics/claude-plugins-official",
+  "upstream_commit": "d1adba47161a271799de7b548225d929310046bd",
+  "upstream_path": "plugins/code-simplifier/agents/code-simplifier.md",
+  "upstream_sha256": "2a51e8d210580d9f66ac2ed1226c41f9374565fc275da30d7bb95f65c2cc87bb",
+  "local_version": "local-adapter.1",
+  "reviewed_at": "2026-10-21",
+  "changes": [
+    "Converted Claude agent to a native SKILL.md.",
+    "Removed hard-coded Opus, JavaScript/React conventions, and unsolicited post-edit activation.",
+    "Added scoped validation and routing to avoid stacking the existing review skill."
+  ],
+  "update_policy": "Pinned local adaptation. Re-audit before updating; do not replace via a whole-plugin installer."
+}

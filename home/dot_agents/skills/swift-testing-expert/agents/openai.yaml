@@ -1,0 +1,6 @@
+interface:
+  display_name: "Swift Testing Expert"
+  short_description: "Focused Swift tests, isolation, and XCTest coexistence"
+  default_prompt: "Use $swift-testing-expert to improve tests within the current project conventions."
+policy:
+  allow_implicit_invocation: true

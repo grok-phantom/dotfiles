@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/AvdLee/Swift-Testing-Agent-Skill",
+  "commit": "798e9b1a2bcac164d4f0c781908199e754f0bab6",
+  "skill_path": "swift-testing-expert",
+  "license": "MIT",
+  "reviewed_at": "2026-10-22",
+  "upstream_files_sha256": {
+    "SKILL.md": "d039eb55cfbaa379d308ff42c1e459dea355edb869ec0a4d6f488759d2156aec",
+    "references/_index.md": "623f23b0e14d363928bfc6b8ed54c89c6d420fde809ee79c0f6e37ed2c4aa965",
+    "references/async-testing-and-waiting.md": "e5f7d016a95d976774d7f26a80be07acf204306aa874f60d6f501aec141c6ceb",
+    "references/expectations.md": "e3d4a57b5d162f49e8f7135e2a020eb1c2af0301782d31c1e4ac3d51a9a0dac5",
+    "references/fundamentals.md": "ad3af7d6ce9a31c2f8222a88baf9a5631de6443d2ad671764e2d183bba7019f3",
+    "references/migration-from-xctest.md": "f94a3bc08fb59358689a84d9d6a2838154dc96904e53457e068d00df5b0671ef",
+    "references/parallelization-and-isolation.md": "209cd458d3fbc8a2830265252714f5ac09abe93100b3b2582034fa7ea1a0568c",
+    "references/parameterized-testing.md": "852ea45d5cae37f3e687050be2cb728370a635129786928cadef4a9dcc8d2c09",
+    "references/performance-and-best-practices.md": "3ecd3da92d2676935863942894e5e9ef649a24b5e56f20f65fc81899297b49c2",
+    "references/traits-and-tags.md": "17dd0b7182f0abdf51f538a6bcc139ef6d501325575476c63a6d5f933312b49e",
+    "references/xcode-workflows.md": "f43407527c30bc1e346d32e4f54a5105a9c61bd071abfbfaa7b91107b4451c94"
+  },
+  "local_adaptations": [
+    "Scoped description and local compatibility rules",
+    "Codex invocation policy",
+    "Retained upstream MIT license"
+  ],
+  "review_scope": "Entry, references risk scan, all Python imports and call sites, subprocess/file-write boundaries. No third-party runtime scripts executed; no hooks or plugin manifests installed."
+}

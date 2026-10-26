@@ -1,0 +1,16 @@
+{
+  "name": "swiftui-pro",
+  "upstream_repo": "https://github.com/twostraws/SwiftUI-Agent-Skill",
+  "upstream_commit": "ce32af1693b9e78a7d22ff48001c97a304d32063",
+  "upstream_path": "swiftui-pro/SKILL.md",
+  "upstream_sha256": "fc62139e262bd364cbbcab9b9f97557cd3fd6d2d4f73c4fab039d562fc324643",
+  "local_version": "2.0.0+local.1",
+  "reviewed_at": "2026-10-21",
+  "changes": [
+    "Reused the existing SwiftUI Pro family, updated to the pinned reviewed commit.",
+    "Kept one standalone Skill plus its 12 reference Markdown files; removed the duplicate nested Skill and plugin manifest.",
+    "Removed unconditional deployment-target/Swift-version defaults and rigid per-type file splitting.",
+    "Scoped reference advice to the project and required evidence for version-sensitive API claims."
+  ],
+  "update_policy": "Pinned local adaptation. Re-audit before updating; do not replace via a whole-plugin installer."
+}

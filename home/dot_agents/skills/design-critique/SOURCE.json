@@ -1,0 +1,15 @@
+{
+  "name": "design-critique",
+  "upstream_repo": "https://github.com/anthropics/knowledge-work-plugins",
+  "upstream_commit": "bc8f6922cfeea215a202cdcc9f0d299a990889a8",
+  "upstream_path": "design/skills/design-critique/SKILL.md",
+  "upstream_sha256": "3a4f260eb9f60b431782bf6d90f22afb480c0c67860267a032df58a3e1bd19cd",
+  "local_version": "local-adapter.1",
+  "reviewed_at": "2026-10-21",
+  "changes": [
+    "Removed Claude placeholders and a broken parent CONNECTORS.md dependency.",
+    "Added read-only default and evidence boundaries for screenshots and accessibility measurements.",
+    "No Figma/MCP installation or credentials are included."
+  ],
+  "update_policy": "Pinned local adaptation. Re-audit before updating; do not replace via a whole-plugin installer."
+}

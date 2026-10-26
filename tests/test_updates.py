@@ -461,6 +461,13 @@ class TemplateTests(Fixture):
         self.assertNotIn('latest', output)
         self.assertNotIn('168h', output)
 
+    def test_agent_skills_have_claude_links(self):
+        home = self.repo/'home'
+        skills = {p.name for p in (home/'dot_agents/skills').iterdir() if p.is_dir()}
+        links = {p.name.removeprefix('symlink_'): p.read_text().strip()
+                 for p in (home/'private_dot_claude/skills').iterdir()}
+        self.assertEqual(links, {n: '../../.agents/skills/'+n for n in skills})
+
     def test_linux_template_platform_guards(self):
         extra = {'chezmoi': {'os':'linux','arch':'arm64','osRelease':{'id':'ubuntu'}}, 'osid':'linux-ubuntu'}
         contents = json.loads(self.chezmoi('full','config','dump','--format=json',extra=extra).stdout)

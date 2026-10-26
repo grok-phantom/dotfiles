@@ -1,0 +1,3 @@
+interface:
+  display_name: "Review Smart"
+  short_description: "按改动范围挑选评审流程，避免把所有评审叠在一起跑"
