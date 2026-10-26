@@ -2,6 +2,7 @@
 useDefault = true
 
 # File SHA-256 values keyed by names such as "latest-apis.md" match generic-api-key.
-[[allowlists]]
+# Single-table form: the CI action runs gitleaks 8.24, before [[allowlists]] existed.
+[allowlist]
 description = "Provenance hashes in a vendored agent skill"
 paths = ['''^home/dot_agents/skills/swiftui-expert-skill/SOURCE\.json$''']
