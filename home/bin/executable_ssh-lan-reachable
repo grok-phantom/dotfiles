@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# usage: ssh-lan-reachable IP [PORT]
+#
+# Exit 0 when IP is on a local network this machine is directly attached to and
+# PORT (default 22) answers there; otherwise exit 1, within about a second.
+# Meant for ssh_config, so one host entry is direct at home and jumps elsewhere:
+#   Match host NAME !exec "~/bin/ssh-lan-reachable 192.0.2.10"
+#       ProxyJump ...
+# On macOS the probe is bound to the physical interface: a VPN or Surge's
+# enhanced mode would otherwise accept the connection itself and say yes.
+set -eufo pipefail
+
+ip="${1:-}"
+port="${2:-22}"
+if [[ ! "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ || ! "$port" =~ ^[0-9]{1,5}$ ]]; then
+  echo "usage: ssh-lan-reachable IP [PORT]" >&2
+  exit 2
+fi
+
+to_int() {
+  local IFS=.
+  set -- $1
+  echo $((($1 << 24) | ($2 << 16) | ($3 << 8) | $4))
+}
+target="$(to_int "$ip")"
+
+if [[ "$(uname -s)" == Darwin ]]; then
+  # "iface address netmask" for each IPv4 address on an en* (Wi-Fi/Ethernet) interface.
+  while read -r iface address mask; do
+    if (((target & mask) == ($(to_int "$address") & mask))); then
+      nc -z -G 1 -b "$iface" "$ip" "$port" >/dev/null 2>&1 && exit 0
+    fi
+  done < <(ifconfig 2>/dev/null | awk '/^[a-z]/ { iface = $1; sub(":$", "", iface) }
+    $1 == "inet" && iface ~ /^en[0-9]+$/ { print iface, $2, $4 }')
+  exit 1
+fi
+
+# Linux: on-link (no gateway) routes only, then a plain TCP connect.
+route="$(ip -4 route get "$ip" 2>/dev/null)" || exit 1
+[[ "$route" != *" via "* ]] || exit 1
+timeout 1 bash -c 'exec 3<>"/dev/tcp/$0/$1"' "$ip" "$port" >/dev/null 2>&1

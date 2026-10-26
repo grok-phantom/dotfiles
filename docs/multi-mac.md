@@ -66,6 +66,11 @@ Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关
 | `temp.conf` | 临时主机 | `sshtmp` 维护，每条带到期日 |
 | `*.local.conf` | 本机其他 | 本机手写 |
 
+主机在家（局域网）和在外走不同路线时，在它的 `Host` 块前加一个反向条件块，例如
+`Match host NAME !exec "~/bin/ssh-lan-reachable 192.0.2.10 22"` 后面写跳板（`ProxyJump`）：连得上局域网地址就直连，否则走跳板，
+`ssh NAME` 在哪都一样用。`ssh-lan-reachable` 绑定物理网卡探测，不会被 Surge 增强模式骗过；同网段才探测，不在家时立刻返回。
+Transmit 等不认 `ProxyJump`/`Match` 的 SFTP 客户端另给固定路线的别名。
+
 OpenSSH 取第一个匹配的值，所以类别文件都在 `Host *` 默认项之前；某台主机需要例外（如 `ForwardAgent yes`、旧的 `ssh-rsa`）就写在它自己的块里。不存在的文件会被跳过。
 
 `Host *` 默认项：保活、`ControlMaster auto`（套接字在 `~/.ssh/controlmasters/`）、`ForwardAgent no`；macOS 上设 `ssh_1password_agent = true` 再加 1Password SSH agent 的 `IdentityAgent`。

@@ -91,6 +91,8 @@ agent 转发并启用连接复用。转发应在特定主机块中按需设置�
 （远端会话保留）再重新镜像，不必手动关掉冻结的窗口。
 `clip-to-remote` / `shot-to-remote` 上传图片并
 复制远端路径，上传时清理远端缓存中超过 7 天的文件。主机名保存在本机配置中。
+`sync-remote`（`-r` 反向）用 rsync 在本机和远端 `~` 下同一位置之间推送或拉回，默认跳过 `.git`
+和 `.gitignore` 忽略的文件，只增不删、不覆盖接收端更新的文件（macOS 自带的 openrsync 删除时不认 `.gitignore`）。
 `rtunnel` 按需打开反向隧道，让远端登回本机，默认 2 小时后自动关闭。
 这几个命令都可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。
 `automation_git_global` 让无人值守的远程主机上所有 git 都不等 1Password 批准。
