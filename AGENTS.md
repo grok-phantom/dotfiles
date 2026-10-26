@@ -32,7 +32,7 @@ source tree，而不是通用软件项目。
 - `home/dot_zshrc.tmpl`、`home/dot_zprofile.tmpl` 和
   `home/private_dot_config/zsh/conf.d/` 定义交互式 shell 行为。
 - `home/private_dot_config/` 映射到 `~/.config/` 下的 private files。
-- `home/bin/` 映射到 `~/bin`：远程开发（`rt`、`clip-to-remote`、`shot-to-remote`）、
+- `home/bin/` 映射到 `~/bin`：远程开发（`mba`、`mba-sync`、`mba-clip`、`mba-shot`、`mba-tunnel`）、
   SSH 临时主机、workspace、agent 通知和检查脚本。
 - `home/private_dot_claude/`、`home/dot_codex/` 是 Claude Code / Codex 的
   `modify_` 模板，只合并本仓库自有的键和 hooks。
@@ -74,9 +74,9 @@ source tree，而不是通用软件项目。
 
 ## 远程开发与 agent 集成
 
-- 远程主机名只放本机：`-H`、环境变量或 `~/.config/clip-to-remote/host`；
+- 远程主机名只放本机：`-H`、`MBA_HOST` 或 `~/.config/mba/host`；
   脚本和文档里不写具体主机名或地址。
-- 远端登回本机只用 `rtunnel` 按需打开，不做常驻隧道。
+- 远端登回本机只用 `mba-tunnel` 按需打开，不做常驻隧道。
 - `~/bin` 下的远程工具要同时能在终端和 Raycast（无 TTY）里运行，保留 Raycast 头。
 - 在远端执行的命令走登录 shell（`"$SHELL" -l`），否则拿不到 Homebrew 的 PATH。
 - 远端不能有需要在它屏幕上点的确认：SSH 会话里的签名、push 走转发 agent，

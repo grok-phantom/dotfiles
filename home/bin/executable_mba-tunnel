@@ -1,52 +1,52 @@
 #!/usr/bin/env bash
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Reverse SSH Tunnel
+# @raycast.title MBA · Tunnel
 # @raycast.mode compact
 # Optional parameters:
 # @raycast.icon 🔁
-# @raycast.packageName Dotfiles
+# @raycast.packageName MBA
 # @raycast.description Let the remote dev host SSH back into this Mac for a few hours.
 # @raycast.argument1 { "type": "dropdown", "placeholder": "action", "data": [{"title": "Toggle", "value": "toggle"}, {"title": "On", "value": "on"}, {"title": "Off", "value": "off"}, {"title": "Status", "value": "status"}] }
 set -eufo pipefail
 
 usage() {
   cat <<'EOF'
-usage: rtunnel [-H host] [status | on [hours] | off | toggle]
+usage: mba-tunnel [-H host] [status | on [hours] | off | toggle]
 
-Open a reverse tunnel so the remote dev host can `ssh -p PORT 127.0.0.1` back
+Open a reverse tunnel so the mba can `ssh -p PORT 127.0.0.1` back
 into this Mac (needs Remote Login on here). Only processes on that host can
 use it, but any of them can, so keep it open only while needed: it closes by
 itself after HOURS (default 2). A notification shows when it opens and closes.
 
 Without an action: status in a terminal, toggle elsewhere (e.g. Raycast).
-Port: $RTUNNEL_PORT, default 2222. Host: -H, else $RT_HOST, else the first
-line of ~/.config/clip-to-remote/host (the same file rt reads).
+Port: $MBA_TUNNEL_PORT, default 2222. Host: -H, else $MBA_HOST, else the first
+line of ~/.config/mba/host (every mba-* command reads it).
 EOF
 }
 
-host="${RT_HOST:-}"
+host="${MBA_HOST:-}"
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
 fi
 if [[ "${1:-}" == "-H" ]]; then
-  host="${2:?rtunnel: -H needs a host}"
+  host="${2:?mba-tunnel: -H needs a host}"
   shift 2
 fi
-if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
-  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+if [[ -z "$host" && -r "$HOME/.config/mba/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/mba/host")"
 fi
-port="${RTUNNEL_PORT:-2222}"
+port="${MBA_TUNNEL_PORT:-2222}"
 if [[ ! "$host" =~ ^[A-Za-z0-9_.@-]+$ || ! "$port" =~ ^[0-9]+$ ]]; then
-  echo "rtunnel: no usable host or port; use -H, RT_HOST or ~/.config/clip-to-remote/host" >&2
+  echo "mba-tunnel: no usable host or port; use -H, MBA_HOST or ~/.config/mba/host" >&2
   exit 1
 fi
-state="${XDG_STATE_HOME:-$HOME/.local/state}/rtunnel"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/mba-tunnel"
 self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 
 notify() {
-  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "反向隧道"' \
+  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "MBA · 反向隧道"' \
     -e 'end run' "$1" >/dev/null 2>&1 || true
 }
 
@@ -101,7 +101,7 @@ on() {
     return 0
   fi
   if [[ ! "$hours" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-    echo "rtunnel: hours must be a number" >&2
+    echo "mba-tunnel: hours must be a number" >&2
     return 1
   fi
   secs="$(awk -v h="$hours" 'BEGIN { printf "%d", h * 3600 }')"
@@ -125,7 +125,7 @@ on() {
     echo "已打开，$(until_time) 自动关闭"
   else
     off >/dev/null
-    echo "rtunnel: 没能打开（登录失败，或远端端口 $port 已被占用）" >&2
+    echo "mba-tunnel: 没能打开（登录失败，或远端端口 $port 已被占用）" >&2
     return 1
   fi
 }

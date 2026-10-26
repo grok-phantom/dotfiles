@@ -119,20 +119,26 @@ Python 更新入口使用进程环境，不经过这些 shell 函数。
 
 ## 远程开发
 
+远程开发主机（mba）的命令都以 `mba` 开头，主机名只写在本机。
+
 | 命令 | 行为与前提 |
 | --- | --- |
-| `rt [-H host] [session]` | SSH 登录 shell 中连接/创建 tmux 会话，默认 main；无 TTY 时通过 macOS AppleScript 打开 Ghostty 标签页 |
-| `clip-to-remote [-H host] [-s] [image ...]` | macOS 剪贴板图片或文件上传；`-s` 先框选截图 |
-| `shot-to-remote` | 调用 `clip-to-remote -s`，使用已配置的默认主机 |
-| `sync-remote [-H host] [-r] [-n] [--all] [path ...]` | 用 rsync 把 `~` 下的目录或文件复制到远端 `~` 下同一相对路径（默认当前目录，缺的目录自动建）；`-r`（`--pull`）反过来从远端拉回；跳过 `.git`、`.DS_Store` 和 `.gitignore` 忽略的文件（拉取时远端须是 Git 仓库才按 `.gitignore` 过滤），`--all` 全部带上；`-n` 只预览；从不删除文件，接收端更新的文件不覆盖；Raycast 里先选方向，路径留空时用 Finder 选中项 |
+| `mba [-H host] [session]` | SSH 登录 shell 中连接/创建 tmux 会话，默认 main；无 TTY 时镜像进 cmux，或通过 AppleScript 打开 Ghostty 标签页；Raycast 里只显示一行结果 |
+| `mba-clip [-H host] [-s] [image ...]` | macOS 剪贴板图片或文件上传；`-s` 先框选截图 |
+| `mba-shot` | 调用 `mba-clip -s` |
+| `mba-tunnel [-H host] [status \| on [hours] \| off \| toggle]` | 按需打开反向隧道，让远端 `ssh -p 2222 127.0.0.1` 登回本机，默认 2 小时后关闭 |
+| `mba-sync [-H host] [-r] [-n] [--all] [path ...]` | 用 rsync 把 `~` 下的目录或文件复制到远端 `~` 下同一相对路径（默认当前目录，缺的目录自动建）；`-r`（`--pull`）反过来从远端拉回；跳过 `.git`、`.DS_Store` 和 `.gitignore` 忽略的文件（拉取时远端须是 Git 仓库才按 `.gitignore` 过滤），`--all` 全部带上；`-n` 只预览；从不删除文件，接收端更新的文件不覆盖；Raycast 里先选方向，路径留空时用 Finder 选中项 |
+
+签名：
+
+| 命令 | 行为与前提 |
+| --- | --- |
 | `git-ssh-sign` | Git 自动调用的签名适配器：本机用 1Password signer，SSH 会话用 ssh-keygen |
-| `ssh-lan-reachable IP [PORT]` | 供 SSH 配置的 `Match … exec` 使用：本机物理网卡与 IP 同网段且端口能连时返回 0，否则 1（约 1 秒内）；macOS 上绑定物理网卡探测，不会被 Surge 增强模式或 VPN 骗过 |
 
-运行 Codex 时，先用 `rt codex` 连接名为 `codex` 的远程会话，再在远端运行 `codex`。
-`rt` 只管理 SSH/tmux 连接，会话名不会自动启动同名程序；远端需已安装 Codex。
+运行 Codex 时，先用 `mba codex` 连接名为 `codex` 的远程会话，再在远端运行 `codex`。
+`mba` 只管理 SSH/tmux 连接，会话名不会自动启动同名程序；远端需已安装 Codex。
 
-主机优先级：`-H` → `RT_HOST`（`clip-to-remote` 用 `CLIP_REMOTE_HOST`）→
-`~/.config/clip-to-remote/host` 第一行。截图工具需要 macOS 截屏/自动化权限与可用
+主机优先级：`-H` → `MBA_HOST` → `~/.config/mba/host` 第一行，所有 `mba*` 命令相同。截图工具需要 macOS 截屏/自动化权限与可用
 SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghostty。
 文件扩展名仅接受字母和数字；没有扩展名时使用 `.png`。
 目录创建或上传写入失败时返回错误，保留原剪贴板，不输入上传路径。

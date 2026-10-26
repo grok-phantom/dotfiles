@@ -14,7 +14,7 @@ dotfiles_paths=("$HOME/bin")
 for dotfiles_path in "$HOME/go/bin" "$HOME/.cargo/bin" "$HOME/.local/bin"; do
   [[ ! -d "$dotfiles_path" ]] || dotfiles_paths+=("$dotfiles_path")
 done
-# A pane whose shell started before cmux mirrored its tmux session (e.g. rt's
+# A pane whose shell started before cmux mirrored its tmux session (e.g. mba's
 # pre-created first pane) misses cmux's default-command, so join it here.
 if [[ -n "$TMUX" && -r "$HOME/.local/share/cmux/tmux-agent/init.sh" ]] &&
   [[ -n "$(tmux show-options -qv @cmux_agent_default_command 2>/dev/null)" ]]; then

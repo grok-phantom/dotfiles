@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Sync with Remote
+# @raycast.title MBA · Sync
 # @raycast.mode silent
 # Optional parameters:
 # @raycast.icon 🔄
-# @raycast.packageName Dotfiles
+# @raycast.packageName MBA
 # @raycast.description Copy the Finder selection (or a path) to or from the same place under ~ on the remote dev host.
 # @raycast.argument1 { "type": "dropdown", "placeholder": "direction", "data": [{"title": "Push", "value": "--push"}, {"title": "Pull", "value": "--pull"}] }
 # @raycast.argument2 { "type": "text", "placeholder": "path under ~", "optional": true }
@@ -13,7 +13,7 @@ set -eufo pipefail
 
 usage() {
   cat <<'EOF'
-usage: sync-remote [-H host] [-r | --pull] [-n] [--all] [path ...]
+usage: mba-sync [-H host] [-r | --pull] [-n] [--all] [path ...]
 
 Copy each PATH (default: the current directory) with rsync over SSH to the
 same path relative to ~ on a remote host, e.g. ~/workspace/x -> host:~/workspace/x.
@@ -35,17 +35,17 @@ directory must be a Git work tree for .gitignore to apply.
 Without a terminal (e.g. from Raycast) and without PATH, the Finder selection
 is used and the result is shown as a notification.
 
-Host: -H, else $RT_HOST, else the first line of ~/.config/clip-to-remote/host
-(the same file rt and clip-to-remote read).
+Host: -H, else $MBA_HOST, else the first line of ~/.config/mba/host
+(every mba-* command reads it).
 EOF
 }
 
 notify() {
-  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "sync-remote"' \
+  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "MBA"' \
     -e 'end run' "$1" >/dev/null 2>&1 || true
 }
 fail() {
-  echo "sync-remote: $1" >&2
+  echo "mba-sync: $1" >&2
   [[ -t 1 ]] || notify "$1"
   exit 1
 }
@@ -67,14 +67,14 @@ normalize() {
   [[ ${#parts[@]} -gt 0 ]] && printf '/%s' "${parts[@]}" || printf '/'
 }
 
-host="${RT_HOST:-}"
+host="${MBA_HOST:-}"
 pull=false
 dry_run=false
 all=false
 while (($#)); do
   case "$1" in
     -h | --help) usage; exit 0 ;;
-    -H) host="${2:?sync-remote: -H needs a host}"; shift 2 ;;
+    -H) host="${2:?mba-sync: -H needs a host}"; shift 2 ;;
     -r | --pull) pull=true; shift ;;
     --push) pull=false; shift ;;
     -n | --dry-run) dry_run=true; shift ;;
@@ -84,10 +84,10 @@ while (($#)); do
     *) break ;;
   esac
 done
-if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
-  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+if [[ -z "$host" && -r "$HOME/.config/mba/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/mba/host")"
 fi
-[[ "$host" =~ ^[A-Za-z0-9_.@-]+$ ]] || fail "no host; use -H, RT_HOST or ~/.config/clip-to-remote/host"
+[[ "$host" =~ ^[A-Za-z0-9_.@-]+$ ]] || fail "no host; use -H, MBA_HOST or ~/.config/mba/host"
 
 paths=()
 for path in "$@"; do

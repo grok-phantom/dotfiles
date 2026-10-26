@@ -61,7 +61,7 @@ configuration stays intact. Do not source iTerm2 integration in Ghostty or set
 its own environment but may be missing on remote systems. This repository explicitly
 sets `shell-integration-features = ssh-env,ssh-terminfo`, enabling Ghostty's SSH
 environment and terminfo integration. SSH use may install terminfo on the remote
-host; review that behavior for the target. The separate `rt` helper also checks
+host; review that behavior for the target. The separate `mba` helper also checks
 remote terminfo and falls back to `xterm-256color` if unavailable.
 iTerm2's native tmux control-mode UI is not replicated
 by Ghostty; normal tmux inside the terminal is a separate workflow.

@@ -9,8 +9,11 @@ unset dotfiles_brew
 
 # In an SSH session, point SSH_AUTH_SOCK at a fixed link to the forwarded agent,
 # refreshed on each login, so tmux sessions that outlive the connection keep
-# reaching the agent of whichever machine is connected now.
-if [[ -n "$SSH_CONNECTION" && -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent-forwarded.sock" ]]; then
+# reaching the agent of whichever machine is connected now. Only a login with a
+# terminal moves the link (or one that finds it dead): a one-off command such as
+# mba-sync's `$SHELL -l` ends at once and would leave the link pointing nowhere.
+if [[ -n "$SSH_CONNECTION" && -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent-forwarded.sock" ]] &&
+  [[ -t 0 || ! -S "$HOME/.ssh/agent-forwarded.sock" ]]; then
   ln -sfn -- "$SSH_AUTH_SOCK" "$HOME/.ssh/agent-forwarded.sock" &&
     export SSH_AUTH_SOCK="$HOME/.ssh/agent-forwarded.sock"
 fi

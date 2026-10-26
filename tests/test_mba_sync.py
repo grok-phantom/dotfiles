@@ -1,4 +1,4 @@
-"""Run sync-remote with real rsync against a local SSH stand-in; never touches the network."""
+"""Run mba-sync with real rsync against a local SSH stand-in; never touches the network."""
 import os
 from pathlib import Path
 import shutil
@@ -9,7 +9,7 @@ import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / 'home/bin/executable_sync-remote'
+SCRIPT = ROOT / 'home/bin/executable_mba-sync'
 
 
 @unittest.skipUnless(shutil.which('rsync'), 'rsync is not installed')
@@ -25,7 +25,7 @@ class SyncRemote(unittest.TestCase):
             path.mkdir()
         self.log = self.root/'ssh.log'
         self.env = dict(os.environ, PATH=str(self.bin)+os.pathsep+os.environ['PATH'], HOME=str(self.home),
-                        RT_HOST='fixture-host', FIXTURE_REMOTE=str(self.remote), FIXTURE_LOG=str(self.log))
+                        MBA_HOST='fixture-host', FIXTURE_REMOTE=str(self.remote), FIXTURE_LOG=str(self.log))
         # Like ssh: drop options and the host, join the rest into one remote shell command.
         self.stub('ssh', '''
             import os, subprocess, sys

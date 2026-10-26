@@ -8,7 +8,7 @@ import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / 'home/bin/executable_clip-to-remote'
+SCRIPT = ROOT / 'home/bin/executable_mba-clip'
 
 
 class ClipToRemote(unittest.TestCase):
@@ -23,7 +23,7 @@ class ClipToRemote(unittest.TestCase):
         self.remote.mkdir()
         self.clipboard.write_text('previous clipboard')
         self.env = dict(os.environ, PATH=str(self.bin)+os.pathsep+os.environ['PATH'],
-                        HOME=str(self.root), CLIP_REMOTE_HOST='fixture-host',
+                        HOME=str(self.root), MBA_HOST='fixture-host',
                         FIXTURE_REMOTE=str(self.remote), FIXTURE_CLIPBOARD=str(self.clipboard))
         self.stub('ssh', '''
             import os, subprocess, sys

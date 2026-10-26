@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Clip Image to Remote
+# @raycast.title MBA · Clip Image
 # @raycast.mode silent
 # Optional parameters:
 # @raycast.icon 🖼️
-# @raycast.packageName Dotfiles
-# @raycast.description Upload the clipboard image to the remote dev host and copy its path.
+# @raycast.packageName MBA
+# @raycast.description Upload the clipboard image to the remote dev host and copy its path there.
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-usage: clip-to-remote [-H host] [-s] [image ...]
+usage: mba-clip [-H host] [-s] [image ...]
 
 Upload the clipboard image (or the given image files) to ~/.cache/clip on a
 remote host over SSH, then put the remote path(s) on the clipboard, ready to
@@ -22,19 +22,19 @@ paste into Codex or another agent running there.
 Without a terminal (e.g. from Raycast) and with Ghostty in front, the path is
 also typed into Ghostty's focused terminal, so it lands in the remote prompt.
 
-Host: -H, else $CLIP_REMOTE_HOST, else the first line of
-~/.config/clip-to-remote/host (machine-local, not managed by chezmoi).
+Host: -H, else $MBA_HOST, else the first line of
+~/.config/mba/host (machine-local, not managed by chezmoi).
 Remote clips older than 7 days are pruned on each upload.
 EOF
 }
 
-host="${CLIP_REMOTE_HOST:-}"
+host="${MBA_HOST:-}"
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
 fi
 if [[ "${1:-}" == "-H" ]]; then
-  host="${2:?clip-to-remote: -H needs a host}"
+  host="${2:?mba-clip: -H needs a host}"
   shift 2
 fi
 shot=false
@@ -42,20 +42,20 @@ if [[ "${1:-}" == "-s" ]]; then
   shot=true
   shift
 fi
-if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
-  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+if [[ -z "$host" && -r "$HOME/.config/mba/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/mba/host")"
 fi
 
 notify() {
-  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "clip-to-remote"' -e 'end run' "$1" >/dev/null 2>&1 || true
+  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "MBA"' -e 'end run' "$1" >/dev/null 2>&1 || true
 }
 fail() {
-  echo "clip-to-remote: $1" >&2
+  echo "mba-clip: $1" >&2
   notify "$1"
   exit 1
 }
 
-[[ -n "$host" ]] || fail "no host; use -H, CLIP_REMOTE_HOST or ~/.config/clip-to-remote/host"
+[[ -n "$host" ]] || fail "no host; use -H, MBA_HOST or ~/.config/mba/host"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT

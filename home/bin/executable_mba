@@ -1,63 +1,68 @@
 #!/usr/bin/env bash
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Remote tmux
+# @raycast.title MBA · Tmux
 # @raycast.mode silent
 # Optional parameters:
 # @raycast.icon 🖥️
-# @raycast.packageName Dotfiles
-# @raycast.description Mirror the remote dev host's tmux sessions into cmux (or one session), else open a Ghostty tab.
-# @raycast.argument1 { "type": "text", "placeholder": "session", "optional": true }
+# @raycast.packageName MBA
+# @raycast.description Open the remote dev host's tmux sessions in cmux (or one session), else in a Ghostty tab.
+# @raycast.argument1 { "type": "text", "placeholder": "session (blank: all)", "optional": true }
 set -eufo pipefail
 
 usage() {
   cat <<'EOF'
-usage: rt [-H host] [session]
+usage: mba [-H host] [session]
 
-Attach to tmux session SESSION (default: main) on a remote host over SSH,
+Attach to tmux session SESSION (default: main) on the remote dev host over SSH,
 creating it if needed. Detach with the tmux prefix + d; the session keeps
-running on the remote host.
+running there.
 
 Without a terminal (e.g. from Raycast), mirrors into cmux when it is installed
-(RT_APP=ghostty to skip): the named session, or every session on the host when
-none is named. Otherwise it opens a new Ghostty tab and runs rt there instead.
-If cmux's mirror of the host has lost its connection (frozen workspaces), rt
+(MBA_APP=ghostty to skip): the named session, or every session on the host when
+none is named. Otherwise it opens a new Ghostty tab and runs mba there instead.
+If cmux's mirror of the host has lost its connection (frozen workspaces), mba
 detaches it first so the mirror starts fresh; remote sessions keep running.
 Reaching cmux from outside it needs its socket in password mode
 (Settings > Automation); the cmux CLI reads the password saved there.
 
-Host: -H, else $RT_HOST, else the first line of ~/.config/clip-to-remote/host
-(the same machine-local file clip-to-remote reads; not managed by chezmoi).
+The other mba-* commands work on the same host: mba-sync (copy files),
+mba-clip / mba-shot (upload an image), mba-tunnel (let it SSH back here).
+
+Host: -H, else $MBA_HOST, else the first line of ~/.config/mba/host
+(machine-local, not managed by chezmoi; every mba-* command reads it).
 EOF
 }
 
-host="${RT_HOST:-}"
+host="${MBA_HOST:-}"
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
 fi
 if [[ "${1:-}" == "-H" ]]; then
-  host="${2:?rt: -H needs a host}"
+  host="${2:?mba: -H needs a host}"
   shift 2
 fi
-if [[ -z "$host" && -r "$HOME/.config/clip-to-remote/host" ]]; then
-  host="$(head -n 1 "$HOME/.config/clip-to-remote/host")"
+if [[ -z "$host" && -r "$HOME/.config/mba/host" ]]; then
+  host="$(head -n 1 "$HOME/.config/mba/host")"
 fi
 # Raycast passes an empty argument when the optional session is left blank.
-session="${1:-main}"
-[[ -n "$session" ]] || session=main
+named="${1:-}"
+session="${named:-main}"
 
-if [[ -z "$host" ]]; then
-  echo "rt: no host; use -H, RT_HOST or ~/.config/clip-to-remote/host" >&2
+# Raycast shows the last line printed as its message, so failures end in one short line.
+fail() {
+  echo "$1" >&2
+  echo "$1"
   exit 1
-fi
+}
+[[ -n "$host" ]] || fail "没有设置主机：写进 ~/.config/mba/host，或用 -H / MBA_HOST"
 if [[ ! "$session" =~ ^[A-Za-z0-9_.-]+$ || ! "$host" =~ ^[A-Za-z0-9_.@-]+$ ]]; then
-  echo "rt: host and session must be plain names" >&2
-  exit 1
+  fail "主机名和会话名只能用字母、数字和 _ . -"
 fi
 
 cmux_cli=/Applications/cmux.app/Contents/Resources/bin/cmux
-if [[ (! -t 0 || ! -t 1) && "${RT_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
+if [[ (! -t 0 || ! -t 1) && "${MBA_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
   open -a cmux
   for _ in {1..20}; do
     "$cmux_cli" ping >/dev/null 2>&1 && break
@@ -66,7 +71,7 @@ if [[ (! -t 0 || ! -t 1) && "${RT_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
   # Sessions become cmux workspaces and windows tabs; closing a mirrored tab
   # closes that tmux window on the host. Sessions are created from a login
   # shell so the tmux server gets Homebrew's PATH.
-  if [[ -n "${1:-}" ]]; then
+  if [[ -n "$named" ]]; then
     ensure="tmux has-session -t '=$session' 2>/dev/null || tmux new-session -d -s '$session'"
   else
     ensure="tmux has-session 2>/dev/null || tmux new-session -d -s main"
@@ -79,32 +84,39 @@ if [[ (! -t 0 || ! -t 1) && "${RT_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
   # fresh one. A fresh ssh connection avoids a stale ControlMaster.
   owner="$(defaults read com.cmuxterm.app remoteTmux.multiplexer.ownerId 2>/dev/null || true)"
   [[ "$owner" =~ ^[A-Za-z0-9-]+$ ]] || owner=""
-  probe="$(ssh -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=10 "$host" 'exec "$SHELL" -l' <<EOF
+  probe="$(ssh -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=10 "$host" 'exec "$SHELL" -l' 2>/dev/null <<EOF
 $ensure
 if tmux list-clients -F '#{client_control_mode} #{@cmux_view_owner}' 2>/dev/null | grep -qx '1 $owner'; then
-  echo rt-mirror:live
+  echo mba-mirror:live
 else
-  echo rt-mirror:stale
+  echo mba-mirror:stale
 fi
-tmux list-sessions -F 'rt-session:#{session_name}' 2>/dev/null | grep -v '^rt-session:cmux-view-' || true
+tmux list-sessions -F 'mba-session:#{session_name}' 2>/dev/null | grep -v '^mba-session:cmux-view-' || true
 EOF
-)"
-  if [[ -n "$owner" ]] && grep -qx rt-mirror:stale <<<"$probe"; then
-    while IFS= read -r name; do
-      [[ "$name" =~ ^[A-Za-z0-9_.-]+$ ]] || continue
+)" || fail "连不上 $host：Tailscale 开着吗？1Password 批准了吗？"
+  sessions=()
+  while IFS= read -r name; do
+    [[ "$name" =~ ^[A-Za-z0-9_.-]+$ ]] && sessions+=("$name")
+  done < <(sed -n 's/^mba-session://p' <<<"$probe")
+  if [[ -n "$owner" ]] && grep -qx mba-mirror:stale <<<"$probe"; then
+    for name in ${sessions[@]+"${sessions[@]}"}; do
       "$cmux_cli" rpc remote.tmux.detach "{\"host\":\"$host\",\"session\":\"$name\"}" >/dev/null 2>&1 || true
-    done < <(sed -n 's/^rt-session://p' <<<"$probe")
+    done
   fi
-  if [[ -n "${1:-}" ]]; then
-    exec "$cmux_cli" ssh-tmux "$host" attach "$session"
+  if [[ -n "$named" ]]; then
+    out="$("$cmux_cli" ssh-tmux "$host" attach "$session" 2>&1)" || fail "cmux 没能打开 $session：${out##*$'\n'}"
+    echo "已在 cmux 打开 $host 的 $session"
+  else
+    out="$("$cmux_cli" ssh-tmux "$host" 2>&1)" || fail "cmux 没能打开 $host：${out##*$'\n'}"
+    echo "已在 cmux 打开 $host 的 ${#sessions[@]} 个会话"
   fi
-  exec "$cmux_cli" ssh-tmux "$host"
+  exit 0
 fi
 
 if [[ ! -t 0 || ! -t 1 ]]; then
-  # Ghostty 1.3+ AppleScript: a new tab whose shell runs rt, so detaching
+  # Ghostty 1.3+ AppleScript: a new tab whose shell runs mba, so detaching
   # leaves an ordinary local shell behind.
-  exec osascript \
+  osascript \
     -e 'on run argv' \
     -e 'tell application "Ghostty"' \
     -e 'activate' \
@@ -116,7 +128,9 @@ if [[ ! -t 0 || ! -t 1 ]]; then
     -e 'new tab in front window with configuration cfg' \
     -e 'end if' \
     -e 'end tell' \
-    -e 'end run' "rt -H $host $session"$'\n' >/dev/null
+    -e 'end run' "mba -H $host $session"$'\n' >/dev/null 2>&1 || fail "Ghostty 没能打开新标签页"
+  echo "已在 Ghostty 打开 $host 的 $session"
+  exit 0
 fi
 
 # Fall back to xterm-256color when the remote lacks Ghostty's terminfo, and

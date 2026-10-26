@@ -82,18 +82,18 @@ UTF-8 路径显示、公共 ignore 和 `~/.config/git/local.conf` 本机扩展�
 1Password SSH 签名，SSH 会话改走转发 agent。
 
 `ssh_managed` 开启后按 personal/work/temp/local 分类 include 主机配置，默认关闭
-agent 转发并启用连接复用。转发应在特定主机块中按需设置；`.zprofile` 在 SSH
-登录时维护稳定的 agent socket 链接供长寿命 tmux 会话使用。临时主机由 `sshtmp`
+agent 转发并启用连接复用。转发应在特定主机块中按需设置；`.zprofile` 在带终端的 SSH
+登录时维护稳定的 agent socket 链接供长寿命 tmux 会话使用（一次性的远程命令不改它）。临时主机由 `sshtmp`
 管理，单独使用 `known_hosts.temp`；清单中的到期项在后续命令运行时清理。
 
-`rt` 连接或创建远程 tmux 会话，可用于运行 Claude Code 或 Codex。
-在 cmux 里重跑 `rt` 时，若本机 cmux 与该主机的镜像连接已断（窗口冻结），会先分离旧镜像
+远程开发主机的命令统一以 `mba` 开头。`mba` 连接或创建远程 tmux 会话，可用于运行 Claude Code 或 Codex。
+在 cmux 里重跑 `mba` 时，若本机 cmux 与该主机的镜像连接已断（窗口冻结），会先分离旧镜像
 （远端会话保留）再重新镜像，不必手动关掉冻结的窗口。
-`clip-to-remote` / `shot-to-remote` 上传图片并
+`mba-clip` / `mba-shot` 上传图片并
 复制远端路径，上传时清理远端缓存中超过 7 天的文件。主机名保存在本机配置中。
-`sync-remote`（`-r` 反向）用 rsync 在本机和远端 `~` 下同一位置之间推送或拉回，默认跳过 `.git`
+`mba-sync`（`-r` 反向）用 rsync 在本机和远端 `~` 下同一位置之间推送或拉回，默认跳过 `.git`
 和 `.gitignore` 忽略的文件，只增不删、不覆盖接收端更新的文件（macOS 自带的 openrsync 删除时不认 `.gitignore`）。
-`rtunnel` 按需打开反向隧道，让远端登回本机，默认 2 小时后自动关闭。
+`mba-tunnel` 按需打开反向隧道，让远端登回本机，默认 2 小时后自动关闭。
 Mac 之间经 Tailscale 互通（`tailscale-app`，无人值守主机用命令行版）；个人 SSH 主机可由本机 infra 仓库的
 `fleet.json` 直接生成（`ssh_personal_fleet`），不必读 1Password。
 这几个命令都可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。

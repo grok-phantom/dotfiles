@@ -100,9 +100,10 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 | `SERVE_HERE_BIND` | 127.0.0.1；HTTP 文件服务监听地址 |
 | `WORKSPACE_ROOT` / `WORKSPACE_VOLUME_UUID` / `WORKSPACE_COMPANY` | 覆盖命令的 workspace 根目录、卷校验值和公司目录选择；不改变 chezmoi 符号链接目标 |
 | `~/.config/workspace/repos.tsv` | workspace clone 默认清单；使用自定义 XDG_CONFIG_HOME 时随之改变 |
-| `RT_HOST` / `CLIP_REMOTE_HOST` | 远程 tmux（含 `rtunnel`）/ 图片上传的主机，低于命令行 `-H` 的优先级 |
-| `RTUNNEL_PORT` | 2222；`rtunnel` 在远端 127.0.0.1 上监听的端口 |
-| `~/.config/clip-to-remote/host` | 上述变量和 `-H` 均未指定时，取第一行 |
+| `MBA_HOST` | 所有 `mba*` 命令的远程主机，低于命令行 `-H` 的优先级 |
+| `MBA_APP` | `mba` 无终端时用 cmux（默认）还是 `ghostty` |
+| `MBA_TUNNEL_PORT` | 2222；`mba-tunnel` 在远端 127.0.0.1 上监听的端口 |
+| `~/.config/mba/host` | 上述变量和 `-H` 均未指定时，取第一行 |
 | `SSHTMP_FILE` | 默认 `~/.ssh/config.d/temp.conf`；测试可用 `SSHTMP_TODAY` 固定日期 |
 | `NORI_WATCH_NORI` | 默认 `~/.local/bin/nori` |
 | `NORI_WATCH_BARK` | 默认 `~/.config/nori-watch/bark.url` |

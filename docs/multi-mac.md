@@ -66,10 +66,8 @@ Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关
 | `temp.conf` | 临时主机 | `sshtmp` 维护，每条带到期日 |
 | `*.local.conf` | 本机其他 | 本机手写 |
 
-主机在家（局域网）和在外走不同路线时，在它的 `Host` 块前加一个反向条件块，例如
-`Match host NAME !exec "~/bin/ssh-lan-reachable 192.0.2.10 22"` 后面写跳板（`ProxyJump`）：连得上局域网地址就直连，否则走跳板，
-`ssh NAME` 在哪都一样用。`ssh-lan-reachable` 绑定物理网卡探测，不会被 Surge 增强模式骗过；同网段才探测，不在家时立刻返回。
-Transmit 等不认 `ProxyJump`/`Match` 的 SFTP 客户端另给固定路线的别名。
+自己的机器都加入 Tailscale，SSH 别名直接写对方的 Tailscale 地址：在家时 Tailscale 自己走局域网直连，在外经中继，SSH 配置里不需要在家/在外的条件块（见下面的 [Tailscale](#tailscale)）。
+Transmit 读不了 `.pub` 形式的 `IdentityFile`，另给一个直接指定 1Password agent 的别名。
 
 OpenSSH 取第一个匹配的值，所以类别文件都在 `Host *` 默认项之前；某台主机需要例外（如 `ForwardAgent yes`、旧的 `ssh-rsa`）就写在它自己的块里。不存在的文件会被跳过。
 
@@ -102,7 +100,7 @@ sshtmp prune
     把公钥加到 GitHub → Settings → SSH and GPG keys → **Signing key**（不要加成 Authentication key），并写进本机 data `automation_signing_pubkey`，`allowed_signers` 会多一行用于本地验证。
   - 关掉开关再 apply，只删除这组由它写入的 `GIT_CONFIG_*`；重启 Claude Code 后生效。连服务器的 SSH 仍走 1Password，写主机的操作照旧要人批准。
   - 无人值守的远程开发主机再设 `automation_git_global = true`：同样的设置写进 `~/.config/git/config` 末尾，终端、Codex 等所有 git 都不再等 1Password（否则 SSH 会话里的 push 和签名每次都要在你面前的 Mac 上批准，人不在就卡住）。代价是这台机器上任何进程都能用 gh 令牌推送、用本机钥签名，所以 gh 令牌要限定到个人仓库。
-- 主机清单很少变，改完 1Password 里的文档后再 `chezmoi apply ~/.ssh/config.d/personal.conf` 即可。
+- 主机清单很少变：改 infra 的 `fleet.json`，有 infra 仓库的机器 `chezmoi apply ~/.ssh/config.d/personal.conf`；读 1Password 文档的机器先在 infra 里 `scripts/fleet ssh --publish`，再 apply。
 
 切换前后用 `ssh -G <alias>` 逐个核对 hostname/user/port/proxyjump/identityfile；`ssh -G` 成功不代表能登录。
 
@@ -110,16 +108,23 @@ sshtmp prune
 
 ## 远程开发主机
 
-常用的远程开发主机名写在本机 `~/.config/clip-to-remote/host`（第一行，不进 Git），下面几个命令共用。它们都带 Raycast 头，在 Raycast → Settings → Extensions → Script Commands 里 Add Directories 选 `~/bin`，再给各自绑全局快捷键：
+远程开发主机（mba）的 SSH 别名写在本机 `~/.config/mba/host`（第一行，不进 Git），下面几个 `mba*` 命令共用。它们都带 Raycast 头（Raycast 里归在 MBA 组，标题是「MBA · …」），在 Raycast → Settings → Extensions → Script Commands 里 Add Directories 选 `~/bin`，再给各自绑全局快捷键：
 
-- `rt [session]`（Remote tmux）：`ssh -t` 后直接 `tmux new-session -A -s <session>`（默认 `main`），断线或 detach 后会话仍在远端。远端缺 Ghostty terminfo 时回退到 `xterm-256color`。从 Raycast 运行时，装了 cmux 就把会话镜像进 cmux（不填会话名则镜像远端全部会话，每个会话是侧边栏一行），否则在 Ghostty 新开标签页执行 `rt`；`RT_APP=ghostty` 强制用 Ghostty。cmux 里可以直接粘贴图片到远端，不需要 `clip-to-remote`。
-- `shot-to-remote`（Screenshot to Remote）：框选截图 → 上传到远端 `~/.cache/clip/` → 远端路径进剪贴板；Ghostty 在前台时直接把路径输入到当前终端，正在远端跑的 Claude Code / Codex 输入框里就有了。
-- `clip-to-remote`（Clip Image to Remote）：同上，但上传剪贴板里已有的图片，或命令行给出的文件；`-s` 等同 `shot-to-remote`。
-- `rtunnel`（Reverse SSH Tunnel）：反方向，让远端能 `ssh -p 2222 127.0.0.1` 登回你面前这台 Mac（本机要开远程登录），例如让远端的 agent 在这台 Mac 上同步配置或测试。Raycast 里选 Toggle 开关；终端里 `rtunnel` 看状态，`rtunnel on 4` 开 4 小时，`rtunnel off` 关。默认 2 小时后自动关闭，开和关都会弹系统通知。端口只监听在远端的 127.0.0.1，但远端上任何进程都能用它，所以只在需要时打开；端口用 `RTUNNEL_PORT` 改。
+```sh
+mkdir -p ~/.config/mba && echo <SSH 别名> > ~/.config/mba/host
+# 从旧名字迁移：mv ~/.config/clip-to-remote/host ~/.config/mba/host
+```
 
-用 Codex 远程开发时，在本机执行 `rt codex`，进入远端会话后再执行 `codex`。
-远端需已安装 Codex；`rt` 使用登录 shell 查找工具，会话名本身不会自动启动程序。
-再次执行 `rt codex` 可接回同一会话。
+
+- `mba [session]`（MBA · Tmux）：`ssh -t` 后直接 `tmux new-session -A -s <session>`（默认 `main`），断线或 detach 后会话仍在远端。远端缺 Ghostty terminfo 时回退到 `xterm-256color`。从 Raycast 运行时，装了 cmux 就把会话镜像进 cmux（不填会话名则镜像远端全部会话，每个会话是侧边栏一行），否则在 Ghostty 新开标签页执行 `mba`；`MBA_APP=ghostty` 强制用 Ghostty。Raycast 里只显示一行结果（打开了几个会话，或连不上的原因）。cmux 里可以直接粘贴图片到远端，不需要 `mba-clip`。
+- `mba-shot`（MBA · Screenshot）：框选截图 → 上传到远端 `~/.cache/clip/` → 远端路径进剪贴板；Ghostty 在前台时直接把路径输入到当前终端，正在远端跑的 Claude Code / Codex 输入框里就有了。
+- `mba-clip`（MBA · Clip Image）：同上，但上传剪贴板里已有的图片，或命令行给出的文件；`-s` 等同 `mba-shot`。
+- `mba-sync`（MBA · Sync）：把 `~` 下的文件或目录推到远端同一位置，`-r` 拉回；见[命令参考](commands.md#远程开发)。
+- `mba-tunnel`（MBA · Tunnel）：反方向，让远端能 `ssh -p 2222 127.0.0.1` 登回你面前这台 Mac（本机要开远程登录），例如让远端的 agent 在这台 Mac 上同步配置或测试。Raycast 里选 Toggle 开关；终端里 `mba-tunnel` 看状态，`mba-tunnel on 4` 开 4 小时，`mba-tunnel off` 关。默认 2 小时后自动关闭，开和关都会弹系统通知。端口只监听在远端的 127.0.0.1，但远端上任何进程都能用它，所以只在需要时打开；端口用 `MBA_TUNNEL_PORT` 改。
+
+用 Codex 远程开发时，在本机执行 `mba codex`，进入远端会话后再执行 `codex`。
+远端需已安装 Codex；`mba` 使用登录 shell 查找工具，会话名本身不会自动启动程序。
+再次执行 `mba codex` 可接回同一会话。
 
 Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着 SSH 和 tmux 也一样；zsh 里是在命令行中插入换行。Codex 也可用 Ctrl+J。
 
@@ -143,13 +148,13 @@ Mac 之间（以及家里主机）走 Tailscale，SSH 别名直接指向对方�
 远端合盖时，任何需要在它屏幕上点的确认都等于卡死。约定：在 SSH 会话里（`SSH_CONNECTION` 非空）需要签名的操作都走转发过来的 agent，1Password 在你面前这台 Mac 上确认：
 
 - `ssh`（含 `git push` 到 GitHub）：`~/.ssh/config` 的 `Match` 块在 SSH 会话中一律用 `SSH_AUTH_SOCK`；没有可用的转发 agent 时直接失败，不回落到远端的 1Password。
-- tmux 会话比 SSH 连接活得久，旧 pane 里的 `SSH_AUTH_SOCK` 会失效。`~/.zprofile` 在每次 SSH 登录时把 `~/.ssh/agent-forwarded.sock` 指向当前的转发 socket，并让后续进程都用这个固定路径。改动之前已经开着的 tmux 会话要重开一次（`tmux kill-server`，或新建会话）才会用上。
+- tmux 会话比 SSH 连接活得久，旧 pane 里的 `SSH_AUTH_SOCK` 会失效。`~/.zprofile` 在每次带终端的 SSH 登录时把 `~/.ssh/agent-forwarded.sock` 指向当前的转发 socket，并让后续进程都用这个固定路径；`mba-sync` 这类一次性命令的登录 shell 不改它（否则命令一结束链接就失效），只有链接已经失效时才顺手接上。改动之前已经开着的 tmux 会话要重开一次（`tmux kill-server`，或新建会话）才会用上。
 - 提交签名：`gpg.ssh.program` 是 `~/bin/git-ssh-sign`，本机用 `op-ssh-sign`，SSH 会话里改用 `ssh-keygen` 经转发 agent 签名。
 - 远端 Claude Code 自己跑的 git 用 `automation_git`（见上文），完全不需要确认；远端也设上它。
 
 仍会在远端弹窗的：远端执行 `op` / 需要 1Password 的 `chezmoi apply`（1Password CLI 走远端的桌面 App），以及 macOS 钥匙串访问确认（例如 Claude Code 升级后首次读取登录凭据）。这些在远端本机处理一次即可，或在远端选“始终允许”。
 
-这几个命令每次都是新的 `ssh` 进程，主机块里关掉 `ControlMaster` 时每次都要走一遍 1Password 确认（有 ProxyJump 时是两次）；让该主机沿用默认的 `ControlMaster auto` 后，8 小时内的后续连接复用同一条连接，不再询问。
+这几个命令每次都是新的 `ssh` 进程，主机块里关掉 `ControlMaster` 时每次都要走一遍 1Password 确认（有 ProxyJump 时是两次）；让该主机沿用默认的 `ControlMaster auto` 后，8 小时内的后续连接复用同一条连接，不再询问。`mba` 探测和 `mba-tunnel` 需要独立连接，命令里已自带 `ControlMaster=no`。
 
 ## nori 定时检查
 

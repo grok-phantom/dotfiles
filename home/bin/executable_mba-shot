@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Screenshot to Remote
+# @raycast.title MBA · Screenshot
 # @raycast.mode silent
 # Optional parameters:
 # @raycast.icon 📸
-# @raycast.packageName Dotfiles
+# @raycast.packageName MBA
 # @raycast.description Select a screen area, upload it to the remote dev host and paste its path.
 set -eufo pipefail
 
-exec "$(dirname "$0")/clip-to-remote" -s "$@"
+exec "$(dirname "$0")/mba-clip" -s "$@"
