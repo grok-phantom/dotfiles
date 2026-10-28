@@ -26,3 +26,16 @@ cct() {
   local dir="$HOME/workspace/scratch/$name"
   mkdir -p -- "$dir" && builtin cd -- "$dir" && command claude "$@"
 }
+
+# cxt [name] [codex args...]: like cct, with a fixed path per name for
+# `codex resume`; omit the name for a timestamp.
+cxt() {
+  local name="${1:-$(date +%Y%m%d-%H%M)}"
+  (( $# )) && shift
+  if [[ "$name" == */* || "$name" == .* ]]; then
+    print -u2 "cxt: name must be a plain directory name"
+    return 1
+  fi
+  local dir="$HOME/workspace/scratch/$name"
+  mkdir -p -- "$dir" && builtin cd -- "$dir" && command codex "$@"
+}

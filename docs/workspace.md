@@ -13,7 +13,7 @@ Repositories sync only through Git remotes; never through a sync drive.
 │   ├── archive/     kept but no longer maintained
 │   └── worktrees/   manual worktrees as <repo>/<branch>
 ├── company/         same categories; only on machines allowed to hold company code
-└── scratch/         throwaway code without a remote; safe to empty (`cct NAME` starts Claude Code here)
+└── scratch/         throwaway code without a remote; safe to empty (`cct NAME` / `cxt NAME` starts Claude Code / Codex here)
 ```
 
 Rules:

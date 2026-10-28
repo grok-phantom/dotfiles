@@ -111,7 +111,7 @@ GUI 登录会话；改变 shell 环境不会同步清理另两处。模板的 NO
 Claude 的 `settings.json` 采用 modify template，合并代理 env、automation_git
 和 Roost hooks，保留不相关设置。`automation_git` 让 Claude 启动的 Git 使用
 GitHub HTTPS + gh 凭据，并指定本机签名钥；不创建密钥、不完成 gh 登录。
-`cct` 则为临时 Claude 会话创建 `~/workspace/scratch/<name>`。
+`cct` 和 `cxt` 分别为临时 Claude、Codex 会话创建 `~/workspace/scratch/<name>`。
 
 Roost 集成分别在 Claude 的 settings.json 和 Codex 的 hooks.json 中添加生命周期
 hooks，并从 Codex notify 中移除旧的 Roost 包装，让 Computer Use 继续使用 notify。

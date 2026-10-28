@@ -66,9 +66,11 @@ package 操作针对真实主机，`--target` 不是包管理器沙箱。
 | Ctrl+R / ↑ | atuin 存在时由其初始化历史搜索；完整按键受 atuin/vi 模式影响 |
 | `y` / `yy` / `r` / `ranger` | 启动 Yazi，退出时让当前 shell 切换到所选目录 |
 | `cct [name] [claude args...]` | 在 `~/workspace/scratch/<name>` 启动 Claude；省略名称用时间戳，名称不可含 `/` 或以 `.` 开头 |
+| `cxt [name] [codex args...]` | 在 `~/workspace/scratch/<name>` 启动 Codex；省略名称用时间戳，名称不可含 `/` 或以 `.` 开头 |
 | `SHARE_HISTORY` | 两个 profile 都开启，让 shell 会话共享历史 |
 
 例如 `cct notes --resume` 在固定的 scratch 目录继续 Claude 会话。
+`cxt notes resume` 在固定的 scratch 目录选择并继续 Codex 会话。
 Conda、OMZ 和 Powerlevel10k 只在 full 初始化；其余工具按是否已安装初始化。
 
 ## 代理与 SSH 隧道
