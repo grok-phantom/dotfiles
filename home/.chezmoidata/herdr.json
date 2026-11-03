@@ -1,0 +1,87 @@
+{
+  "herdr_shortcuts": {
+    "bindings": [
+      {
+        "key": "prefix+f",
+        "type": "plugin_action",
+        "command": "herdr-file-viewer.open-file-viewer",
+        "description": "Files: split"
+      },
+      {
+        "key": "prefix+shift+f",
+        "type": "plugin_action",
+        "command": "herdr-file-viewer.open-file-viewer-tab",
+        "description": "Files: tab"
+      },
+      {
+        "key": "prefix+ctrl+g",
+        "type": "plugin_action",
+        "command": "herdr-lazygit.open-lazygit",
+        "description": "Lazygit: split"
+      },
+      {
+        "key": "prefix+ctrl+t",
+        "type": "plugin_action",
+        "command": "herdr-lazygit.open-lazygit-tab",
+        "description": "Lazygit: tab"
+      },
+      {
+        "key": "prefix+shift+z",
+        "type": "plugin_action",
+        "command": "herdr-zoxide.browse",
+        "description": "Find project directory"
+      },
+      {
+        "key": "prefix+shift+o",
+        "type": "plugin_action",
+        "command": "herdr-quicklook.hint",
+        "description": "Preview paths and links"
+      },
+      {
+        "key": "prefix+ctrl+p",
+        "type": "plugin_action",
+        "command": "cloudmanic.herdr-plus.projects",
+        "description": "Project layouts"
+      },
+      {
+        "key": "prefix+ctrl+a",
+        "type": "plugin_action",
+        "command": "cloudmanic.herdr-plus.quick-actions",
+        "description": "Quick actions"
+      },
+      {
+        "key": "super+v",
+        "type": "plugin_action",
+        "command": "dotfiles.quick-actions.paste-image",
+        "description": "Codex：粘贴图片（文本由 Ghostty 处理）"
+      },
+      {
+        "key": "prefix+ctrl+n",
+        "type": "plugin_action",
+        "command": "herdr-navigator.open",
+        "description": "导航：工作区、Agent、目录、操作"
+      },
+      {
+        "key": "prefix+shift+m",
+        "type": "plugin_action",
+        "command": "nicosuave.memex.palette",
+        "description": "历史：搜索并恢复会话"
+      },
+      {
+        "key": "prefix+ctrl+r",
+        "type": "plugin_action",
+        "command": "persiyanov.reviewr.toggle",
+        "description": "审阅：差异与逐行批注"
+      },
+      {
+        "key": "prefix+f1",
+        "type": "popup",
+        "command": "less -R \"$HOME/.config/herdr/shortcuts.txt\"",
+        "description": "中文快捷键速查",
+        "width": "90%",
+        "height": "85%"
+      }
+    ],
+    "retired_commands": []
+  }
+}

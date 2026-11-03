@@ -18,6 +18,8 @@
 | `hostname` | 当前主机名，保留已有值 | 本机模板数据，不应把渲染结果加入公共仓库 |
 | `osid` | 初始化按 OS/发行版计算 | apt 判断支持的 Debian/Ubuntu/Pop!_OS/Raspbian 系统 |
 | `package_cask_groups` | macOS 默认 desktop 加 company 或 personal | 覆盖 cask 组选择；`[]` 表示不选 cask，当前两个角色附加组为空 |
+| `herdr_enabled` | 未设置时 full 默认开启 | 管理 Herdr/Memex 配置，允许插件维护；false 从 Homebrew 选择中排除 herdr/memex，不卸载已有软件 |
+| `cmux_enabled` | 未设置时 full 默认开启；macOS | 管理 cmux 配置；不改变手动调用 mba 的行为 |
 | `package_cask_exclude` | 默认不排除 | 从选中 cask 中排除包名；不卸载现有软件 |
 
 软件完整清单在 [packages.yaml](../home/.chezmoidata/packages.yaml)。core 的软件入口
@@ -111,6 +113,10 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 | `PYTHON` | 测试入口选择已有 Python 3.11+，不会安装解释器 |
 
 ## 关闭功能时的行为
+
+`herdr_enabled=false`、`cmux_enabled=false` 只停止管理对应配置。旧文件、已安装插件、
+后台会话和 hooks 保留。需要卸载集成时按[终端回退步骤](terminals.md#herdr)单独处理。
+两个开关必须是布尔值，重新 init 会保留；core 始终排除这些配置。
 
 开关通常改变的是管理范围，不是卸载动作。full → core、删除 SSH/nori 的选择值、
 关闭定时检查，都不会自动移除旧文件或已加载的 LaunchAgent；需审查具体目标并

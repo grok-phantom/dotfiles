@@ -59,10 +59,24 @@
 {{-     $ours := list -}}
 {{-     range $group := get $hooks $event | default (list) -}}
 {{-       $mine := false -}}
+{{-       $otherHooks := list -}}
 {{-       range $hook := get $group "hooks" | default (list) -}}
-{{-         if eq (toString (get $hook "command")) $command -}}{{- $mine = true -}}{{- end -}}
+{{-         if eq (toString (get $hook "command")) $command -}}
+{{-           $mine = true -}}
+{{-         else -}}
+{{-           $otherHooks = append $otherHooks $hook -}}
+{{-         end -}}
 {{-       end -}}
-{{-       if $mine -}}{{- $ours = append $ours $group -}}{{- else -}}{{- $kept = append $kept $group -}}{{- end -}}
+{{-       if $mine -}}
+{{-         $ours = append $ours $group -}}
+{{-         if $otherHooks -}}
+{{-           $remaining := deepCopy $group -}}
+{{-           $_ := set $remaining "hooks" $otherHooks -}}
+{{-           $kept = append $kept $remaining -}}
+{{-         end -}}
+{{-       else -}}
+{{-         $kept = append $kept $group -}}
+{{-       end -}}
 {{-     end -}}
 {{-     if and $m.on (has $event $m.events) -}}
 {{-       if not (and (eq (len $ours) 1) (eq (index $ours 0 | toJson) ($wantedGroup | toJson))) -}}

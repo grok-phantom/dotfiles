@@ -76,9 +76,12 @@ macOS full 管理 iTerm2 的 `wizplus` Dynamic Profile 和 Ghostty 配置，不�
 默认终端。Ghostty 支持 OSC 52 写剪贴板、长命令完成通知、Shift+Enter 换行，
 并显式启用 SSH 环境/terminfo 集成。快捷键、效果检查和回退见[终端说明](terminals.md)。
 
-full profile 管理 Herdr 的共享偏好：Gruvbox、终端通知和直接新建标签页。
+full profile 默认管理 Herdr 的共享偏好：Gruvbox、终端通知和直接新建标签页。
 其余配置键保留在本机；machine 清单、会话、日志和 socket 不纳入仓库。
-Claude/Codex 集成按主机显式安装，见[Herdr 说明](terminals.md#herdr)。
+`herdr_enabled=false` 停止管理 Herdr/Memex，并从 Homebrew 选择中排除两者；
+`cmux_enabled=false` 停止管理 cmux。关闭开关不卸载工具或删除会话。
+插件通过 `scripts/software herdr-plugins` 预检、安装和验证；Claude/Codex 集成按主机显式安装。
+步骤见[Herdr 说明](terminals.md#herdr)。
 
 ## Git、SSH 与远程开发
 

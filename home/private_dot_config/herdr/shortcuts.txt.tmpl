@@ -2,30 +2,17 @@ Herdr 快捷键速查
 
 先按 Ctrl+B，松开，再按第二个键。Ctrl+N 等组合也要在松开 Ctrl+B 后按。
 Mac 的 F1 若用于调亮度，请按 Fn+F1。
-前半部分只列第二个键；例如 Quicklook 的完整按法是 Ctrl+B → Shift+O。
+托管清单用 prefix 表示 Ctrl+B；其余操作表只列第二个键。
 “内部”小节直接按键，不加前缀；特殊情况单独注明。
 这是常用操作表，不是所有插件的完整手册；实际 Herdr 绑定看 Ctrl+B → ?。
 本表用 less 显示：/ 输入名称后回车搜索，n 找下一个，q 退出。
 
-先记这五个入口
-  Ctrl+N     Navigator：统一找工作区、Agent、项目目录、快捷操作
-  f          文件树
-  Shift+M    Memex：搜索历史会话
-  Ctrl+R     Reviewr：查看改动、逐行批注
-  Ctrl+A     Herdr Plus：启动工具、临时任务、查看配置差异
-
-忘记时
-  ?          Herdr 自带按键帮助，显示当前实际绑定
-  F1         本速查表；方向键/空格翻页，q 退出
-  Shift+R    重新加载配置
-
-已有插件入口
-  Shift+F    独立标签页文件树
-  Ctrl+G     lazygit 分屏：打开/聚焦/关闭
-  Ctrl+T     lazygit 标签页：打开/切换/关闭
-  Shift+Z    zoxide 常用目录
-  Shift+O    Quicklook：选择屏幕上的路径或链接
-  Ctrl+P     Herdr Plus 项目布局：Dotfiles（Shell / Git）
+仓库管理的快捷键（与配置共用同一份清单）
+{{ range .herdr_shortcuts.bindings -}}
+  {{ .key }}  {{ .description }}
+{{ end }}
+上表 prefix 是 Ctrl+B；super 是 Cmd。prefix+f1 打开本速查表。
+? 为内置帮助；Shift+R 重新加载配置，均先按 Ctrl+B。
 
 标签页与分屏（以下仍需先按 Ctrl+B）
   c          新标签页
