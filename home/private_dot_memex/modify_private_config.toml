@@ -1,0 +1,11 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $config := .chezmoi.stdin | fromToml -}}
+{{- $before := toJson $config -}}
+{{- $_ := set $config "embeddings" false -}}
+{{- $_ := set $config "token_usage" false -}}
+{{- $_ := set $config "herdr_resume" "tab" -}}
+{{- if eq $before (toJson $config) -}}
+{{ .chezmoi.stdin -}}
+{{- else -}}
+{{ $config | toToml -}}
+{{- end -}}

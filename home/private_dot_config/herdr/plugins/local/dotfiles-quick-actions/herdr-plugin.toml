@@ -1,0 +1,38 @@
+id = "dotfiles.quick-actions"
+name = "Dotfiles Quick Action Tabs"
+version = "0.1.1"
+min_herdr_version = "0.9.5"
+description = "Open interactive tools selected from Herdr Plus in their own tabs."
+platforms = ["macos", "linux"]
+
+[[actions]]
+id = "paste-image"
+title = "Codex: paste clipboard image"
+command = ["sh", "paste-image.sh"]
+contexts = ["pane"]
+
+# Each tool gets a fresh PTY. The action supplies the original workspace and cwd.
+# Login/interactive zsh loads Codex PATH and the cct/cxt shell functions.
+[[panes]]
+id = "claude"
+title = "Claude"
+placement = "tab"
+command = ["zsh", "-lic", "claude"]
+
+[[panes]]
+id = "codex"
+title = "Codex"
+placement = "tab"
+command = ["zsh", "-lic", "codex"]
+
+[[panes]]
+id = "scratch-claude"
+title = "Claude Scratch"
+placement = "tab"
+command = ["zsh", "-lic", "cct"]
+
+[[panes]]
+id = "scratch-codex"
+title = "Codex Scratch"
+placement = "tab"
+command = ["zsh", "-lic", "cxt"]

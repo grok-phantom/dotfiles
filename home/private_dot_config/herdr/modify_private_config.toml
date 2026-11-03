@@ -1,0 +1,69 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Herdr also writes this file. Own only shared preferences; preserve local keys. */ -}}
+{{- $config := .chezmoi.stdin | fromToml -}}
+{{- $before := toJson $config -}}
+{{- $_ := set $config "onboarding" false -}}
+{{- $theme := get $config "theme" | default (dict) -}}
+{{- $_ := set $theme "name" "gruvbox" -}}
+{{- $_ := set $theme "auto_switch" false -}}
+{{- $_ := set $config "theme" $theme -}}
+{{- $ui := get $config "ui" | default (dict) -}}
+{{- $_ := set $ui "prompt_new_tab_name" false -}}
+{{- $_ := set $ui "sidebar_width" 36 -}}
+{{- $sidebar := get $ui "sidebar" | default (dict) -}}
+{{- $agents := get $sidebar "agents" | default (dict) -}}
+{{- $_ := set $agents "rows" (list (list "state_icon" "pane") (list "workspace" "machine")) -}}
+{{- $_ := set $sidebar "agents" $agents -}}
+{{- $_ := set $ui "sidebar" $sidebar -}}
+{{- $toast := get $ui "toast" | default (dict) -}}
+{{- $_ := set $toast "delivery" "terminal" -}}
+{{- $_ := set $ui "toast" $toast -}}
+{{- $_ := set $config "ui" $ui -}}
+{{- $keys := get $config "keys" | default (dict) -}}
+{{- $_ := set $keys "cycle_pane_next" "" -}}
+{{- $_ := set $keys "last_pane" "prefix+tab" -}}
+{{- $wanted := list
+      (dict "key" "prefix+f" "type" "plugin_action" "command" "herdr-file-viewer.open-file-viewer" "description" "Files: split")
+      (dict "key" "prefix+shift+f" "type" "plugin_action" "command" "herdr-file-viewer.open-file-viewer-tab" "description" "Files: tab")
+      (dict "key" "prefix+ctrl+g" "type" "plugin_action" "command" "herdr-lazygit.open-lazygit" "description" "Lazygit: split")
+      (dict "key" "prefix+ctrl+t" "type" "plugin_action" "command" "herdr-lazygit.open-lazygit-tab" "description" "Lazygit: tab")
+      (dict "key" "prefix+shift+z" "type" "plugin_action" "command" "herdr-zoxide.browse" "description" "Find project directory")
+      (dict "key" "prefix+shift+o" "type" "plugin_action" "command" "herdr-quicklook.hint" "description" "Preview paths and links")
+      (dict "key" "prefix+ctrl+p" "type" "plugin_action" "command" "cloudmanic.herdr-plus.projects" "description" "Project layouts")
+      (dict "key" "prefix+ctrl+a" "type" "plugin_action" "command" "cloudmanic.herdr-plus.quick-actions" "description" "Quick actions")
+      (dict "key" "super+v" "type" "plugin_action" "command" "dotfiles.quick-actions.paste-image" "description" "Codex：粘贴图片（文本由 Ghostty 处理）")
+      (dict "key" "prefix+ctrl+n" "type" "plugin_action" "command" "herdr-navigator.open" "description" "导航：工作区、Agent、目录、操作")
+      (dict "key" "prefix+shift+m" "type" "plugin_action" "command" "nicosuave.memex.palette" "description" "历史：搜索并恢复会话")
+      (dict "key" "prefix+ctrl+r" "type" "plugin_action" "command" "persiyanov.reviewr.toggle" "description" "审阅：差异与逐行批注")
+      (dict "key" "prefix+f1" "type" "popup" "command" "less -R \"$HOME/.config/herdr/shortcuts.txt\"" "description" "中文快捷键速查" "width" "90%" "height" "85%")
+-}}
+{{- $owned := list -}}
+{{- range $wanted -}}{{- $owned = append $owned .command -}}{{- end -}}
+{{- $commands := list -}}
+{{- range get $keys "command" | default (list) -}}
+{{-   if not (has .command $owned) -}}
+{{-     $existing := . -}}
+{{-     range $wanted -}}
+{{-       if eq .key $existing.key -}}
+{{-         fail (printf "Herdr shortcut %s is already used by %s" .key $existing.command) -}}
+{{-       end -}}
+{{-     end -}}
+{{-     $commands = append $commands . -}}
+{{-   end -}}
+{{- end -}}
+{{- range $wanted -}}
+{{-   $binding := . -}}
+{{-   range $name, $value := $keys -}}
+{{-     if and (kindIs "string" $value) (eq $value $binding.key) -}}
+{{-       fail (printf "Herdr shortcut %s is already used by %s" $binding.key $name) -}}
+{{-     end -}}
+{{-   end -}}
+{{-   $commands = append $commands . -}}
+{{- end -}}
+{{- $_ := set $keys "command" $commands -}}
+{{- $_ := set $config "keys" $keys -}}
+{{- if eq $before (toJson $config) -}}
+{{ .chezmoi.stdin -}}
+{{- else -}}
+{{ $config | toToml -}}
+{{- end -}}

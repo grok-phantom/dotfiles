@@ -1,0 +1,22 @@
+[picker]
+reuse_existing = true
+prefix_workspace_labels = false
+check_updates = false
+source_order = ["workspace", "agent", "project", "zoxide", "root", "quick", "session"]
+
+[sources]
+servers = false
+
+[[roots]]
+path = "~/workspace/personal/projects"
+max_depth = 1
+
+[[roots]]
+path = "~/workspace/scratch"
+max_depth = 1
+
+[notifications]
+audio = false
+
+[theme]
+inherit_herdr = true

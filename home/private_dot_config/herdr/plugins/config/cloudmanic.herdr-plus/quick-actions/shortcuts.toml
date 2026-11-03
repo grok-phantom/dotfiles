@@ -1,0 +1,3 @@
+name = "帮助 · 快捷键速查"
+description = "中文说明，q 退出"
+command = "less -R \"$HOME/.config/herdr/shortcuts.txt\" </dev/tty"

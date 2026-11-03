@@ -1,0 +1,3 @@
+name = "Claude · 当前目录"
+description = "在独立标签页运行 Claude Code"
+command = '"${HERDR_BIN_PATH:-herdr}" plugin pane open --plugin dotfiles.quick-actions --entrypoint claude --placement tab --workspace "${HERDR_PLUS_WORKSPACE_ID:?missing workspace}" --cwd "${HERDR_PLUS_WORKDIR:?missing working directory}" --focus'

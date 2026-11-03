@@ -1,0 +1,6 @@
+theme = "gruvbox"
+auto_open = false
+default_scope = "uncommitted"
+markdown_view = "rendered"
+toggle_placement = "tab"
+editor = "vim +{line} {file}"

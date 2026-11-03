@@ -108,6 +108,17 @@ sshtmp prune
 
 ## 远程开发主机
 
+### Herdr Machines
+
+在 Herdr 的 Machines 中选择已添加的主机，即可使用远端工作区。
+`herdr machine list` 查看已保存的主机，`herdr machine status` 检查连通性。
+主机清单、SSH 别名和会话数据留在本机，不同步进 dotfiles。
+Claude/Codex 的 Herdr 集成需装在实际运行 agent 的主机上；本机安装不能代替远端安装。
+在对应主机的 dotfiles 目录执行 `sh scripts/manual/herdr-integrations.sh`。
+远端已有 current 集成时不需要重复安装。
+
+### 原有 mba 工具
+
 远程开发主机（mba）的 SSH 别名写在本机 `~/.config/mba/host`（第一行，不进 Git），下面几个 `mba*` 命令共用。它们都带 Raycast 头（Raycast 里归在 MBA 组，标题是「MBA · …」），在 Raycast → Settings → Extensions → Script Commands 里 Add Directories 选 `~/bin`，再给各自绑全局快捷键：
 
 ```sh
@@ -126,7 +137,8 @@ mkdir -p ~/.config/mba && echo <SSH 别名> > ~/.config/mba/host
 远端需已安装 Codex；`mba` 使用登录 shell 查找工具，会话名本身不会自动启动程序。
 再次执行 `mba codex` 可接回同一会话。
 
-Ghostty 里 Shift+Enter 发送 Esc+Return：Claude Code 把它当换行，隔着 SSH 和 tmux 也一样；zsh 里是在命令行中插入换行。Codex 也可用 Ctrl+J。
+Ghostty 里 Shift+Enter 发送 Ctrl+J，供 Claude Code 和 Codex 输入换行。
+普通 zsh 中保留 Ctrl+J 的行为，通常会执行当前命令。
 
 ### Tailscale
 

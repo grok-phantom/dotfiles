@@ -1,0 +1,3 @@
+name = "Codex · 新建临时任务"
+description = "调用 cxt，进入按时间命名的 scratch 目录"
+command = '"${HERDR_BIN_PATH:-herdr}" plugin pane open --plugin dotfiles.quick-actions --entrypoint scratch-codex --placement tab --workspace "${HERDR_PLUS_WORKSPACE_ID:?missing workspace}" --cwd "${HERDR_PLUS_WORKDIR:?missing working directory}" --focus'

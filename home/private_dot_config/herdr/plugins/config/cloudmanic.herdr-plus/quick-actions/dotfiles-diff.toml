@@ -1,0 +1,3 @@
+name = "Dotfiles · 查看差异"
+description = "只查看 chezmoi 差异，q 退出"
+command = "chezmoi diff --pager 'less -R' </dev/tty"

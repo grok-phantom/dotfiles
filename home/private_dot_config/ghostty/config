@@ -14,6 +14,10 @@ macos-option-as-alt = false
 keybind = ctrl+tab=unbind
 keybind = ctrl+shift+tab=unbind
 
+# Paste text normally; let Herdr handle Cmd+V when there is no text to paste.
+# Requires Ghostty >= 1.3.1 on macOS.
+keybind = performable:super+v=paste_from_clipboard
+
 # Send Ctrl+J for newline input in Claude Code and Codex, including over SSH/tmux.
 # In a regular shell this retains the shell's Ctrl+J behavior (usually accept-line).
 keybind = shift+enter=text:\x0a

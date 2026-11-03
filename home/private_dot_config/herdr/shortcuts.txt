@@ -1,0 +1,181 @@
+Herdr 快捷键速查
+
+先按 Ctrl+B，松开，再按第二个键。Ctrl+N 等组合也要在松开 Ctrl+B 后按。
+Mac 的 F1 若用于调亮度，请按 Fn+F1。
+前半部分只列第二个键；例如 Quicklook 的完整按法是 Ctrl+B → Shift+O。
+“内部”小节直接按键，不加前缀；特殊情况单独注明。
+这是常用操作表，不是所有插件的完整手册；实际 Herdr 绑定看 Ctrl+B → ?。
+本表用 less 显示：/ 输入名称后回车搜索，n 找下一个，q 退出。
+
+先记这五个入口
+  Ctrl+N     Navigator：统一找工作区、Agent、项目目录、快捷操作
+  f          文件树
+  Shift+M    Memex：搜索历史会话
+  Ctrl+R     Reviewr：查看改动、逐行批注
+  Ctrl+A     Herdr Plus：启动工具、临时任务、查看配置差异
+
+忘记时
+  ?          Herdr 自带按键帮助，显示当前实际绑定
+  F1         本速查表；方向键/空格翻页，q 退出
+  Shift+R    重新加载配置
+
+已有插件入口
+  Shift+F    独立标签页文件树
+  Ctrl+G     lazygit 分屏：打开/聚焦/关闭
+  Ctrl+T     lazygit 标签页：打开/切换/关闭
+  Shift+Z    zoxide 常用目录
+  Shift+O    Quicklook：选择屏幕上的路径或链接
+  Ctrl+P     Herdr Plus 项目布局：Dotfiles（Shell / Git）
+
+标签页与分屏（以下仍需先按 Ctrl+B）
+  c          新标签页
+  n / p      下一个 / 上一个标签页
+  1…9        切到当前工作区顶部编号对应的标签页；第二步只按数字
+  Shift+T    重命名标签页
+  Shift+X    关闭当前标签页，注意其中的运行任务
+  v / -      向右 / 向下分屏
+  h j k l    焦点向左、下、上、右
+  Shift+H/J/K/L 将当前 pane 与对应方向的 pane 交换位置
+  Shift+P    重命名 pane
+  z          放大当前 pane / 恢复分屏
+  r          进入调整分屏大小模式
+  x          关闭当前 pane，注意其中的运行任务
+  Shift+Tab  轮转到上一个 pane
+  Tab        按本机配置：默认轮转下一个 pane；绑定 last_pane 后返回上次焦点
+             last_pane 可跨标签页和工作区，再按可切回；以 Ctrl+B → ? 为准
+
+工作区与其他操作（以下仍需先按 Ctrl+B）
+  w          工作区选择器
+  g          Herdr 内置导航器；Ctrl+N 是另装的 Navigator 插件
+  Shift+N    新建工作区
+  Shift+W    重命名工作区
+  Shift+D    关闭工作区，注意其中的运行任务
+  Shift+G    新建 Git worktree
+  b          显示 / 隐藏侧栏
+  s          设置
+  o          跳到通知目标；Shift+O 才是 Quicklook
+  [          进入复制模式
+  e          在编辑器中查看终端回滚内容
+  q          脱离客户端；后台会话继续
+
+Quicklook 内部
+  入口：Ctrl+B → Shift+O，给屏幕上的路径、链接显示字母提示。
+  提示阶段：
+    小写提示字母 / 点击目标    打开目标：文件预览、目录文件树、URL 浏览器
+    大写提示字母              文件用完整标签页打开
+    Esc / q                   取消选择
+  文件预览阶段（直接按，不加前缀）：
+    q / 连按两次 Esc          关闭预览；单次 Esc 不保证退出
+    o                         在文件树中打开同一文件、同一行
+    e                         用配置的编辑器编辑，退出编辑器后返回
+    Shift+D                   查看当前文件的 Git 差异，q 返回文件预览
+    j / k、方向键             上下滚动
+    d / u                     下 / 上半页；小写 d 不是差异
+    Space / b                 下 / 上一页
+    g / Shift+G               文件开头 / 末尾
+    /                         搜索；n / Shift+N 找下一个 / 上一个
+    Ctrl+点击路径             在同一预览中继续打开另一文件
+    , / Backspace             返回上一层文件
+  URL 交给浏览器后 Quicklook 会收起，这是正常行为。
+  上游示例用 prefix+v；此处用 Shift+O，保留 v 的 Herdr 分屏功能。
+  最近预览、剪贴板预览等可选 action 当前没有单独绑定快捷键。
+
+Navigator 内部（除收藏外，不加 Herdr 前缀）
+  直接输入   模糊搜索；上下键选择，Enter 打开，Esc 退出
+  Ctrl+W     只看工作区
+  Ctrl+A     只看 Agent
+  Ctrl+P     Herdr Plus 项目布局
+  Ctrl+Z     常用目录
+  Ctrl+Q     快捷操作入口
+  Ctrl+B 两次 收藏选中项；第一次是 Herdr 前缀，第二次把 Ctrl+B 传给插件
+  Ctrl+O     显示 / 隐藏预览
+  Tab        切换来源过滤
+  ?          查看内部按键
+  跨机器仍用 Herdr Machines；Navigator 搜索当前服务端的内容。
+
+Memex 内部
+  /          搜索；Esc 离开输入框
+  上下键     选择会话
+  Enter      阅读会话
+  r          恢复选中会话：优先聚焦已打开会话，否则新建标签页
+  i          更新本机索引
+  q          退出（输入框中先按 Esc）
+  本机与远端分别保存和检索自己的记录，不自动复制历史。
+
+Reviewr 内部
+  1 / 2 / 3  改动 / 全部文件 / PR 或 MR
+  u / b      未提交改动 / 当前分支差异
+  Tab        文件列表与差异之间切换
+  v          选行，上下键扩展
+  c          添加批注，Enter 保存
+  e / d      编辑 / 删除批注；没有批注时 e 可打开文件编辑器
+  n / Shift+N 下一个 / 上一个批注
+  l          批注列表
+  s          将批注送入 Agent 输入
+  y          复制批注
+  Esc        清除选行；批注输入框内取消编辑
+  Shift+Enter / Ctrl+J 批注输入框内换行
+  ?          完整帮助
+  q          退出
+
+文件树内部
+  方向键     展开、折叠、选择
+  Tab        切到预览
+  f / s      找文件 / 搜内容
+  .          显示隐藏文件
+  v          切换差异 / 渲染 / 语法视图
+  [ / ]      上一个 / 下一个修改过的文件
+  b          切换差异基准：分支 merge-base / HEAD
+  Shift+L    复制 path:line 引用或选中行
+  Shift+Z    文件全屏
+  e          用 Vim 编辑；只想查看不需要按
+  ?          文件树完整帮助
+  q          退出
+
+zoxide 目录选择器内部
+  输入文字   过滤目录；方向键选择
+  Enter      用选中目录新建并切到工作区
+  Ctrl+T     用选中目录新建并切到标签页
+  Ctrl+S     用选中目录向右分屏
+  Ctrl+W     后台新建工作区，不切换
+  Esc        取消
+
+lazygit 内部
+  ?          查看当前面板的按键帮助；不同面板的可用操作不同
+  q / Esc    返回或退出；弹窗中先退出弹窗
+  Git 提交、暂存、推送等操作以 lazygit 当前面板提示为准。
+
+Herdr Plus 快捷操作
+  菜单内直接输入过滤，方向键选择，Enter 执行，Esc 取消。
+  Claude / Codex · 当前目录      收起菜单，新建标签页并在原项目目录运行
+  Claude / Codex · 新建临时任务  调用 cct / cxt，目录在 ~/workspace/scratch
+  Dotfiles · 查看差异           在弹窗中查看 chezmoi diff，q 退出
+  帮助 · 快捷键速查             在弹窗中查看本表，q 退出
+  Auto Title · 启用或刷新       启动自动命名，首次会更新已有 pane 名称
+  菜单是弹窗，Esc 直接收起，不新建标签页。
+  只有选择 Claude / Codex 才新建标签页；退出工具后，该工具标签页关闭。
+
+Auto Title
+  首次在每台机器的快捷操作菜单中选择“Auto Title · 启用或刷新”。
+  以后 Herdr 服务端启动时自动启动；手动重命名后的标签页会被保留。
+
+Ghostty 与 Herdr
+  Cmd+V      文本仍由 Ghostty 正常粘贴；无文本时转交 Herdr，Codex 中触发图片粘贴
+             本机 Local + Codex 已实测图片和文字均正常；首次启用需重载两者
+  Cmd+Shift+P 打开 Ghostty 命令面板。
+  Cmd+T / Cmd+D 属于外层 Ghostty。
+  上面的 Ctrl+B 前缀属于内层 Herdr。
+  Ctrl+B → Ctrl+R 打开 Reviewr；Ctrl+B → Shift+R 重新加载配置。
+  普通终端直接按 Ctrl+R 仍是 Shell 历史搜索。
+  Ghostty 保留 Shift+方向键选区绑定；Reviewr 选行用 v，再按普通方向键。
+  在 Machines 中选中哪台机器，插件就在那台机器运行。
+
+本机 Codex 粘贴截图
+  Ctrl+Cmd+Shift+4 截取选区并直接复制到系统剪贴板。
+  回到 Codex 输入框，按 Cmd+V；不加 Herdr 前缀。
+  Ctrl+Option+V（Ctrl+Alt+V）保留为已实测可用的备用按法。
+  普通 Ctrl+V 无响应的拦截点尚未确定；这里没有对 Ctrl+V 做全局重映射。
+  Cmd+V 图片转发针对本机 Codex；通过 Machines 使用远端时仍用 Herdr 原有图片入口。
+  Cmd+Shift+4 默认保存截图文件，不等于复制到剪贴板。
+  也可以用 Cmd+Shift+5，在“选项”中选择保存到“剪贴板”。
+  Raycast 历史中的图片与当前系统剪贴板不是同一个状态。

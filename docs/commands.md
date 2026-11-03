@@ -62,6 +62,7 @@ package 操作针对真实主机，`--target` 不是包管理器沙箱。
 | `cat` | 有 bat 时用 bat，否则尝试 batcat；原始行为用 `command cat` |
 | `ls` / `ll` | 有 eza 时映射到 eza / `eza -lah` |
 | `fd` | 检测到 fdfind 时为其建立别名 |
+| `copypath [file_or_directory]` | 复制当前目录或指定文件、目录的绝对路径，不带末尾换行；full profile 的 Oh My Zsh 插件，macOS 使用 `pbcopy`，Linux 需要可用的剪贴板工具 |
 | `z` | zoxide 存在时启用的目录跳转 |
 | Ctrl+R / ↑ | atuin 存在时由其初始化历史搜索；完整按键受 atuin/vi 模式影响 |
 | `y` / `yy` / `r` / `ranger` | 启动 Yazi，退出时让当前 shell 切换到所选目录 |
@@ -140,6 +141,15 @@ Python 更新入口使用进程环境，不经过这些 shell 函数。
 运行 Codex 时，先用 `mba codex` 连接名为 `codex` 的远程会话，再在远端运行 `codex`。
 `mba` 只管理 SSH/tmux 连接，会话名不会自动启动同名程序；远端需已安装 Codex。
 
+cmux 内按 `⌘⇧P` 搜索 `MBA · Tmux`：从临时本地工作区运行 `mba`，
+连接成功后聚焦远端 tmux 工作区并关闭启动页；失败时保留启动页显示错误。
+入口由 dotfiles 的 `~/.config/cmux/cmux.json` 管理，适用于 macOS full profile。
+cmux 0.65.2 的 `⌘N` 强制新建本地工作区，不会在 tmux 镜像主机上新建 session。
+聚焦远端 tmux 镜像工作区后，按 `⌘⌥⇧N` 或在命令面板选择 `Tmux · 新建会话`，
+调用原生 `cmux.newWorkspace` 动作，在该主机上新建 session；在本地工作区调用则新建本地工作区。
+`⌘T` 在当前 session 新建 window。新会话首次 `cd` 到项目目录时，会按目录名自动命名，
+需要远端已应用 dotfiles 的 zsh 配置。此自定义动作不依赖 `cmux ssh` 工作区。
+
 主机优先级：`-H` → `MBA_HOST` → `~/.config/mba/host` 第一行，所有 `mba*` 命令相同。截图工具需要 macOS 截屏/自动化权限与可用
 SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghostty。
 文件扩展名仅接受字母和数字；没有扩展名时使用 `.png`。
@@ -154,7 +164,12 @@ SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghos
 | Vim | F6 调用 ALEFix；F8 切换 Tagbar；`<leader>c` / `<leader>cc` 通过 OSCYank 复制选区/整行 |
 | Yazi | `h` 上级，`l` smart-enter，`gg` / `G` 首尾，Ctrl+D/U 半页，`yy` 复制、`dd` 剪切、`p` 粘贴，`r` 重命名 |
 | Yazi | `v` 选择，`.` 隐藏文件，`/` 搜索，`:` shell，`t` 新标签，`gt` / `gT` 切换标签 |
-| Ghostty | Shift+Enter 发送 Esc+Return；其余 Cmd 快捷键见[终端说明](terminals.md) |
+| Ghostty | Shift+Enter 发送 Ctrl+J；其余 Cmd 快捷键见[终端说明](terminals.md) |
+| Herdr | Ctrl+B 后按 C 新建标签页、Shift+N 新建工作区、V / - 分屏、Q 脱离客户端 |
+| Herdr 文件树 | Ctrl+B 后按 F 分屏打开；按 Shift+F 在独立标签页打开；树内 `f` 找文件、`s` 搜内容、`q` 退出 |
+
+Herdr 的 Machines 中选择已添加的远端主机。`herdr machine list` 查看清单，
+`herdr machine status` 检查连通性。集成安装、通知和恢复说明见[终端说明](terminals.md#herdr)。
 
 这些按键基于安装好的 full 外部资源；语言工具还需对应项目环境。
 
@@ -173,6 +188,9 @@ SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghos
 | `./scripts/test cached-externals --cache /path/to/cache` | 已下载锁定资源的校验与临时目标应用 |
 | `./scripts/test runtime --cache /path/to/cache` | 在上述基础上检查 Zsh/Vim/Tmux |
 | `./scripts/verify-terminals` | iTerm2 JSON；macOS 上检查已安装 Ghostty 的配置、字体、主题和搜索能力 |
+| `herdr config check` / `herdr integration status` | Herdr 配置语法 / 本机 agent 集成版本 |
+| `sh scripts/manual/herdr-integrations.sh` | 显式安装或更新本机 Claude/Codex 的 Herdr 集成，保留其他 hooks |
+| `sh scripts/manual/herdr-plugins.sh` | 按锁文件安装九个 Herdr 插件，已匹配的安装跳过；需在使用插件的每台主机执行 |
 | `bash -n scripts/manual/macos-defaults.sh` | 只检查 Bash 入口；Python 实现也需运行 static 检查 |
 | `bash scripts/manual/macos-defaults.sh --check` | 只读比较当前值、类型与期望值，不备份、不重启进程 |
 | `bash scripts/manual/macos-defaults.sh --apply` | 有差异时先备份，再写入并回读验证，重启相关桌面进程 |

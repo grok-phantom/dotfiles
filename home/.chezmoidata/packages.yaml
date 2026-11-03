@@ -15,11 +15,16 @@ packages:
       - gh
       - git
       - git-lfs
+      - git-delta
       - glab
+      - glow
+      - go
+      - herdr
       - htop
       - imagemagick
       - jq
       - lazygit
+      - memex
       - node
       - pandoc
       - python@3.15
@@ -71,8 +76,13 @@ packages:
       - eza
       - fzf
       - gh
+      - git-delta
       - glab
+      - glow
+      - go
+      - herdr
       - lazygit
+      - memex
       - node
       - python@3.15
       - tokei
@@ -91,6 +101,7 @@ packages:
       - fzf
       - git
       - git-lfs
+      - git-delta
       - htop
       - jq
       - ripgrep
