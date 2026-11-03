@@ -1,7 +1,7 @@
 # 本机配置参考
 
 本机数据通常在 `~/.config/chezmoi/chezmoi.toml` 的 `[data]`，XDG 配置目录可改变
-路径。初始化模板是 [home/.chezmoi.toml.tmpl](../home/.chezmoi.toml.tmpl)，
+路径。Ubuntu 部署见 [Linux 指南](linux.md)。初始化模板是 [home/.chezmoi.toml.tmpl](../home/.chezmoi.toml.tmpl)，
 实际管理范围还由 [.chezmoiignore.tmpl](../home/.chezmoiignore.tmpl) 决定。
 修改这些值前先备份本机配置；模板、渲染后的 diff 和计划都可能关联私有信息。
 
@@ -12,8 +12,8 @@
 | `profile` | 初始化默认 full；已有选择保留 | 直接 chezmoi 的 core/full 范围；更新 CLI 的 `--profile` 单独覆盖，默认仍为 full |
 | `company` | 首次初始化询问，默认 false | workspace 公司目录与软件角色组，不决定 Git 身份 |
 | `ephemeral` | 首次初始化询问，默认 false | 初始化时禁止 Homebrew，默认关闭 Claude 代理；外部字体跳过临时主机 |
-| `sudo` | 首次初始化询问，默认 false | 无 sudo 时初始化关闭 Homebrew；apt 写操作要求 true 且 `sudo -n` 可用 |
-| `homebrew` | 初始化默认 true，保留显式值，再受 ephemeral/sudo 守卫约束 | 允许软件入口使用已安装 Homebrew，不会安装 Homebrew 本身 |
+| `sudo` | 首次初始化询问，默认 false | 未明确选择 Homebrew 且无 sudo 时初始化关闭它；apt 写操作要求 true；默认用 `sudo -n`，`--interactive` 可在终端输入密码 |
+| `homebrew` | 初始化默认 true，保留显式值，ephemeral 仍强制关闭 | 允许软件入口使用已安装且当前用户可写的 Homebrew；显式 true 不要求 sudo，不安装 Homebrew 本身 |
 | `git_name` / `email` | 首次询问，默认空 | 全局 Git 姓名和邮箱；空值不生成对应 user 项 |
 | `hostname` | 当前主机名，保留已有值 | 本机模板数据，不应把渲染结果加入公共仓库 |
 | `osid` | 初始化按 OS/发行版计算 | apt 判断支持的 Debian/Ubuntu/Pop!_OS/Raspbian 系统 |
@@ -44,6 +44,9 @@
 | `ssh_personal_pubkey` | 默认空 | 渲染公钥文件，供主机选钥及个人 Git 签名使用；不渲染私钥 |
 | `workspace_root` | 未设置时忽略 `~/workspace` 目标 | 把 `~/workspace` 管为指向指定目录的符号链接 |
 | `workspace_volume_uuid` | 可选 | workspace 命令检查 macOS 外置卷身份，避免写到错误卷 |
+
+Zsh 在有效的 SSH agent 转发会话中维护 `~/.ssh/agent-forwarded.sock`，不受 `ssh_managed` 控制。
+首次需要时创建 0700 的 `.ssh` 目录，不修改已有目录权限。
 
 私钥、`work.conf`、`temp.conf`、`*.local.conf`、`known_hosts*`、Git 的
 `~/.config/git/local.conf` 和 workspace 仓库清单留在本机。迁移与签名准备见

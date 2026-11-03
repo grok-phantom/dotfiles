@@ -65,7 +65,8 @@ belongs only to V10 after its separate baseline and prerequisites are ready.
 
 ## Environments this plan cannot replace
 
-- Linux apt/systemd/Docker need a corresponding Linux guest or isolated service test.
+- Linux deployment has a separate [Ubuntu guide](linux.md) and read-only preflight.
+  Linux apt/systemd/Docker runtime still needs a corresponding Linux guest or isolated service test.
   Different CPU binaries must be run on the corresponding architecture; template
   overrides are only rendering checks.
 - TUN, routing, DNS/UDP/IPv6 and gateway behavior need a Linux kernel/network lab

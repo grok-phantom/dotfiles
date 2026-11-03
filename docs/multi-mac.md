@@ -1,5 +1,7 @@
 # 多 Mac 迁移与本机边界
 
+Linux 部署使用 [Ubuntu 指南](linux.md)。本页的桌面、Keychain、Surge 和 1Password App 操作仅针对 macOS。
+
 默认 `full` 选择完整用户环境；它不意味着复制整台 Mac。`company`、`ephemeral`、
 `sudo`、`homebrew` 与 Git 身份仍是各设备自己的数据。不要复制另一台机器的 chezmoi
 配置、SSH 目录、Keychain、浏览器资料、代理订阅或公司账户到新机。
@@ -48,7 +50,7 @@ cask 列表；两个角色组初始为空。tldr、Discord、qBittorrent 已从�
 cask（`package_cask_exclude = []` 则不排除条目）。这些选择只影响以后计划/安装/升级，永远不执行卸载。company 标志不是公司批准清单。
 
 重新 init 会保留已有身份/profile、代理地址/端口、hostname、显式关闭的 Homebrew
-以及上述软件选择；ephemeral/sudo 守卫仍可禁止 Homebrew。先备份本机配置再初始化。
+以及上述软件选择；ephemeral 守卫仍禁止 Homebrew；已有用户可写的安装可显式启用，不要求 sudo。先备份本机配置再初始化。
 PATH 在 shell 启动时检查用户工具目录并去重，后装工具不再要求重新 apply。
 
 Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关闭 base 自动激活的行为。
@@ -57,7 +59,7 @@ Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关
 
 ## SSH 配置
 
-按机器选择启用：本机 chezmoi data 设 `ssh_managed = true` 后，`~/.ssh/config` 由本仓库生成；未设置的机器完全不碰 `~/.ssh`。生成的配置只有 Include 和默认项，主机按类别放在 `~/.ssh/config.d/`：
+按机器选择启用：本机 chezmoi data 设 `ssh_managed = true` 后，`~/.ssh/config` 由本仓库生成；未设置时不托管 SSH 配置。Zsh 的转发 agent 链接是独立的登录行为：检测到有效转发 socket 时可能创建 `~/.ssh/agent-forwarded.sock`。生成的配置只有 Include 和默认项，主机按类别放在 `~/.ssh/config.d/`：
 
 | 文件 | 类别 | 来源 |
 | --- | --- | --- |
@@ -157,7 +159,7 @@ Mac 之间（以及家里主机）走 Tailscale，SSH 别名直接指向对方�
 远端合盖时，任何需要在它屏幕上点的确认都等于卡死。约定：在 SSH 会话里（`SSH_CONNECTION` 非空）需要签名的操作都走转发过来的 agent，1Password 在你面前这台 Mac 上确认：
 
 - `ssh`（含 `git push` 到 GitHub）：`~/.ssh/config` 的 `Match` 块在 SSH 会话中一律用 `SSH_AUTH_SOCK`；没有可用的转发 agent 时直接失败，不回落到远端的 1Password。
-- tmux 会话比 SSH 连接活得久，旧 pane 里的 `SSH_AUTH_SOCK` 会失效。`~/.zprofile` 在每次带终端的 SSH 登录时把 `~/.ssh/agent-forwarded.sock` 指向当前的转发 socket，并让后续进程都用这个固定路径；`mba-sync` 这类一次性命令的登录 shell 不改它（否则命令一结束链接就失效），只有链接已经失效时才顺手接上。改动之前已经开着的 tmux 会话要重开一次（`tmux kill-server`，或新建会话）才会用上。
+- tmux 会话比 SSH 连接活得久，旧 pane 里的 `SSH_AUTH_SOCK` 会失效。`~/.zprofile` 在每次带终端的 SSH 登录时把 `~/.ssh/agent-forwarded.sock` 指向当前的转发 socket，并让后续进程都用这个固定路径；`mba-sync` 这类一次性命令的登录 shell 不改它（否则命令一结束链接就失效），只有链接已经失效时才顺手接上。已有 pane 可能保留旧环境，先在新建会话检查 `SSH_AUTH_SOCK`；不要为刷新变量结束仍有任务的 tmux 服务端。
 - 提交签名：`gpg.ssh.program` 是 `~/bin/git-ssh-sign`，本机用 `op-ssh-sign`，SSH 会话里改用 `ssh-keygen` 经转发 agent 签名。
 - 远端 Claude Code 自己跑的 git 用 `automation_git`（见上文），完全不需要确认；远端也设上它。
 

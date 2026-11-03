@@ -1,7 +1,8 @@
 # Terminals
 
 macOS `full` manages one iTerm2 Dynamic Profile and a minimal Ghostty config.
-`core` and Linux skip both; Linux package installation is unchanged.
+`core` and Linux skip both. Linux can use full Zsh/Tmux/Herdr independently;
+see [Ubuntu deployment](linux.md) for tool requirements and non-GUI limits.
 
 ## iTerm2
 
@@ -182,9 +183,9 @@ Auto Title 的共享偏好位于 `~/.config/herdr-auto-title/config.env`。
 `--remote-keybindings server`；它与 Machines 切换是两种入口。
 修改客户端设置后，在 Herdr 中按 Ctrl+B、Shift+R 重新加载配置。
 
-### 每台 Mac 的验收
+### 每台主机的验收
 
-在本机和实际运行 agent 的远端分别完成：
+在本机和实际运行 agent 的远端分别完成。Linux 上通知与剪贴板按实际终端能力验收：
 
 1. 检查本机开关，预览并应用配置，运行 `herdr config check`。
 2. 运行插件 `plan`、显式 `install --yes` 和 `verify`。

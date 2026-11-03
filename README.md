@@ -12,6 +12,7 @@
 | 仓库管理哪些功能、文件在哪里、哪些集成已退役 | [功能总览](docs/features.md) |
 | 更新、软件维护、shell、远程开发和小工具怎么用 | [命令速查](docs/commands.md) |
 | core/full、平台守卫、本机 data 和环境变量 | [本机配置参考](docs/configuration.md) |
+| Ubuntu 24.04 x86_64 部署、apt 与 Linux 验收 | [Linux 部署](docs/linux.md) |
 | 首次使用、新 Mac 迁移、SSH、签名与代理 | [多 Mac 迁移](docs/multi-mac.md) |
 | 代码目录、外置盘、仓库清单和克隆 | [Workspace](docs/workspace.md) |
 | Ghostty、Herdr、cmux、快捷键和回退 | [终端](docs/terminals.md) |
@@ -134,7 +135,7 @@ install 使用 `bundle --no-upgrade` 并关闭自动 update/cleanup；upgrade �
 macOS 现有 casks 保留为 desktop 组，角色附加组默认空；本机可显式选择组或排除条目，
 不会卸载现有应用。编辑器依赖与软件选择方法见 [多 Mac 迁移](docs/multi-mac.md)。
 apt plan 使用当前本地索引做安装模拟，执行阶段才更新索引；需要本机 `data.sudo=true` 和可用的
-非交互 `sudo -n`。apt 升级仅针对清单中的已安装包，不执行全系统 upgrade/full-upgrade。
+非交互 `sudo -n`，或显式传 `--interactive` 在当前终端输入密码。apt 升级仅针对清单中的已安装包，不执行全系统 upgrade/full-upgrade。
 操作非事务性：失败时停止后续步骤，但不声称撤销已经安装的包。
 
 ```sh
@@ -156,61 +157,20 @@ Herdr 插件使用 `./scripts/software herdr-plugins plan`、`install --yes`、`
 
 ## 首次使用、身份和迁移
 
-先备份已有目标和本机 chezmoi 配置。可用 `chezmoi init --source PATH` 生成本机数据（不加 `--apply`），
-阅读其提示和生成内容，再使用上述 plan。新用户的 Git 姓名/邮箱默认空，由本人输入；
-company flag 不再代表某个固定身份。已有 `data.email` 保留，姓名需显式设置 `data.git_name`。
-如原来依赖仓库硬编码姓名，迁移时先在本机补充姓名，避免中断 Git 提交。
+先准备 Git、Python 3.9+、chezmoi；运行测试需 Python 3.11+。
+新机先 `chezmoi init`，不加 `--apply`，再按目标平台完成预览与验收：
 
-公司电脑上全局邮箱是公司邮箱时，在本机 chezmoi data 里设置 `personal_email`（可选 `personal_git_dir`，默认
-`~/workspace/personal/`），该目录下的仓库会通过 `includeIf` 使用个人邮箱，避免个人仓库提交带上公司邮箱。
-这两个值只存在本机配置里，重新 `chezmoi init` 时会保留。
+- [Ubuntu 24.04 x86_64](docs/linux.md)：先 core，分别准备 apt 基线和 full 工具依赖。
+- [Mac 迁移](docs/multi-mac.md)：软件、身份、签名、SSH 与本机服务分别准备。
+- [本机配置](docs/configuration.md)：profile、功能开关、代理、关闭后的保留行为。
+- [Workspace](docs/workspace.md)：代码目录布局、外置盘与仓库清单。
 
-代码目录统一为 `~/workspace/{personal,company}/{projects,oss,learning,archive,worktrees}` 加 `scratch/`，
-可放外置盘；`workspace init|doctor|list|clone` 见 [workspace](docs/workspace.md)。
+身份、凭据、主机清单、会话和代理数据留在本机，不复制另一台机器的配置。
+`modify_` 目标只合并仓库拥有的字段，保留应用和用户的其他设置；
+应用改写这些目标时不被更新入口直接判为普通文件漂移。
 
-`~/.config/git/local.conf` 是可选的本机 Git include，适合身份、组织 URL rewrite 等；
-它不属于本仓库托管范围。不要把凭据、主机专属地址、私钥、token 或渲染后的私有配置提交到公开仓库。
-现有 localhost 代理辅助函数保留，但包装函数默认直连；需要时显式设置 `DOTFILES_PROXY_MODE=on`
-或调用 `withproxy`。Python 更新入口使用进程环境中的代理变量，不继承交互 Zsh 的函数包装。
-
-SSH 配置按机器启用（`ssh_managed`），主机分自己的 / 公司 / 临时三类文件，私钥和个人主机清单可放 1Password，见 [多 Mac 迁移](docs/multi-mac.md#ssh-配置)。
-
-GUI 应用（Codex、Claude 桌面版等）不读 shell 配置；macOS full 在 `claude_proxy` 开启时管理 `~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist`，登录时用 `launchctl setenv` 设置同一组代理变量。首次加载用 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dotfiles.gui-proxy.plist`；已加载项修改后需先卸载再加载，并重启目标应用以获取新环境。应用是否采用这些变量仍需实际检查。
-
-Claude Code 的 `~/.claude/settings.json` 单独托管代理设置，复用本机 chezmoi data 中的
-`proxy_host` 和 `proxy_http_port`（macOS 默认 `127.0.0.1:6152`，Linux 默认
-`127.0.0.1:7890`），不依赖先运行 `proxyon`。采用 chezmoi modify template 合并六个
-HTTP/HTTPS 和 NO_PROXY 环境变量，保留其他设置和环境变量；登录凭据、会话历史不纳入仓库。
-源文件是 `home/private_dot_claude/modify_private_settings.json`，按 chezmoi 要求不加 `.tmpl`。
-只应用 Claude 配置可运行 `chezmoi diff ~/.claude`，确认后运行
-`chezmoi apply ~/.claude`（首次也会创建目录）。重启 Claude 后用 `/status` 检查代理地址，
-并在代理客户端确认请求命中的出口策略。此配置独立于 shell 的 `proxyoff` / `noproxy`。
-该托管由本机 `data.claude_proxy` 控制：默认只在非 ephemeral 的 macOS 上开启，Linux 和
-ephemeral 主机默认不管理该文件；需要时在本机 chezmoi 配置中显式设为 `true` 或 `false`。
-关闭后已有的 env 值不会被自动删除。同一文件还承载 `data.automation_git`：让 Claude Code 跑的 git 走 HTTPS + gh token、用本机签名钥，不等 1Password 批准，见 [多 Mac 迁移](docs/multi-mac.md#1password)。代理值已正确时原样保留文件内容；`scripts/dotfiles`
-不把应用对 `modify_` 目标的改写视为漂移，因为 apply 会基于当前内容合并。
-
-`data.roost_hooks = true` 按机器把 roost（在手机上查看 tmux 中 agent 状态的应用）接进 agent：
-`~/.claude/settings.json` 的 `hooks` 里每个相关事件加一条 `~/bin/roost hook claude`；
-`~/.codex/hooks.json` 里同样给每个事件加一条 `~/bin/roost hook codex`（Codex 0.163 起有和 Claude 同格式的生命周期钩子，
-跑在 agent 进程里，带得到 `$TMUX_PANE`）。`~/.codex/config.toml` 的 `notify` 留给 Codex Computer Use：
-早先 roost 用 `--chain` 包过它，Computer Use 又把那层包进 `--previous-notify`，roost 在里面拿不到 pane；
-apply 会把这两种包装里的 roost 都拿掉。Codex 第一次看到新的或改过的钩子会问一次要不要信任，
-结果记在 `config.toml` 的 `[hooks.state]`。手写的 hooks 不受影响；设为 `false` 再 apply 会清理仍在托管范围内的对应条目，详见[关闭功能时的行为](docs/configuration.md#关闭功能时的行为)。
-没有设这个键的机器完全不管理 `~/.codex`。`~/bin/roost` 由 roost 应用仓库另行安装。
-
-`data.tmux_agent_notify = true` 用在被 cmux 远程镜像 tmux 的主机上：给 `~/.claude/settings.json` 的
-`Notification` 和 `Stop` 各加一条 `~/bin/tmux-agent-notify`。在 tmux 里时它把消息（或 Claude 最后的回复）
-作为 OSC 777 通知写进 agent 所在 pane，cmux 显示成该工作区的通知；cmux 自带的远程钩子只传运行状态。
-需要 `jq`；不在 tmux 里时什么都不做。设为 `false` 再 apply 会移除这两条。
-
-macOS 偏好通过 `scripts/manual/macos-defaults.sh` 手动管理，需要已有 Python 3.9+。
-先用 `--check` 预览；`--apply` 会在仓库外备份托管键的原值，再写入、回读并重启相关桌面进程。
-`--restore /path/to/backup.json` 只恢复这些键，并再次备份恢复前状态；无差异时不写入或重启。
-偏好清单、备份位置与失败处理见[命令参考](docs/commands.md#nori验证与手动系统偏好)。
-它不在任一更新组件中自动调用。dotfiles 更新不要求授予 Full Disk Access。
-登录 shell、Docker 组、服务、网络与持久权限由用户/infra 单独评审操作；这里没有自动命令。
-Docker 组访问接近 root 权限，不能当成普通 dotfiles 的便利设置。
+系统偏好通过 `scripts/manual/macos-defaults.sh` 手动管理。
+登录 shell、Docker 组、系统服务、网络和持久权限由用户或 infra 单独管理。
 
 ## 升级锁与回退
 

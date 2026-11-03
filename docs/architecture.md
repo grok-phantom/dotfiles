@@ -8,6 +8,7 @@
 | 配置更新 | `scripts/dotfiles` | 提交快照、plan/apply/verify、漂移和过期计划检查 |
 | 软件维护 | `scripts/software` | packages、Miniforge、Herdr 插件；默认 plan，写入须显式执行 |
 | 共用实现 | `scripts/dotfiles_lib/` | 子进程与诊断、平台检查、Herdr 安装验证和 Quicklook 补丁 |
+| Linux 部署检查 | `scripts/check-linux` | Ubuntu 24.04 x86_64 的前置工具、full 版本要求与只读 apt 模拟 |
 | 手动操作 | `scripts/manual/` | 系统偏好、agent 集成；旧插件脚本转发到软件入口 |
 | 本机状态 | 目标机器 | 身份、凭据、主机清单、会话、日志、索引和插件注册表 |
 
@@ -42,4 +43,5 @@ Herdr 重试先运行 plan，再 install；版本匹配的插件会跳过。
 
 提交前运行 `./scripts/test all`。新增维护行为应使用临时目录和替身命令验证失败路径。
 修改模板需验证已有配置保留、重复应用和关闭或退役行为。
+Linux 路径与 macOS 专用目标使用隔离渲染回归；Ubuntu CI 再执行 apt 依赖模拟。
 本机 verify 与 GUI、远端验收分开记录；具体操作见[终端说明](terminals.md#herdr)。

@@ -11,7 +11,7 @@
 | 功能 | 当前提供的行为 | 主要源码 / 使用说明 |
 | --- | --- | --- |
 | 配置更新 | status → fetch → plan → apply → verify；计划绑定提交、渲染结果和目标状态；只允许向前更新 | [scripts/dotfiles](../scripts/dotfiles)、[README](../README.md#更新入口) |
-| 软件维护 | Homebrew / apt 清单安装、升级、检查；独立的 Miniforge 安装器与校验 | [scripts/software](../scripts/software)、[软件清单](../home/.chezmoidata/packages.yaml) |
+| 软件维护 | Homebrew / apt 清单安装、升级、检查；独立的 Miniforge、Herdr 插件安装与校验 | [scripts/software](../scripts/software)、[软件清单](../home/.chezmoidata/packages.yaml) |
 | 外部资源 | 固定 commit 和 SHA-256 的插件、主题、字体；显式选择 externals 才下载 | [外部声明](../home/.chezmoiexternal.toml.tmpl)、[依赖锁](../locks/README.md) |
 | Shell | Zsh、共享命令历史、命令提示、vi 模式、目录跳转、可选历史搜索、代理函数 | [Zsh 入口](../home/dot_zshrc.tmpl)、[shell 模块](../home/private_dot_config/zsh/conf.d)、[命令速查](commands.md#shell-日常操作) |
 | Git | 全局身份、个人目录邮箱、可选 SSH 签名、本机 include、自动跟踪与 prune | [Git 配置](../home/private_dot_config/git)、[多 Mac 迁移](multi-mac.md#1password) |
@@ -32,6 +32,7 @@
 ## 平台与 profile
 
 配置入口支持 macOS / Linux 的 arm64/aarch64/x86_64，具体组合由入口检查。
+Ubuntu 24.04 x86_64 的安装顺序和 fzf 版本要求见 [Linux 部署](linux.md)。
 CLI 默认 full，直接 chezmoi 使用本机 `data.profile`，未设置也回落到 full。
 
 | 范围 | core | full |
@@ -44,7 +45,8 @@ CLI 默认 full，直接 chezmoi 使用本机 `data.profile`，未设置也回�
 | SSH、Claude、Codex、nori 配置 | 由各自本机开关决定 | 由各自本机开关决定 |
 | `scripts/software` | 拒绝执行 | 显式 plan / install / upgrade / apply / verify |
 
-工具文件被管理不等于能在所有平台运行：截图、剪贴板和 Raycast 流程依赖 macOS；
+Linux 跳过截图/剪贴板上传及 macOS 1Password 签名助手；其余工具仍按能力使用。
+Raycast 和 mba 的无 TTY 桌面启动依赖 macOS；
 nori-watch 需已有 nori；Roost 需应用仓库安装的 `~/bin/roost`。
 从 full 切换到 core 只忽略可选目标，保留既有文件与软件。所有开关见[配置参考](configuration.md)。
 
@@ -56,7 +58,7 @@ zsh-vi-mode 的延迟初始化后绑定按键。VS Code / iTerm2 的 shell integ
 按当前终端和本机文件是否存在加载。
 
 full 使用 OMZ + Powerlevel10k，关闭 OMZ 自动更新。启用 Git、eza、extract、
-vi 模式、语法高亮、自动建议、command-not-found、aliases、history、tmux 插件；
+copypath、vi 模式、语法高亮、自动建议、command-not-found、aliases、history、tmux 插件；
 Docker/rsync 按渲染时工具是否存在加入，Linux 加 systemd。Conda 优先加载
 `conda.sh`，缺失时回退到 hook；`DOTFILES_CONDA_INIT=hook` 可显式选择 hook。
 

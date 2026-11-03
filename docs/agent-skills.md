@@ -30,7 +30,8 @@ Claude Code 和 Codex 共用一份 skill：正本在 `~/.agents/skills/<name>`�
 ## 用官方安装器
 
 这些 skill 和上游一致，直接安装、更新，不进仓库。`npx skills add -g` 会装到
-`~/.agents/skills`（Codex 直接读取），并给 Claude Code 建链接；之后用 `npx skills update -g` 更新。
+`~/.agents/skills`（Codex 直接读取），并给 Claude Code 建链接。更新前检查本机来源与哈希记录，确认没有本地适配再更新；
+不要用批量更新覆盖仓库管理的 skill。
 
 安装时始终加 `-a codex claude-code`，只装给这两个 agent。不加的话 CLI 会沿用上次选过的
 agent 列表，给 Cursor、Gemini、Copilot 等各建一份 `~/.<agent>/skills`。`-a` 会吞掉后面所有
@@ -48,6 +49,9 @@ agent 列表，给 Cursor、Gemini、Copilot 等各建一份 `~/.<agent>/skills`
 
 不加 `--skill` 时会列出仓库里所有 skill 让你选。
 
+上游 skill 文档中的示例路径不是仓库文件。Matt Pocock 的 `SCOPE.md` 还引用上游未随本地包收录的
+`.out-of-scope/` 文档；这些链接不代表本地安装缺失，不能据此自动下载或覆盖本地适配。
+
 ## 不在这里管理
 
 - Claude.ai 账号同步的 skill（docx、pptx、xlsx、pdf、computer-use 等）：许可证不允许再分发，由账号同步维护。
@@ -61,7 +65,7 @@ mattpocock/skills 1.3.1 的本地改编版（MIT，见其 SOURCE.json），作�
 `dotfiles-local` 提供插件 `mattpocock-skills`。chezmoi 只同步插件源文件；在 Codex 里注册
 marketplace、安装插件仍用 Codex 自己的命令，这样配置和插件缓存才能保持一致。
 
-每台 Mac 上做一次（apply 之后）：
+每台使用该插件的主机分别注册，前提是该平台的 Codex CLI 提供相应命令。apply 只同步源码：
 
 ```sh
 codex plugin marketplace list            # 找出 source 指向 ~/.agents/skill-sources/mattpocock 的旧名称

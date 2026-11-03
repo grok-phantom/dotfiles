@@ -1,7 +1,7 @@
 # 命令速查
 
 仓库入口从 source 根目录运行；`~/bin` 命令要先应用对应配置，再通过 PATH 使用。
-开关与平台条件见[本机配置参考](configuration.md)，首次部署见[多 Mac 迁移](multi-mac.md)。
+开关与平台条件见[本机配置参考](configuration.md)，首次部署见 [Mac 迁移](multi-mac.md)或 [Ubuntu 部署](linux.md)。
 
 ## 配置更新
 
@@ -44,13 +44,14 @@ package 操作针对真实主机，`--target` 不是包管理器沙箱。
 | `./scripts/software packages upgrade --yes` | 更新 Homebrew 索引并升级清单项 |
 | `./scripts/software packages verify` | 检查所选包是否安装 |
 | `./scripts/software packages plan --manager apt` | 支持的 Debian 系统用当前本地索引模拟安装 |
-| `./scripts/software packages install --manager apt --yes` | 需要本机 sudo 开关和 `sudo -n`；upgrade 同理 |
+| `./scripts/software packages install --manager apt --yes` | 需要本机 sudo 开关；加 `--interactive` 可输入 sudo 密码，否则需 `sudo -n`；upgrade 同理 |
+| `./scripts/software herdr-plugins plan` / `install --yes` / `verify` | 插件预检、显式安装和只读验证，详见[终端说明](terminals.md#herdr) |
 | `./scripts/software miniforge plan` | 显示固定版本和安装/更新状态 |
 | `./scripts/software miniforge apply --yes` | 下载、核验 SHA-256 后安装；已有匹配标记时跳过重装 |
 | `./scripts/software miniforge apply --yes --update-existing` | 明确允许更新已有 base；先自行备份环境 |
 | `./scripts/software miniforge verify` | 检查安装器标记和 conda 可执行程序 |
 
-`--manager` 默认 brew；需要终端密码交互的 Homebrew cask 可加 `--interactive`。
+`--manager` 默认 brew；需要终端密码交互的 Homebrew cask 或 apt 操作可加 `--interactive`。
 软件入口也支持 `--repo`、`--target`、`--config`、`--profile` 和 `--diagnostic-dir`；
 软件诊断可能包含安装器原始输出。不会安装 Homebrew 本身、卸载未选包、运行 cleanup
 或执行全系统 apt upgrade。软件选择见[配置参考](configuration.md#基础数据与软件选择)。
@@ -126,7 +127,7 @@ Python 更新入口使用进程环境，不经过这些 shell 函数。
 
 | 命令 | 行为与前提 |
 | --- | --- |
-| `mba [-H host] [session]` | SSH 登录 shell 中连接/创建 tmux 会话，默认 main；无 TTY 时镜像进 cmux，或通过 AppleScript 打开 Ghostty 标签页；Raycast 里只显示一行结果 |
+| `mba [-H host] [session]` | SSH 登录 shell 中连接/创建 tmux 会话，默认 main；macOS 无 TTY 时镜像进 cmux，或通过 AppleScript 打开 Ghostty 标签页；Raycast 里只显示一行结果 |
 | `mba-clip [-H host] [-s] [image ...]` | macOS 剪贴板图片或文件上传；`-s` 先框选截图 |
 | `mba-shot` | 调用 `mba-clip -s` |
 | `mba-tunnel [-H host] [status \| on [hours] \| off \| toggle]` | 按需打开反向隧道，让远端 `ssh -p 2222 127.0.0.1` 登回本机，默认 2 小时后关闭 |
@@ -183,6 +184,7 @@ Herdr 的安装、Machines、通知与恢复步骤见[终端说明](terminals.md
 | --- | --- |
 | `./scripts/test all` / `make test` | unit + static |
 | `./scripts/test unit` / `./scripts/test static` | 单独选中套件 |
+| `./scripts/check-linux --profile core --apt` | 在 Ubuntu 24.04 x86_64 检查基础工具并模拟 apt 清单；full 另查 fzf/Vim/Ctags |
 | `./scripts/test cached-externals --cache /path/to/cache` | 已下载锁定资源的校验与临时目标应用 |
 | `./scripts/test runtime --cache /path/to/cache` | 在上述基础上检查 Zsh/Vim/Tmux |
 | `./scripts/verify-terminals` | iTerm2 JSON；macOS 上检查已安装 Ghostty 的配置、字体、主题和搜索能力 |

@@ -1,7 +1,8 @@
 # Workspace layout
 
 Every machine keeps code under `~/workspace` with the same relative paths, so
-zoxide history, scripts, editor recents and Claude Code project memory carry over.
+scripts can use consistent relative paths. History, editor recents and agent memory
+are machine-local unless separately migrated; matching paths do not synchronize them.
 Repositories sync only through Git remotes; never through a sync drive.
 
 ```
@@ -13,7 +14,7 @@ Repositories sync only through Git remotes; never through a sync drive.
 │   ├── archive/     kept but no longer maintained
 │   └── worktrees/   manual worktrees as <repo>/<branch>
 ├── company/         same categories; only on machines allowed to hold company code
-└── scratch/         throwaway code without a remote; safe to empty (`cct NAME` / `cxt NAME` starts Claude Code / Codex here)
+└── scratch/         temporary code without a remote; review running tasks and unsaved work before removal (`cct NAME` / `cxt NAME` starts Claude Code / Codex here)
 ```
 
 Rules:
@@ -46,6 +47,10 @@ chezmoi then manages `~/workspace` as a symlink to that root. Without
 it. While the volume is unplugged the symlink dangles; `workspace` refuses to run
 instead of creating anything on the internal disk, and also stops when a
 different volume is mounted under the same name.
+
+On Linux, use a normal directory or a mount prepared by the host administrator.
+`workspace_volume_uuid` and `/Volumes` checks are macOS-specific; Linux mount identity
+is not verified by this tool. Do not copy a Mac volume path or UUID into Linux data.
 
 ## Commands
 

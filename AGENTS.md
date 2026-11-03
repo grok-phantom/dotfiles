@@ -27,7 +27,8 @@ source tree，而不是通用软件项目。
 - `home/.chezmoiignore.tmpl` 控制不同平台、profile 和本机开关下哪些目标被忽略；
   按机器开启的功能（SSH、Claude、Codex、nori）都在这里守卫。
 - `home/.chezmoitemplates/` 放多个目标共用的模板（代理地址、nori 配置）。
-- `scripts/dotfiles` 管理配置更新；`scripts/software` 管理显式软件操作。
+- `scripts/dotfiles` 管理配置更新；`scripts/software` 管理软件包、Miniforge 和 Herdr 插件。
+  共用实现放在 `scripts/dotfiles_lib/`；`scripts/check-linux` 只读检查 Ubuntu 部署前置条件。
 - `scripts/manual/` 保存单独审查执行的系统偏好；不恢复自动安装脚本。
 - `home/dot_zshrc.tmpl`、`home/dot_zprofile.tmpl` 和
   `home/private_dot_config/zsh/conf.d/` 定义交互式 shell 行为。
@@ -98,6 +99,8 @@ source tree，而不是通用软件项目。
 - 对 shell scripts，运行 `bash -n <script>` 或对应 shell 的语法检查。
 - 对 JSON、TOML、YAML，使用可用的 parser 或 formatter check。
 - 对 Git 配置变更，在声称行为正确前，先检查渲染后的文件。
+- Linux 变更需验证 core/full 目标隔离；Ubuntu 软件清单在 CI 中做 apt 模拟，
+  不把 macOS 上的模板渲染当作 Linux 运行验收。部署说明见 `docs/linux.md`。
 - 提交前运行 `./scripts/test all`；新增 data 开关时同时更新 `home/.chezmoi.toml.tmpl`
   的保留列表、`docs/configuration.md` 和 `docs/features.md`，并补测试。
 

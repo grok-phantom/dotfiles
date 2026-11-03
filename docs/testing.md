@@ -28,8 +28,11 @@ uploaded by the CI workflow. Do not put reports into the managed `home/` tree.
 
 The launcher isolates HOME, XDG paths, Git global/system configuration, temporary
 files and proxy/agent inheritance. Tests create synthetic identities and repositories;
-the caller's dotfiles are not applied or inspected. Unit tests must run as a non-root
+the caller's dotfiles are not applied or inspected. Apt tests also check that
+`--interactive` attaches sudo operations to the terminal while the default keeps `sudo -n`. Unit tests must run as a non-root
 user. Unit and static checks require installed Git, chezmoi, Bash and Zsh.
+Repository documentation tests validate local links and heading anchors outside code examples.
+Linux-target tests render core/full and ensure macOS-only targets and SSH settings are excluded.
 Missing selected dependencies are `blocked` (exit 2), assertion failures are `failed`
 (exit 1), and successful selected suites return 0. Unselected/VM suites remain
 `not_run`; an overall `passed` only describes `selected_suites`.
@@ -85,6 +88,12 @@ checkout v7.0.1, setup-python v7.0.0 and upload-artifact v7.0.2. Python is pinne
 <https://github.com/twpayne/chezmoi/releases/tag/v2.73.0>. The CI-only helper downloads
 and verifies those bytes, then extracts only the regular `chezmoi` executable into
 runner temporary storage. It is not called by local test commands.
+
+The Ubuntu job also runs `python -B scripts/check-linux --profile core --apt` after
+the offline suite. This checks the runner's Ubuntu 24.04 x86_64 prerequisites and
+simulates the current apt manifest. No manifest packages are installed by this step;
+existing runner packages and indexes differ from a fresh target. Full fzf/Vim/Tmux
+runtime and real SSH/GUI acceptance remain separate.
 
 Hosted OS images, Git/Bash and the Ubuntu Zsh system package are not byte-for-byte
 locked; the reports record the relevant actual versions. CI provisions dependencies
