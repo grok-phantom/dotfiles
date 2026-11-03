@@ -119,7 +119,7 @@ def static_checks(env):
     count = 0
     for name in files:
         path = ROOT / name
-        if path.suffix == '.py' or name in ('scripts/dotfiles', 'scripts/software'):
+        if path.suffix == '.py' or name in ('scripts/dotfiles', 'scripts/software', 'scripts/check-linux'):
             ast.parse(path.read_text(), filename=name)
             count += 1
         elif path.suffix == '.json' and not path.name.startswith('modify_'):

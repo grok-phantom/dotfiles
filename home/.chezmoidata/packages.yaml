@@ -72,29 +72,45 @@ packages:
   linux:
     brews:
       - atuin
+      - bat
       - btop
+      - chezmoi
+      - curl
+      - direnv
       - eza
+      - fd
       - fzf
       - gh
+      - git
       - git-delta
+      - git-lfs
       - glab
       - glow
       - go
       - herdr
+      - htop
+      - jq
       - lazygit
+      - less
       - memex
       - node
       - python@3.15
+      - ripgrep
+      - tmux
       - tokei
+      - universal-ctags
       - uv
       - vim
+      - wget
       - yazi
       - zoxide
+      - zsh
     apt:
       # Baseline for hosts without Homebrew (e.g. ephemeral); where brew also installs
       # fzf/vim, its newer copy wins on PATH.
       - ack
       - bat
+      - ca-certificates
       - curl
       - direnv
       - fd-find
@@ -104,6 +120,9 @@ packages:
       - git-delta
       - htop
       - jq
+      - less
+      - openssh-client
+      - python3
       - ripgrep
       - tmux
       - universal-ctags

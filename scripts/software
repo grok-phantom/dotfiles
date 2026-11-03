@@ -168,12 +168,14 @@ def packages(args, machine):
             return
         if not args.yes or not data['sudo']:
             raise Stop('apt install/upgrade requires --yes and local data.sudo=true')
-        run(['sudo', '-n', 'true'], stage='apt permission check')
+        interactive = getattr(args, 'interactive', False)
+        sudo = ['sudo'] + ([] if interactive else ['-n'])
+        run(sudo + ['true'], stage='apt permission check', interactive=interactive)
         print('Running apt index update...', flush=True)
-        run(['sudo', '-n', 'apt-get', 'update'], stage='apt update', diagnostic_output=True)
+        run(sudo + ['apt-get', 'update'], stage='apt update', diagnostic_output=True, interactive=interactive)
         print('Running apt '+args.action+'...', flush=True)
-        run(['sudo', '-n', 'apt-get', 'install', '-y',
-             '--only-upgrade' if args.action == 'upgrade' else '--no-upgrade', *names], stage='apt '+args.action, diagnostic_output=True)
+        run(sudo + ['apt-get', 'install', '-y',
+             '--only-upgrade' if args.action == 'upgrade' else '--no-upgrade', *names], stage='apt '+args.action, diagnostic_output=True, interactive=interactive)
     print('Selected package operation completed. No OS-wide upgrade, cleanup, shell or group changes were requested.')
 
 
@@ -189,7 +191,7 @@ def main():
     parser.add_argument('--yes', action='store_true')
     parser.add_argument('--update-existing', action='store_true')
     parser.add_argument('--interactive', action='store_true',
-                        help='Attach Homebrew install/upgrade to this terminal so casks can prompt for sudo; output is shown, not captured')
+                        help='Attach package install/upgrade to this terminal so Homebrew casks or apt sudo can prompt; output is shown, not captured')
     parser.add_argument('--diagnostic-dir', type=Path, help='New private directory outside repo; may contain raw installer/package output')
     args = parser.parse_args()
     try:

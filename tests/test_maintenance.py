@@ -246,7 +246,7 @@ class LocalChoicesTests(base.Fixture):
         # Avoid keyword override ambiguity when composing fixture dictionaries.
         data = dict(company=False, ephemeral=False, sudo=True, homebrew=False,
                     email='person@example.invalid', git_name='Example', profile='full')
-        for updates in ({}, {'homebrew':True, 'sudo':False}, {'homebrew':True,'ephemeral':True}):
+        for updates in ({}, {'homebrew':True,'ephemeral':True}):
             self.config.write_text(json.dumps({'data':dict(data, **updates)}))
             output = self.cmd(['chezmoi','--source',self.repo,'--destination',self.target,'--config',self.config,
                        'execute-template','--init','--file',self.repo/'home/.chezmoi.toml.tmpl']).stdout

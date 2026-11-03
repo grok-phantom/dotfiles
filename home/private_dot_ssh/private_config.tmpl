@@ -6,8 +6,10 @@
 # OpenSSH uses the first value it finds, so these come before the defaults below.
 # Missing files are skipped.
 
+{{ if eq .chezmoi.os "darwin" -}}
 # OrbStack's 'orb' host must come before any Host block.
 Include ~/.orbstack/ssh/config
+{{ end -}}
 
 Include ~/.ssh/config.d/personal.conf
 Include ~/.ssh/config.d/work.conf

@@ -40,8 +40,8 @@
 {{- if hasKey . "claude_proxy" -}}{{- $claudeProxy = .claude_proxy -}}{{- end -}}
 {{- "" -}}
 
-{{/* Homebrew requires sudo and non-ephemeral */}}
-{{- if not $sudo -}}
+{{/* Without an explicit choice, no sudo means no Homebrew bootstrap. Existing user-owned installs need no sudo. */}}
+{{- if and (not $sudo) (not (hasKey . "homebrew")) -}}
 {{-   $homebrew = false -}}
 {{- end -}}
 {{- "" -}}

@@ -61,6 +61,10 @@ if [[ ! "$session" =~ ^[A-Za-z0-9_.-]+$ || ! "$host" =~ ^[A-Za-z0-9_.@-]+$ ]]; t
   fail "主机名和会话名只能用字母、数字和 _ . -"
 fi
 
+if [[ (! -t 0 || ! -t 1) && "$(uname -s)" != Darwin ]]; then
+  fail "mba: Linux 上请从交互终端运行；无终端的 GUI 启动仅支持 macOS"
+fi
+
 cmux_cli=/Applications/cmux.app/Contents/Resources/bin/cmux
 if [[ (! -t 0 || ! -t 1) && "${MBA_APP:-cmux}" == cmux && -x "$cmux_cli" ]]; then
   open -a cmux

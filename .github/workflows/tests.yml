@@ -26,13 +26,16 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y zsh
+          sudo apt-get install --no-install-recommends -y zsh jq
       - name: Provide hash-locked chezmoi in runner temp
         run: python -B tests/ci_fetch_chezmoi.py
       - name: Offline unit and static suites
         env:
           PYTHON: python
         run: ./scripts/test all --report-dir .test-results/ci
+      - name: Ubuntu 24.04 deployment prerequisites and apt simulation
+        if: runner.os == 'Linux'
+        run: python -B scripts/check-linux --profile core --apt
       - name: Upload synthetic test evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Read-only Ubuntu 24.04 x86_64 deployment preflight; never installs or applies."""
+import argparse
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def check(profile, apt=False):
+    if platform.system() != 'Linux':
+        raise RuntimeError('Run this check on the target Linux host; macOS rendering is not Linux acceptance')
+    release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
+    if release.get('ID', '').strip('"') != 'ubuntu' or release.get('VERSION_ID', '').strip('"') != '24.04':
+        raise RuntimeError('This deployment preflight targets Ubuntu 24.04; other distributions need separate checks')
+    if platform.machine() != 'x86_64':
+        raise RuntimeError('This deployment preflight targets x86_64, not 32-bit x86 or ARM')
+    missing = [name for name in ('git', 'chezmoi', 'zsh', 'bash', 'python3', 'ssh', 'curl')
+               if not shutil.which(name)]
+    if missing:
+        raise RuntimeError('Missing prerequisites: ' + ', '.join(missing))
+    if sys.version_info < (3, 9):
+        raise RuntimeError('Maintenance requires Python 3.9+; offline tests require Python 3.11+')
+    print('Ubuntu 24.04 x86_64: base command prerequisites present')
+    if profile == 'full':
+        for tool in ('vim', 'tmux', 'fzf', 'ctags'):
+            if not shutil.which(tool):
+                raise RuntimeError('Full terminal prerequisite missing: ' + tool)
+        fzf = subprocess.check_output(['fzf', '--version'], text=True)
+        version = re.match(r'(\d+)\.(\d+)\.(\d+)', fzf)
+        if not version or tuple(map(int, version.groups())) < (0, 54, 0):
+            raise RuntimeError('Locked fzf.vim requires fzf >= 0.54.0; Ubuntu 24.04 apt fzf is older')
+        if '+python3' not in subprocess.check_output(['vim', '--version'], text=True):
+            raise RuntimeError('Full Vim requires +python3; use vim-nox or a suitable Homebrew Vim')
+        if 'Universal Ctags' not in subprocess.check_output(['ctags', '--version'], text=True):
+            raise RuntimeError('Full Vim requires Universal Ctags')
+        print('Full Vim/Tmux command prerequisites: passed; plugins still need runtime verification')
+    if apt:
+        if not shutil.which('apt-get'):
+            raise RuntimeError('apt-get is missing')
+        repo = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory(prefix='dotfiles-linux-check-') as directory:
+            config = Path(directory)/'config.json'
+            config.write_text('{}')
+            packages = json.loads(subprocess.check_output(['chezmoi', '--source', str(repo),
+                '--config', str(config), '--no-tty', 'execute-template',
+                '{{ .packages.linux.apt | toJson }}'], text=True))
+        subprocess.run(['apt-get', '--simulate', 'install', '--no-upgrade', *packages], check=True)
+        print('APT dependency simulation passed using current local indexes; nothing installed')
+    print('No configuration applied. SSH authentication, agent tools, GUI and full plugin runtime require separate verification.')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--profile', choices=['core', 'full'], default='core')
+    parser.add_argument('--apt', action='store_true', help='Simulate the apt manifest without sudo or index refresh')
+    args = parser.parse_args()
+    try:
+        check(args.profile, args.apt)
+    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
+        print('BLOCKED: ' + str(error), file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

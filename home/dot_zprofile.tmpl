@@ -14,7 +14,8 @@ unset dotfiles_brew
 # mba-sync's `$SHELL -l` ends at once and would leave the link pointing nowhere.
 if [[ -n "$SSH_CONNECTION" && -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent-forwarded.sock" ]] &&
   [[ -t 0 || ! -S "$HOME/.ssh/agent-forwarded.sock" ]]; then
-  ln -sfn -- "$SSH_AUTH_SOCK" "$HOME/.ssh/agent-forwarded.sock" &&
+  mkdir -p -m 700 -- "$HOME/.ssh" &&
+    ln -sfn -- "$SSH_AUTH_SOCK" "$HOME/.ssh/agent-forwarded.sock" &&
     export SSH_AUTH_SOCK="$HOME/.ssh/agent-forwarded.sock"
 fi
 {{/* vim: set filetype=zsh: */}}

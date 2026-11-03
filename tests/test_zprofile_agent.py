@@ -40,6 +40,13 @@ class ForwardedAgentLink(unittest.TestCase):
         self.login(self.sock('oneoff.sock'))
         self.assertEqual(os.readlink(self.link), str(live))
 
+    def test_first_ssh_login_creates_private_directory(self):
+        (self.home/'.ssh').rmdir()
+        agent = self.sock('first.sock')
+        self.login(agent)
+        self.assertEqual(os.readlink(self.link), str(agent))
+        self.assertEqual((self.home/'.ssh').stat().st_mode & 0o777, 0o700)
+
     def test_a_dead_link_is_replaced(self):
         self.link.symlink_to(self.home / 'gone.sock')
         agent = self.sock('new.sock')
