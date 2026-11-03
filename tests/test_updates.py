@@ -204,7 +204,7 @@ class UpdateTests(Fixture):
 
     def test_unsupported_os_arch(self):
         for system, arch in [('Windows', 'x86_64'), ('Linux', 'riscv64'), ('Darwin', 'aarch64')]:
-            with patch.object(UPDATE.platform, 'system', return_value=system), patch.object(UPDATE.platform, 'machine', return_value=arch):
+            with patch.object(UPDATE.common.platform, 'system', return_value=system), patch.object(UPDATE.common.platform, 'machine', return_value=arch):
                 with self.assertRaises(UPDATE.Stop):
                     UPDATE.host()
 
@@ -304,6 +304,8 @@ echo installed >> "$TEST_ROOT/install-log"
         scripts.mkdir()
         for name in ('dotfiles', 'software'):
             shutil.copy(ROOT/'scripts'/name, scripts/name)
+        shutil.copytree(ROOT/'scripts/dotfiles_lib', scripts/'dotfiles_lib',
+                        ignore=shutil.ignore_patterns('__pycache__'))
         self.commit()
         env = dict(self.env)
         env.pop('PYTHONDONTWRITEBYTECODE', None)
@@ -312,7 +314,7 @@ echo installed >> "$TEST_ROOT/install-log"
         code = "import sys,runpy;sys.pycache_prefix=None;sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name='__main__')"
         self.cmd([sys.executable, '-c', code, scripts/'software', 'miniforge', 'plan',
                   '--profile', 'full', '--target', self.target], env=env)
-        self.assertFalse((scripts/'__pycache__').exists())
+        self.assertEqual(list(scripts.rglob('__pycache__')), [])
         self.assertEqual(self.git('status', '--porcelain=v1'), '')
 
     def test_brew_install_and_upgrade_separate(self):

@@ -333,7 +333,7 @@ class DiagnosticTests(base.Fixture):
             base.UPDATE.run(self.command(), stage='Homebrew install', diagnostic_output=True)
         self.assertIn('Homebrew install', str(result.exception))
         self.assertNotIn('synthetic-secret', str(result.exception))
-        self.assertIsNone(base.UPDATE._diagnostics)
+        self.assertIsNone(base.UPDATE.common._diagnostics)
 
     def test_opt_in_log_is_private_and_only_eligible_output_is_recorded(self):
         directory = self.root/'diagnostic'
@@ -346,7 +346,7 @@ class DiagnosticTests(base.Fixture):
         self.assertEqual(stat.S_IMODE(directory.stat().st_mode), 0o700)
         self.assertEqual(stat.S_IMODE((directory/'commands.log').stat().st_mode), 0o600)
         self.assertIn('package reason', (directory/'commands.log').read_text())
-        self.assertIsNone(base.UPDATE._diagnostics)
+        self.assertIsNone(base.UPDATE.common._diagnostics)
 
     def test_existing_directory_and_source_destination_refused(self):
         for destination in (self.repo/'diagnostics', self.root):

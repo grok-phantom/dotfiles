@@ -2,8 +2,6 @@
 """Explicit software maintenance, separate from configuration updates (Python 3.9+)."""
 import argparse
 import hashlib
-import importlib.machinery
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,11 +12,9 @@ import tempfile
 
 
 sys.dont_write_bytecode = True
-loader = importlib.machinery.SourceFileLoader('dotfiles_update', str(Path(__file__).with_name('dotfiles')))
-spec = importlib.util.spec_from_loader(loader.name, loader)
-common = importlib.util.module_from_spec(spec)
-loader.exec_module(common)
-Stop, run = common.Stop, common.run
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from dotfiles_lib import common
+from dotfiles_lib.common import Stop, run
 
 
 def download(url, destination, expected):
@@ -84,7 +80,7 @@ def miniforge(args, machine):
 def package_data(args):
     data = run(['chezmoi', '--source', args.repo, '--destination', args.target,
                 '--config', args.config, '--no-tty', 'execute-template',
-                '{{ dict "packages" .packages "homebrew" .homebrew "sudo" .sudo "osid" .osid "company" (get . "company") "groups" (get . "package_cask_groups") "exclude" (get . "package_cask_exclude") | toJson }}'], stage='software configuration')
+                '{{ dict "packages" .packages "homebrew" .homebrew "sudo" .sudo "osid" .osid "company" (get . "company") "groups" (get . "package_cask_groups") "exclude" (get . "package_cask_exclude") "herdr_enabled" (get . "herdr_enabled") | toJson }}'], stage='software configuration')
     return json.loads(data)
 
 
@@ -108,6 +104,9 @@ def packages(args, machine):
     if args.action not in ('plan', 'install', 'upgrade', 'verify'):
         raise Stop('Packages support plan, install, upgrade, verify')
     data = package_data(args)
+    enabled = data.get('herdr_enabled', '')
+    if not (isinstance(enabled, bool) or enabled == ''):
+        raise Stop('herdr_enabled must be a boolean')
     key = 'darwin' if machine[0] == 'Darwin' else 'linux'
     packages = data['packages'][key]
     env = dict(os.environ, HOMEBREW_NO_AUTO_UPDATE='1', HOMEBREW_NO_INSTALL_CLEANUP='1',
@@ -118,7 +117,10 @@ def packages(args, machine):
         brew = shutil.which('brew')
         if not brew:
             raise Stop('Homebrew is not installed; bootstrap manually from its official instructions')
-        content = ''.join('brew ' + json.dumps(x) + '\n' for x in packages['brews'])
+        brews = packages['brews']
+        if data.get('herdr_enabled') is False:
+            brews = [name for name in brews if name not in ('herdr', 'memex')]
+        content = ''.join('brew ' + json.dumps(x) + '\n' for x in brews)
         if key == 'darwin':
             content += ''.join('cask ' + json.dumps(x) + '\n' for x in selected_casks(packages, data))
         print(content, end='')
@@ -177,7 +179,7 @@ def packages(args, machine):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('component', choices=['packages', 'miniforge'])
+    parser.add_argument('component', choices=['packages', 'miniforge', 'herdr-plugins'])
     parser.add_argument('action', nargs='?', default='plan', choices=['plan', 'apply', 'install', 'upgrade', 'verify'])
     parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument('--target', type=Path, default=Path.home())
@@ -208,13 +210,26 @@ def main():
                 miniforge(args, machine)
             else:
                 if args.target != Path.home().resolve():
-                    raise Stop('Package managers affect the current host; --target is not a package sandbox')
-                packages(args, machine)
+                    raise Stop('Package managers and Herdr affect the current host; --target is not a software sandbox')
+                if args.component == 'herdr-plugins':
+                    enabled = json.loads(run(['chezmoi', '--source', args.repo, '--config', args.config,
+                        '--no-tty', 'execute-template', '{{ get . \"herdr_enabled\" | toJson }}'],
+                        stage='Herdr local selection'))
+                    if enabled is False:
+                        raise Stop('Herdr is disabled by local data.herdr_enabled')
+                    if not (isinstance(enabled, bool) or enabled == ''):
+                        raise Stop('herdr_enabled must be a boolean')
+                    from dotfiles_lib.herdr import maintain
+                    maintain(args)
+                else:
+                    packages(args, machine)
     except KeyboardInterrupt:
         print('Interrupted: active subprocesses stopped; completed changes are not rolled back.', file=sys.stderr)
         return 130
     except (Stop, OSError, ValueError, KeyError) as error:
         print('Stopped: ' + str(error), file=sys.stderr)
+        if args.component == 'herdr-plugins' and args.action == 'install':
+            print('Completed plugin changes are retained. Inspect the failure, then rerun plan/install; matching pins are skipped.', file=sys.stderr)
         return 1
     return 0
 
