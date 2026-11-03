@@ -104,10 +104,10 @@ EOF
     done
   fi
   if [[ -n "$named" ]]; then
-    out="$("$cmux_cli" ssh-tmux "$host" attach "$session" 2>&1)" || fail "cmux 没能打开 $session：${out##*$'\n'}"
+    out="$("$cmux_cli" ssh-tmux "$host" attach "$session" --focus 2>&1)" || fail "cmux 没能打开 $session：${out##*$'\n'}"
     echo "已在 cmux 打开 $host 的 $session"
   else
-    out="$("$cmux_cli" ssh-tmux "$host" 2>&1)" || fail "cmux 没能打开 $host：${out##*$'\n'}"
+    out="$("$cmux_cli" ssh-tmux "$host" --focus 2>&1)" || fail "cmux 没能打开 $host：${out##*$'\n'}"
     echo "已在 cmux 打开 $host 的 ${#sessions[@]} 个会话"
   fi
   exit 0

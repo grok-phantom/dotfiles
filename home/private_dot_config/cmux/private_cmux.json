@@ -2,6 +2,42 @@
   "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
   "schemaVersion": 1,
 
+  "actions": {
+    "new-remote-tmux-session": {
+      "type": "builtin",
+      "builtin": "cmux.newWorkspace",
+      "title": "Tmux · 新建会话",
+      "description": "在当前 tmux 镜像主机新建 session；本地工作区则新建本地工作区",
+      "keywords": ["tmux", "session", "remote"],
+      "shortcut": "cmd+alt+shift+n"
+    }
+  },
+
+  "commands": [
+    {
+      "name": "MBA · Tmux",
+      "description": "连接或恢复远端 tmux 会话并聚焦",
+      "keywords": ["mba", "ssh", "tmux"],
+      "restart": "new",
+      "workspace": {
+        "name": "MBA · Launcher",
+        "cwd": "~/",
+        "layout": {
+          "pane": {
+            "surfaces": [
+              {
+                "type": "terminal",
+                "name": "MBA · Connect",
+                "command": "MBA_APP=cmux \"$HOME/bin/mba\" </dev/null && /Applications/cmux.app/Contents/Resources/bin/cmux close-workspace --workspace \"$CMUX_WORKSPACE_ID\" --force",
+                "focus": true
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+
   "app": {
     "sendAnonymousTelemetry": false
   },
