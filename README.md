@@ -8,12 +8,13 @@
 
 | 想了解什么 | 文档 |
 | --- | --- |
+| 配置、软件、插件与本机状态的职责边界 | [架构与维护](docs/architecture.md) |
 | 仓库管理哪些功能、文件在哪里、哪些集成已退役 | [功能总览](docs/features.md) |
 | 更新、软件维护、shell、远程开发和小工具怎么用 | [命令速查](docs/commands.md) |
 | core/full、平台守卫、本机 data 和环境变量 | [本机配置参考](docs/configuration.md) |
 | 首次使用、新 Mac 迁移、SSH、签名与代理 | [多 Mac 迁移](docs/multi-mac.md) |
 | 代码目录、外置盘、仓库清单和克隆 | [Workspace](docs/workspace.md) |
-| Ghostty、iTerm2、快捷键和回退 | [终端](docs/terminals.md) |
+| Ghostty、Herdr、cmux、快捷键和回退 | [终端](docs/terminals.md) |
 | 本地测试、CI、缓存与运行时检查 | [测试说明](docs/testing.md) |
 | 完整安装与系统偏好验收范围 | [macOS VM 验收计划](docs/macos-vm-acceptance.md) |
 | 外部插件、字体和 Miniforge 的版本来源 | [依赖锁](locks/README.md) |
@@ -149,6 +150,9 @@ Miniforge 固定为 `locks/miniforge.json` 的版本，下载后必须通过锁�
 仅管理 `$HOME/opt/miniforge3`（或显式 `--target` 下的同路径）。成功后记录安装器哈希，重复运行不重装；
 没有标记的旧安装需要 `--update-existing`。verify 检查标记和 conda 可运行，
 不声称验证 base 中每个包。已有环境及 conda 环境内的包升级由用户另外规划；不执行 `conda init`。
+
+Herdr 插件使用 `./scripts/software herdr-plugins plan`、`install --yes`、`verify`。
+配置应用不安装插件。准备顺序、失败恢复与逐机验收见[终端说明](docs/terminals.md#herdr)。
 
 ## 首次使用、身份和迁移
 

@@ -110,12 +110,9 @@ sshtmp prune
 
 ### Herdr Machines
 
-在 Herdr 的 Machines 中选择已添加的主机，即可使用远端工作区。
-`herdr machine list` 查看已保存的主机，`herdr machine status` 检查连通性。
-主机清单、SSH 别名和会话数据留在本机，不同步进 dotfiles。
-Claude/Codex 的 Herdr 集成需装在实际运行 agent 的主机上；本机安装不能代替远端安装。
-在对应主机的 dotfiles 目录执行 `sh scripts/manual/herdr-integrations.sh`。
-远端已有 current 集成时不需要重复安装。
+Herdr 的主机清单、SSH 别名和会话留在本机，不同步进 dotfiles。
+共享配置、插件和 agent 集成需在实际运行它们的每台主机准备。
+按[终端说明](terminals.md#herdr)完成安装、验证和每台 Mac 的验收；本机通过不能代替远端通过。
 
 ### 原有 mba 工具
 

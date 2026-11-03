@@ -82,58 +82,59 @@ the source and target, then reload. Keep the private backup outside the reposito
 Herdr 的工作区、标签页和分屏使用 Ctrl+B 前缀；Cmd+T / Cmd+D 仍控制外层 Ghostty。
 Ctrl+B 后按小写 q 只脱离客户端，后台会话继续运行。`herdr server stop` 会停止服务端及其中的进程。
 
-full profile 在 macOS 和 Linux 管理 `~/.config/herdr/config.toml` 的共享偏好：
+full profile 默认在 macOS 和 Linux 管理 `~/.config/herdr/config.toml` 的共享偏好：
 关闭首次引导、Gruvbox 主题、关闭主题自动切换、直接新建标签页、通过终端发送通知。
 Agent 侧栏宽度设为 36，第一行显示状态和 pane 名称，第二行显示 workspace 和机器。
 不再单独显示 Agent 类型和 tab 编号，给任务名称留出空间。
 合并模板保留其他配置键；首次发生差异时会重新格式化 TOML，之后无差异则保留原文。
 在 Herdr 设置页修改上述偏好后，下次 apply 会恢复仓库值。
-Homebrew 软件清单包含 `herdr`；配置 apply 不会自动安装或升级软件。
+本机 `herdr_enabled=false` 可停止管理 Herdr 和 Memex 配置，并从 Homebrew 选择中排除这两个包。
+不删除已有文件、会话或软件。`cmux_enabled=false` 独立停止管理 cmux 配置。
+这两个开关由重新 init 保留，详见[本机配置](configuration.md)。配置 apply 不安装或升级软件。
 
 ### 插件与文件树
 
-在需要使用插件的每台主机执行 `sh scripts/manual/herdr-plugins.sh`。
-脚本按 `locks/herdr-plugins.tsv` 固定的提交安装九个插件，已匹配的安装会跳过。
-应用配置后，脚本还会注册本仓库的 `dotfiles.quick-actions` 本地插件，
-它声明四个工具标签页入口和 Codex 图片粘贴动作，不下载代码或运行常驻后台任务。
-升级时先审阅新提交，再更新锁文件；不要直接用批量 update 绕过锁定版本。
-`glow`、`git-delta` 和 `bat` 提供 Markdown、差异和代码渲染，均列在 Homebrew 清单中。
+在需要使用插件的每台主机先应用共享配置，再从干净的仓库执行：
 
-下列按键都先按 Ctrl+B 并松开，再按表中第二个键：
+```sh
+./scripts/software herdr-plugins plan
+./scripts/software herdr-plugins install --yes
+./scripts/software herdr-plugins verify
+```
 
-| 第二个键 | 操作 |
-| --- | --- |
-| `f` | 在当前项目旁边打开文件树和预览 |
-| `Shift+F` | 在独立标签页打开文件树 |
-| `Ctrl+G` | 打开 / 聚焦 / 关闭 lazygit 分屏 |
-| `Ctrl+T` | 打开 / 切换 / 关闭 lazygit 标签页 |
-| `Shift+Z` | 从 zoxide 常用目录新建工作区、标签页或分屏 |
-| `Shift+O` | 给屏幕上的文件路径和链接标号，选择后预览 |
-| `Ctrl+P` | Herdr Plus 项目布局，预置 Dotfiles 的 Shell / Git 标签页 |
-| `Ctrl+A` | Herdr Plus 弹窗菜单；选中 Claude / Codex 后再新建标签页 |
-| `Ctrl+N` | Navigator：统一找工作区、Agent、目录和快捷操作 |
-| `Shift+M` | Memex：搜索并恢复历史会话 |
-| `Ctrl+R` | Reviewr：查看差异并给 Agent 写逐行批注 |
-| `F1` | 中文快捷键速查表；Mac 可能需要 Fn+F1 |
-| `?` | Herdr 自带按键帮助，显示当前生效绑定 |
+`plan` 只读取状态，先检查所需的 Go/Cargo、jq、本地插件文件、已有注册和补丁条件。
+插件清单与版本以 `locks/herdr-plugins.tsv` 为准，命令显示实际数量和安装差异。
+`install` 跳过已匹配的安装，逐个回读版本，核对 Quicklook 字节后打补丁，最后注册本地插件。
+`verify` 只核对锁定版本、启用状态、本地文件与注册位置、补丁内容，不下载或修复。
+旧命令 `sh scripts/manual/herdr-plugins.sh` 保留为 `install --yes` 的兼容入口。
+
+本地插件文件不一致时，先审查 chezmoi diff 并应用配置。
+缺少 Go、Cargo 或 jq 时，先补齐对应依赖。安装中断后保留已完成的插件，
+再次运行 `plan`、`install --yes` 会继续；不自动回退已安装的软件。
+升级插件时先审阅提交，再改锁文件；Quicklook 同时更新补丁版本与哈希。
+注册源冲突、补丁内容异常时停止，需先检查本机改动。
+命令不重启 Herdr 服务端，不结束已有 agent。
+
+共享快捷键和中文速查表从 `home/.chezmoidata/herdr.json` 的同一份清单生成。
+在 Herdr 中按 `Ctrl+B → F1` 查看日常按键，或打开 `~/.config/herdr/shortcuts.txt`；
+Mac 可能需要 Fn+F1。`Ctrl+B → ?` 查看 Herdr 当前实际绑定。
+新增或修改按键只改清单。删除或重命名 action 时，将旧 command 放入
+`retired_commands`，下次 apply 才会清理旧绑定；不要把用户自定义 command 加入清理清单。
 
 文件树内，方向键展开、折叠和选择，Tab 切换到右侧预览，`f` 找文件，`s` 搜内容，
 `.` 显示隐藏文件，`q` 退出。查看器本身只读，`e` 会打开 Vim 编辑选中文件。
 Quicklook 的自动 agent 建议保持关闭，只在手动调用时打开预览。
 固定版本的提示扫描器会把中文句号及其前面的右括号收入 URL，例如
-`https://example.com/docx/abc)。`。安装脚本会运行 `herdr-quicklook-fix.py`，
+`https://example.com/docx/abc)。`。软件入口会调用共享的 Quicklook 补丁模块，
 在扫描器清理英文括号前先去掉中文句末标点。补丁核对版本和文件哈希、备份原文件，
 重复执行会跳过；升级 Quicklook 时需重新审阅，不盲目套用。
 
-本机 Ghostty + Herdr Local + Codex 0.166.0 中，已实测 `Ctrl+Option+V`
-能直接粘贴剪贴板图片，不需要 Raycast，也不加 Herdr 前缀。普通 `Ctrl+V`
-无响应的拦截点尚未定位；这不等于 Codex 无法读取图片，未做全局按键重映射。
-共享配置另将 Ghostty 的 `Cmd+V` 设为 `performable:super+v=paste_from_clipboard`：
-可粘贴文本时保留原有粘贴路径，没有文本时将按键交给 Herdr。Herdr 的同名直接
-绑定调用本地插件：按触发时捕获的 pane ID，将 Codex 的按键转为 `ctrl+alt+v`，
-其他程序收到原来的 `super+v`，不模拟 Enter、不提交输入。该图片路径针对 Local，
-不增加跨机器剪贴板传输；配置与路由测试通过，本机 Local + Codex 已实测
-Cmd+V 图片和普通文字粘贴均正常。其他主机仍需各自重载并验证。
+共享配置将 Ghostty 的 `Cmd+V` 设为 `performable:super+v=paste_from_clipboard`。
+可粘贴文本时由 Ghostty 处理，没有文本时将按键交给 Herdr。
+本地插件按触发时捕获的 pane ID，将 Codex 的按键转为 `ctrl+alt+v`；
+其他程序收到原来的 `super+v`，不模拟 Enter。图片路径针对 Local，
+不增加跨机器剪贴板传输。`Ctrl+Option+V` 可作为本机 Codex 的备用入口。
+配置测试检查路由与目标 pane，不证明 GUI、输入法和远程图片传输可用。
 启用时先在 Ghostty 按 `Cmd+Shift+,`，再在 Herdr 按 `Ctrl+B → Shift+R` 重载。
 macOS 用 `Ctrl+Cmd+Shift+4` 将选区截图直接复制到剪贴板；
 普通 `Cmd+Shift+4` 默认保存文件，两者不是同一个操作。
@@ -143,7 +144,7 @@ macOS 用 `Ctrl+Cmd+Shift+4` 将选区截图直接复制到剪贴板；
 插件内部通常不加前缀，但 Navigator 的收藏键本身也是 Ctrl+B；当前 overlay
 仍是普通 pane，需要连续按两次 Ctrl+B，才能把一次 Ctrl+B 传给插件。
 
-按 Herdr 0.9.5 内置键位和 Ghostty 实际绑定核对，十二个前缀入口没有重复或
+按 Herdr 0.9.5 内置键位和 Ghostty 实际绑定核对，仓库前缀入口没有重复或
 覆盖内置按键。Shift+N 保留新建工作区，Shift+H 保留交换左侧 pane。
 Ctrl+B → Ctrl+R 打开 Reviewr，Ctrl+B → Shift+R 重新加载配置；普通终端中的
 Ctrl+R 仍供 Shell 搜索历史。Ghostty 的 Cmd+Shift+P 打开外层命令面板。
@@ -180,6 +181,18 @@ Auto Title 的共享偏好位于 `~/.config/herdr-auto-title/config.env`。
 否则本机安装不能代替远端安装。独立 `herdr --remote` 模式需使用
 `--remote-keybindings server`；它与 Machines 切换是两种入口。
 修改客户端设置后，在 Herdr 中按 Ctrl+B、Shift+R 重新加载配置。
+
+### 每台 Mac 的验收
+
+在本机和实际运行 agent 的远端分别完成：
+
+1. 检查本机开关，预览并应用配置，运行 `herdr config check`。
+2. 运行插件 `plan`、显式 `install --yes` 和 `verify`。
+3. 安装需要的 Claude/Codex 集成，运行 `herdr integration status`。
+4. 热加载后，从新启动的 agent 验证侧栏状态、通知和会话恢复。
+5. 本机测试文字与图片粘贴；远端单独测试 Machines、工作区和快捷键。
+
+本机通过不能代替远端通过。CLI 验证不包括实际按键、通知弹出或图片上传。
 
 ### 应用共享配置
 

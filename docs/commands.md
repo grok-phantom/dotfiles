@@ -165,11 +165,9 @@ SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghos
 | Yazi | `h` 上级，`l` smart-enter，`gg` / `G` 首尾，Ctrl+D/U 半页，`yy` 复制、`dd` 剪切、`p` 粘贴，`r` 重命名 |
 | Yazi | `v` 选择，`.` 隐藏文件，`/` 搜索，`:` shell，`t` 新标签，`gt` / `gT` 切换标签 |
 | Ghostty | Shift+Enter 发送 Ctrl+J；其余 Cmd 快捷键见[终端说明](terminals.md) |
-| Herdr | Ctrl+B 后按 C 新建标签页、Shift+N 新建工作区、V / - 分屏、Q 脱离客户端 |
-| Herdr 文件树 | Ctrl+B 后按 F 分屏打开；按 Shift+F 在独立标签页打开；树内 `f` 找文件、`s` 搜内容、`q` 退出 |
+| Herdr | Ctrl+B → F1 打开中文速查表；Ctrl+B → ? 查看当前生效绑定 |
 
-Herdr 的 Machines 中选择已添加的远端主机。`herdr machine list` 查看清单，
-`herdr machine status` 检查连通性。集成安装、通知和恢复说明见[终端说明](terminals.md#herdr)。
+Herdr 的安装、Machines、通知与恢复步骤见[终端说明](terminals.md#herdr)。
 
 这些按键基于安装好的 full 外部资源；语言工具还需对应项目环境。
 
@@ -190,7 +188,7 @@ Herdr 的 Machines 中选择已添加的远端主机。`herdr machine list` 查�
 | `./scripts/verify-terminals` | iTerm2 JSON；macOS 上检查已安装 Ghostty 的配置、字体、主题和搜索能力 |
 | `herdr config check` / `herdr integration status` | Herdr 配置语法 / 本机 agent 集成版本 |
 | `sh scripts/manual/herdr-integrations.sh` | 显式安装或更新本机 Claude/Codex 的 Herdr 集成，保留其他 hooks |
-| `sh scripts/manual/herdr-plugins.sh` | 按锁文件安装九个 Herdr 插件，已匹配的安装跳过；需在使用插件的每台主机执行 |
+| `./scripts/software herdr-plugins plan / install --yes / verify` | 预检 / 显式安装 / 只读验证锁定插件；旧手动脚本保留兼容 |
 | `bash -n scripts/manual/macos-defaults.sh` | 只检查 Bash 入口；Python 实现也需运行 static 检查 |
 | `bash scripts/manual/macos-defaults.sh --check` | 只读比较当前值、类型与期望值，不备份、不重启进程 |
 | `bash scripts/manual/macos-defaults.sh --apply` | 有差异时先备份，再写入并回读验证，重启相关桌面进程 |

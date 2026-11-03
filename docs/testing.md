@@ -121,3 +121,18 @@ cancellation. Missing tools/unsupported dependencies are blocked, not passed.
 `runtime` is separate from `all`: CI need not download plugins or install runtimes.
 This is a smoke test, not GUI/IME or full startup performance acceptance. Run it
 after software or external lock changes; cached asset naming is unchanged.
+
+## Herdr maintenance and configuration
+
+The offline suite uses a fake Herdr CLI and synthetic plugin files. It checks
+full preflight before installation, missing build tools, interrupted-install resume,
+version readback, local registration conflicts, patch hashes and backup/idempotence.
+Real chezmoi renders Herdr/Memex merges, optional flags and retirement migrations;
+the shortcut sheet and bindings are checked against one manifest. Mixed user/managed
+Claude and Codex hook groups must preserve user hooks on enable and disable.
+Clipboard tests capture the target pane and forwarded key without submitting input.
+
+`./scripts/software herdr-plugins verify` separately checks the current host's
+installed pins, enabled state, local source/registration and patched Quicklook bytes.
+It does not install, repair, restart services, validate upstream build artifacts or
+prove GUI behavior. Follow the per-machine acceptance steps in `terminals.md`.
