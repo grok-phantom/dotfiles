@@ -10,8 +10,10 @@
 不要挂载真实 HOME、SSH 密钥、agent 凭据或 Docker socket，不使用 privileged。
 
 ```sh
-# Ubuntu 26.04 amd64 manifest；24.04 可用此前验证的固定 digest。
+# Ubuntu 26.04 amd64 manifest。
 image=ubuntu@sha256:0d5255be560e2d2ddcfbfda88549e9e815ef29e7cd7fc62183d5709e6e2963c6
+# Ubuntu 24.04 的已验证镜像；同样配合 --platform linux/amd64 使用。
+# image=ubuntu@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8
 container=dotfiles-linux-validation
 artifacts="$(mktemp -d)"
 git rev-parse HEAD > "$artifacts/source-commit.txt"
