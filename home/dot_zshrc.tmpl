@@ -42,7 +42,6 @@ ZVM_LINE_INIT_MODE=i
 # Each plugin adds startup time.
 {{- $plugins := list
   "git"
-  "eza"
   "extract"
   "copypath"
   "zsh-vi-mode"
@@ -53,6 +52,9 @@ ZVM_LINE_INIT_MODE=i
   "history"
   "tmux"
 }}
+{{- if lookPath "eza" }}
+{{-   $plugins = mustAppend $plugins "eza" }}
+{{- end }}
 {{- if lookPath "docker" }}
 {{-   $plugins = mustAppend $plugins "docker" }}
 {{- end }}
