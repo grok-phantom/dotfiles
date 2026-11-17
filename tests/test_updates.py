@@ -640,11 +640,16 @@ class TemplateTests(Fixture):
     def test_ssh_config_orders_categories_before_defaults_and_parses(self):
         agent = 'IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'
         path = self.repo/'home/private_dot_ssh/private_config.tmpl'
-        plain = self.chezmoi('core','config','execute-template','--file',path,extra={'ssh_managed':True}).stdout
-        self.assertNotIn('IdentityAgent', plain)
-        includes = [line.split()[1] for line in plain.splitlines() if line.startswith('Include ')]
-        self.assertEqual(includes[1:], ['~/.ssh/config.d/personal.conf', '~/.ssh/config.d/work.conf',
-                                        '~/.ssh/config.d/temp.conf', '~/.ssh/config.d/*.local.conf'])
+        categories = ['~/.ssh/config.d/personal.conf', '~/.ssh/config.d/work.conf',
+                      '~/.ssh/config.d/temp.conf', '~/.ssh/config.d/*.local.conf']
+        for platform in ('darwin', 'linux'):
+            with self.subTest(platform=platform):
+                plain = self.chezmoi('core','config','execute-template','--file',path,
+                    extra={'ssh_managed':True,'chezmoi':{'os':platform}}).stdout
+                self.assertNotIn('IdentityAgent', plain)
+                includes = [line.split()[1] for line in plain.splitlines() if line.startswith('Include ')]
+                expected = ['~/.orbstack/ssh/config'] + categories if platform == 'darwin' else categories
+                self.assertEqual(includes, expected)
         self.assertLess(plain.index('work.conf'), plain.index('Host *'))
         with_agent = self.chezmoi('core','config','execute-template','--file',path,
             extra={'ssh_managed':True,'ssh_1password_agent':True,'chezmoi':{'os':'darwin'}}).stdout

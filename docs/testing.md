@@ -115,6 +115,14 @@ the offline test workflow and does not replace reviewing rendered private data b
 action updates. It does not update Homebrew/apt packages, external plugin/font locks
 or the Miniforge installer lock; those have separate reviewed maintenance paths.
 
+## Ubuntu container installation check
+
+[Ubuntu Docker acceptance](linux-docker.md) starts from an empty amd64 image,
+installs dependencies, initializes chezmoi, repeats core/full apply and runs real
+Zsh/Vim/Tmux/Yazi checks. It is explicitly online and mutating inside the disposable
+container, and is not part of `all` or the hosted offline CI suite. The bootstrap
+also installs jq/rsync so those offline tests do not silently skip.
+
 ## Optional locked-runtime check
 
 ```sh

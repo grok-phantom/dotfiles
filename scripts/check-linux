@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Ubuntu 24.04 x86_64 deployment preflight; never installs or applies."""
+"""Read-only Ubuntu 24.04/26.04 x86_64 deployment preflight; never installs or applies."""
 import argparse
 import json
 import os
@@ -16,8 +16,9 @@ def check(profile, apt=False):
     if platform.system() != 'Linux':
         raise RuntimeError('Run this check on the target Linux host; macOS rendering is not Linux acceptance')
     release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
-    if release.get('ID', '').strip('"') != 'ubuntu' or release.get('VERSION_ID', '').strip('"') != '24.04':
-        raise RuntimeError('This deployment preflight targets Ubuntu 24.04; other distributions need separate checks')
+    version_id = release.get('VERSION_ID', '').strip('"')
+    if release.get('ID', '').strip('"') != 'ubuntu' or version_id not in ('24.04', '26.04'):
+        raise RuntimeError('This deployment preflight targets Ubuntu 24.04/26.04; other distributions need separate checks')
     if platform.machine() != 'x86_64':
         raise RuntimeError('This deployment preflight targets x86_64, not 32-bit x86 or ARM')
     missing = [name for name in ('git', 'chezmoi', 'zsh', 'bash', 'python3', 'ssh', 'curl')
@@ -26,7 +27,7 @@ def check(profile, apt=False):
         raise RuntimeError('Missing prerequisites: ' + ', '.join(missing))
     if sys.version_info < (3, 9):
         raise RuntimeError('Maintenance requires Python 3.9+; offline tests require Python 3.11+')
-    print('Ubuntu 24.04 x86_64: base command prerequisites present')
+    print(f'Ubuntu {version_id} x86_64: base command prerequisites present')
     if profile == 'full':
         for tool in ('vim', 'tmux', 'fzf', 'ctags'):
             if not shutil.which(tool):

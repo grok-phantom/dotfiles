@@ -28,6 +28,11 @@ let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standar
 {{ if lookPath "brew" -}}
 {{ $brew_prefix := (output "brew" "--prefix" | trim) }}
 set rtp+={{ $brew_prefix }}/opt/fzf
+{{ else if eq .chezmoi.os "linux" -}}
+" Ubuntu packages the fzf Vim runtime with its examples.
+if filereadable('/usr/share/doc/fzf/examples/plugin/fzf.vim')
+  set rtp+=/usr/share/doc/fzf/examples
+endif
 {{ end -}}
 
 nmap <leader>c <Plug>OSCYankOperator
