@@ -29,7 +29,15 @@ unset dotfiles_path dotfiles_paths
 export ZSH="$HOME/.oh-my-zsh"
 fpath=("$HOME/.config/zsh/completions" $fpath)
 
-ZSH_THEME="powerlevel10k/powerlevel10k"
+# gitstatus (bundled with powerlevel10k) needs job control, which a shell without a
+# tty cannot enable; it aborts with "can't change option: monitor". Keep the fancy
+# prompt for real terminals and use a plain theme otherwise, so `ssh host 'zsh -lc ...'`
+# and other non-tty invocations stay quiet.
+if [[ -t 0 && -t 1 ]]; then
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+else
+  ZSH_THEME="robbyrussell"
+fi
 # oh-my-zsh is pinned via .chezmoiexternal; never self-update.
 zstyle ':omz:update' mode disabled
 HIST_STAMPS="yyyy-mm-dd"
