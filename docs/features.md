@@ -11,7 +11,7 @@
 | 功能 | 当前提供的行为 | 主要源码 / 使用说明 |
 | --- | --- | --- |
 | 配置更新 | status → fetch → plan → apply → verify；计划绑定提交、渲染结果和目标状态；只允许向前更新 | [scripts/dotfiles](../scripts/dotfiles)、[README](../README.md#更新入口) |
-| 软件维护 | Homebrew / apt 清单安装、升级、检查；独立的 Miniforge、Herdr 插件安装与校验 | [scripts/software](../scripts/software)、[软件清单](../home/.chezmoidata/packages.yaml) |
+| 软件维护 | Homebrew / apt 清单安装、升级、检查；独立的 Miniforge 安装与校验 | [scripts/software](../scripts/software)、[软件清单](../home/.chezmoidata/packages.yaml) |
 | 外部资源 | 固定 commit 和 SHA-256 的插件、主题、字体；显式选择 externals 才下载 | [外部声明](../home/.chezmoiexternal.toml.tmpl)、[依赖锁](../locks/README.md) |
 | Shell | Zsh、共享命令历史、命令提示、vi 模式、目录跳转、可选历史搜索、代理函数 | [Zsh 入口](../home/dot_zshrc.tmpl)、[shell 模块](../home/private_dot_config/zsh/conf.d)、[命令速查](commands.md#shell-日常操作) |
 | Git | 全局身份、个人目录邮箱、可选 SSH 签名、本机 include、自动跟踪与 prune | [Git 配置](../home/private_dot_config/git)、[多 Mac 迁移](multi-mac.md#1password) |
@@ -78,12 +78,7 @@ macOS full 管理 iTerm2 的 `wizplus` Dynamic Profile 和 Ghostty 配置，不�
 默认终端。Ghostty 支持 OSC 52 写剪贴板、长命令完成通知、Shift+Enter 换行，
 并显式启用 SSH 环境/terminfo 集成。快捷键、效果检查和回退见[终端说明](terminals.md)。
 
-full profile 默认管理 Herdr 的共享偏好：Gruvbox、终端通知和直接新建标签页。
-其余配置键保留在本机；machine 清单、会话、日志和 socket 不纳入仓库。
-`herdr_enabled=false` 停止管理 Herdr/Memex，并从 Homebrew 选择中排除两者；
 `cmux_enabled=false` 停止管理 cmux。关闭开关不卸载工具或删除会话。
-插件通过 `scripts/software herdr-plugins` 预检、安装和验证；Claude/Codex 集成按主机显式安装。
-步骤见[Herdr 说明](terminals.md#herdr)。
 
 ## Git、SSH 与远程开发
 

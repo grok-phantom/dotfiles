@@ -104,7 +104,7 @@ def main():
         '--promptChoice', 'Configuration profile=core')
     config = HOME / '.config/chezmoi/chezmoi.toml'
     config.write_text(config.read_text().replace('homebrew = true', 'homebrew = false') +
-                      '\n    herdr_enabled = false\n    cmux_enabled = false\n    ssh_managed = false\n')
+                      '\n    cmux_enabled = false\n    ssh_managed = false\n')
     run('./scripts/check-linux', '--profile', 'core')
     apply_twice('core', 'config')
     run('zsh', '-lic', '[[ -z "$ZSH" ]] && print CORE-SHELL-OK')

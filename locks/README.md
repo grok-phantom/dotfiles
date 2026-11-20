@@ -46,9 +46,6 @@ archive and checksum as `.vim_runtime`. Its explicit target is `.vim/bundle/ale`
 because `.vim_runtime/sources_non_forked` remains locally managed and ignored.
 This adds no upstream version change and does not take over the local directory.
 
-Herdr plugins use `herdr-plugins.tsv`: source repository, full commit, release version.
-`./scripts/software herdr-plugins plan` validates the lock and local prerequisites;
-`install --yes` installs through Herdr and verifies the resulting registration.
 `verify` only reads installed state. The reviewed Quicklook patch revision and hash
 live in `scripts/dotfiles_lib/quicklook.py` and must be reviewed with a lock update.
 The lock pins source commits, not every upstream downloaded binary or build dependency.

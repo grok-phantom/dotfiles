@@ -33,7 +33,6 @@ class LinuxTests(base.Fixture):
                 self.assertNotIn(name, contents)
             for name in ('bin/mba','bin/mba-sync','bin/workspace','.zshrc','.config/git/config'):
                 self.assertIn(name, contents)
-            self.assertEqual('.config/herdr/config.toml' in contents, profile == 'full')
             self.assertEqual('.vimrc' in contents, profile == 'full')
             self.assertNotIn('1Password.app', contents['.config/git/config']['contents'])
             self.assertNotIn('launchctl', contents['.zshrc']['contents'])

@@ -52,9 +52,6 @@ Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 .p10k.zsh
 .condarc
 .config/yazi/**
-.config/herdr/**
-.config/herdr-auto-title/**
-.memex/**
 .config/karabiner/**
 .config/ghostty/**
 .config/cmux/**
@@ -63,15 +60,10 @@ Library/**
 {{ end }}
 
 {{- /* Optional terminal integrations default on for existing full-profile hosts. */}}
-{{ range $key := list "herdr_enabled" "cmux_enabled" }}
+{{ range $key := list "cmux_enabled" }}
 {{   if and (hasKey $ $key) (not (kindIs "bool" (get $ $key))) }}
 {{     fail (printf "%s must be a boolean" $key) }}
 {{   end }}
-{{ end }}
-{{ if and (hasKey . "herdr_enabled") (not .herdr_enabled) }}
-.config/herdr/**
-.config/herdr-auto-title/**
-.memex/**
 {{ end }}
 {{ if and (hasKey . "cmux_enabled") (not .cmux_enabled) }}
 .config/cmux/**

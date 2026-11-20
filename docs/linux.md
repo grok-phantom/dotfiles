@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | core | Git、基础 Zsh、用户命令、pip/uv 配置、仓库内 skills | Git、Python、Zsh、chezmoi；SSH 身份由本机管理 |
 | full + apt | 再增加 Vim/Tmux/OMZ 等配置与 Debian 系基础软件清单 | 锁定外部资源；24.04 另需新版 fzf；Yazi、agent 工具等未在 apt 清单内的软件 |
-| full + Homebrew | 增加可选 CLI 软件，包括新版 fzf、Yazi、Herdr、Memex | 已安装且当前用户可写的 Homebrew；上游所需系统编译工具 |
+| full + Homebrew | 增加可选 CLI 软件，包括新版 fzf、Yazi | 已安装且当前用户可写的 Homebrew；上游所需系统编译工具 |
 
 Ubuntu 24.04 的 apt fzf 为 0.44.x，仓库锁定的 fzf.vim 需要 fzf >= 0.54.0。
 Ubuntu 26.04 的 apt fzf 0.67.x 已满足此版本要求；Yazi 仍不在本仓库 apt 清单中。
@@ -27,7 +27,7 @@ Linux 桌面沿用相同终端配置，桌面环境、终端模拟器、输入�
 
 Linux 不管理 macOS 的 iTerm2、Ghostty、cmux、Karabiner、LaunchAgents、截图/剪贴板上传和 1Password 本地签名助手。
 `mba` 支持交互终端中的 SSH/tmux；无 TTY 的桌面启动只支持 macOS。
-Herdr 可单独启用，终端通知、剪贴板和按键仍需按实际终端验收。
+终端通知、剪贴板和按键仍需按实际终端验收。
 
 ## 按使用场景选择
 
@@ -42,7 +42,7 @@ Herdr 可单独启用，终端通知、剪贴板和按键仍需按实际终端�
 
 `ephemeral=true` 会在初始化时关闭 Homebrew，不会自动减少 full 的插件，
 也不是退出后清理 HOME 的开关。24.04 临时 full 环境仍需要满足新版 fzf 等运行依赖。
-`sudo` 只描述安装权限；SSH、agent、Herdr 等按本机需求分别开启，不由“常用”自动推导。
+`sudo` 只描述安装权限；SSH、agent 等按本机需求分别开启，不由“常用”自动推导。
 
 ## 准备与初始化
 
@@ -71,7 +71,6 @@ chezmoi init --source "$PWD"
 ```toml
 profile = "core"
 homebrew = false
-herdr_enabled = false
 cmux_enabled = false
 claude_proxy = false
 ```
@@ -135,7 +134,7 @@ apt 使用 Ubuntu 软件源中的包。部分条目在 universe；先由管理�
 安装要求本机 data.sudo=true。`--interactive` 在当前终端询问 sudo 密码；
 不传时要求非交互 `sudo -n` 可通过。无需为正常终端安装设置永久免密 sudo。
 软件入口只接受 full，默认也是 full；它不改变上面的 core 配置选择。
-APT 清单不安装 chezmoi、Homebrew、Claude、Codex、Herdr、Memex、Yazi 或 Rust 工具链。
+APT 清单不安装 chezmoi、Homebrew、Claude、Codex、Yazi 或 Rust 工具链。
 `bat` 的命令可能为 batcat，fd 为 fdfind，Shell 已做别名适配。
 
 如使用已经准备好的 Homebrew，在本机 data 设置 `homebrew=true`。
@@ -171,8 +170,6 @@ Miniforge 可选，不是使用 Zsh 或系统 Python 的前置条件。
 ```
 
 externals 会下载并校验锁定资源，exact 目录可能清理额外文件，必须审查 diff。
-Herdr 需要时设 `herdr_enabled=true`，按[终端说明](terminals.md#herdr)安装插件和集成。
-Navigator 需要 Cargo，Auto Title/Plus 需要 Go；不能仅凭 Homebrew 软件清单已安装就认为所有插件可用。
 无桌面 SSH 会话不保证系统剪贴板、copypath 或桌面通知可用。
 
 ## 验收边界
@@ -186,5 +183,5 @@ CI 在 Ubuntu 24.04 x86_64 上运行离线测试及 apt 模拟；不安装整份
 有已下载的锁定缓存时，可运行 `./scripts/test runtime --cache /path/to/cache`，
 它仍使用临时 HOME，与真实用户环境验收分开。
 
-切回 core 或关闭 Herdr 不删除已生成的文件，也不卸载软件。恢复方式见
-[配置参考](configuration.md#关闭功能时的行为)和[终端说明](terminals.md#herdr)。
+切回 core 不删除已生成的文件，也不卸载软件。恢复方式见
+[配置参考](configuration.md#关闭功能时的行为)。

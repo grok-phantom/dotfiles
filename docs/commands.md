@@ -45,7 +45,6 @@ package 操作针对真实主机，`--target` 不是包管理器沙箱。
 | `./scripts/software packages verify` | 检查所选包是否安装 |
 | `./scripts/software packages plan --manager apt` | 支持的 Debian 系统用当前本地索引模拟安装 |
 | `./scripts/software packages install --manager apt --yes` | 需要本机 sudo 开关；加 `--interactive` 可输入 sudo 密码，否则需 `sudo -n`；upgrade 同理 |
-| `./scripts/software herdr-plugins plan` / `install --yes` / `verify` | 插件预检、显式安装和只读验证，详见[终端说明](terminals.md#herdr) |
 | `./scripts/software miniforge plan` | 显示固定版本和安装/更新状态 |
 | `./scripts/software miniforge apply --yes` | 下载、核验 SHA-256 后安装；已有匹配标记时跳过重装 |
 | `./scripts/software miniforge apply --yes --update-existing` | 明确允许更新已有 base；先自行备份环境 |
@@ -166,9 +165,6 @@ SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghos
 | Yazi | `h` 上级，`l` smart-enter，`gg` / `G` 首尾，Ctrl+D/U 半页，`yy` 复制、`dd` 剪切、`p` 粘贴，`r` 重命名 |
 | Yazi | `v` 选择，`.` 隐藏文件，`/` 搜索，`:` shell，`t` 新标签，`gt` / `gT` 切换标签 |
 | Ghostty | Shift+Enter 发送 Ctrl+J；其余 Cmd 快捷键见[终端说明](terminals.md) |
-| Herdr | Ctrl+B → F1 打开中文速查表；Ctrl+B → ? 查看当前生效绑定 |
-
-Herdr 的安装、Machines、通知与恢复步骤见[终端说明](terminals.md#herdr)。
 
 这些按键基于安装好的 full 外部资源；语言工具还需对应项目环境。
 
@@ -188,9 +184,6 @@ Herdr 的安装、Machines、通知与恢复步骤见[终端说明](terminals.md
 | `./scripts/test cached-externals --cache /path/to/cache` | 已下载锁定资源的校验与临时目标应用 |
 | `./scripts/test runtime --cache /path/to/cache` | 在上述基础上检查 Zsh/Vim/Tmux |
 | `./scripts/verify-terminals` | iTerm2 JSON；macOS 上检查已安装 Ghostty 的配置、字体、主题和搜索能力 |
-| `herdr config check` / `herdr integration status` | Herdr 配置语法 / 本机 agent 集成版本 |
-| `sh scripts/manual/herdr-integrations.sh` | 显式安装或更新本机 Claude/Codex 的 Herdr 集成，保留其他 hooks |
-| `./scripts/software herdr-plugins plan / install --yes / verify` | 预检 / 显式安装 / 只读验证锁定插件；旧手动脚本保留兼容 |
 | `bash -n scripts/manual/macos-defaults.sh` | 只检查 Bash 入口；Python 实现也需运行 static 检查 |
 | `bash scripts/manual/macos-defaults.sh --check` | 只读比较当前值、类型与期望值，不备份、不重启进程 |
 | `bash scripts/manual/macos-defaults.sh --apply` | 有差异时先备份，再写入并回读验证，重启相关桌面进程 |

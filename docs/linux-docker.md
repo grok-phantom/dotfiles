@@ -75,7 +75,7 @@ fzf/Yazi 是测试补充依赖，不会写进生产 apt 清单，也不代表 ap
 `build-essential procps curl file git`。使用普通测试用户和默认前缀
 `/home/linuxbrew/.linuxbrew`，记录官方安装器提交及 SHA-256。
 然后用登录 shell 执行 `python3 /home/tester/repo/tests/check_linux_container.py --manager brew`。
-该路线仍先安装 apt 清单，覆盖重复软件并存的情况；关闭 Herdr/Memex，不验证其服务或插件。
+该路线仍先安装 apt 清单，覆盖重复软件并存的情况；不验证桌面服务或插件。
 
 ## 取证与清理
 

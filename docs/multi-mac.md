@@ -110,12 +110,6 @@ sshtmp prune
 
 ## 远程开发主机
 
-### Herdr Machines
-
-Herdr 的主机清单、SSH 别名和会话留在本机，不同步进 dotfiles。
-共享配置、插件和 agent 集成需在实际运行它们的每台主机准备。
-按[终端说明](terminals.md#herdr)完成安装、验证和每台 Mac 的验收；本机通过不能代替远端通过。
-
 ### 原有 mba 工具
 
 远程开发主机（mba）的 SSH 别名写在本机 `~/.config/mba/host`（第一行，不进 Git），下面几个 `mba*` 命令共用。它们都带 Raycast 头（Raycast 里归在 MBA 组，标题是「MBA · …」），在 Raycast → Settings → Extensions → Script Commands 里 Add Directories 选 `~/bin`，再给各自绑全局快捷键：

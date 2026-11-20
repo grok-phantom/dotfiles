@@ -27,7 +27,7 @@ source tree，而不是通用软件项目。
 - `home/.chezmoiignore.tmpl` 控制不同平台、profile 和本机开关下哪些目标被忽略；
   按机器开启的功能（SSH、Claude、Codex、nori）都在这里守卫。
 - `home/.chezmoitemplates/` 放多个目标共用的模板（代理地址、nori 配置）。
-- `scripts/dotfiles` 管理配置更新；`scripts/software` 管理软件包、Miniforge 和 Herdr 插件。
+- `scripts/dotfiles` 管理配置更新；`scripts/software` 管理软件包和 Miniforge。
   共用实现放在 `scripts/dotfiles_lib/`；`scripts/check-linux` 只读检查 Ubuntu 部署前置条件。
 - `scripts/manual/` 保存单独审查执行的系统偏好；不恢复自动安装脚本。
 - `home/dot_zshrc.tmpl`、`home/dot_zprofile.tmpl` 和
