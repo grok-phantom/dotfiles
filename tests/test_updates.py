@@ -640,7 +640,8 @@ class TemplateTests(Fixture):
     def test_ssh_config_orders_categories_before_defaults_and_parses(self):
         agent = 'IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'
         path = self.repo/'home/private_dot_ssh/private_config.tmpl'
-        categories = ['~/.ssh/config.d/personal.conf', '~/.ssh/config.d/work.conf',
+        categories = ['~/.ssh/config.d/git.conf', '~/.ssh/config.d/hosts.conf',
+                      '~/.ssh/config.d/personal.conf', '~/.ssh/config.d/work.conf',
                       '~/.ssh/config.d/temp.conf', '~/.ssh/config.d/*.local.conf']
         for platform in ('darwin', 'linux'):
             with self.subTest(platform=platform):
@@ -666,6 +667,9 @@ class TemplateTests(Fixture):
         self.assertIn('hostname 192.0.2.10', resolved)
         self.assertIn('forwardagent yes', resolved)
         self.assertIn('serveraliveinterval 30', resolved)
+        (ssh/'config.d/hosts.conf').write_text('Host box\n    ForwardAgent no\n')
+        resolved = self.cmd(['ssh', '-G', '-F', ssh/'config', 'box']).stdout
+        self.assertIn('forwardagent no', resolved)
 
     def test_personal_email_applies_only_under_personal_directory(self):
         extra={'email':'work@example.invalid','personal_email':'me@example.invalid'}
