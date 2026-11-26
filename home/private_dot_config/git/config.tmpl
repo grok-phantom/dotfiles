@@ -39,14 +39,16 @@
 {{- $gh := "gh" -}}
 {{- if lookPath "gh" -}}{{- $gh = lookPath "gh" -}}{{- end -}}
 # automation_git_global: all git on this host runs unattended, like automation_git does for
-# Claude Code: GitHub over HTTPS with gh's token, commits signed with this machine's own key.
+# Claude Code: credentials and signing use this machine's own keys when configured.
 # Last in the file so it wins over the 1Password signer set in personal.conf.
 [credential "https://github.com"]
     helper =
     helper = !{{ $gh }} auth git-credential
+{{ if not (stat (joinPath .chezmoi.homeDir ".ssh/config.d/git.conf")) -}}
 [url "https://github.com/"]
     insteadOf = git@github.com:
     insteadOf = ssh://git@github.com/
+{{ end -}}
 [gpg "ssh"]
     program = ssh-keygen
 [user]

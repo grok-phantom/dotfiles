@@ -1,4 +1,6 @@
 # Managed by chezmoi (dotfiles). Do not add hosts here; each category has its own file:
+#   config.d/git.conf        local Git hosting credentials, before other host identities
+#   config.d/hosts.conf      machine-local authentication settings for existing aliases
 #   config.d/personal.conf   own machines and servers (from the infra repo's fleet.json, or 1Password)
 #   config.d/work.conf       company hosts; only on machines approved for them, never in Git
 #   config.d/temp.conf       short-lived hosts; edit with `sshtmp`, expired entries are pruned
@@ -11,6 +13,8 @@
 Include ~/.orbstack/ssh/config
 {{ end -}}
 
+Include ~/.ssh/config.d/git.conf
+Include ~/.ssh/config.d/hosts.conf
 Include ~/.ssh/config.d/personal.conf
 Include ~/.ssh/config.d/work.conf
 Include ~/.ssh/config.d/temp.conf

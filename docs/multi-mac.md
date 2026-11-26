@@ -63,6 +63,8 @@ Conda 默认直接加载本机 `conda.sh`，只初始化命令，保持仓库关
 
 | 文件 | 类别 | 来源 |
 | --- | --- | --- |
+| `git.conf` | Git 托管平台认证 | 本机维护，按平台指定本机私钥，设置 `IdentityAgent none` |
+| `hosts.conf` | 已有主机别名的认证例外 | 本机维护，可覆盖 agent 转发与登录钥 |
 | `personal.conf` | 自己的机器和服务器 | 设了 `ssh_personal_fleet` 时由本机 infra 仓库的 `fleet.json` 生成；否则设了 `ssh_personal_document` 时从 1Password 文档渲染（可选 `ssh_personal_vault`）；都没设则本机手写，chezmoi 不动 |
 | `work.conf` | 公司主机 | 只在获准的机器上本机手写，永远不进 Git、不进个人 1Password |
 | `temp.conf` | 临时主机 | `sshtmp` 维护，每条带到期日 |
@@ -74,6 +76,8 @@ Transmit 读不了 `.pub` 形式的 `IdentityFile`，另给一个直接指定 1P
 OpenSSH 取第一个匹配的值，所以类别文件都在 `Host *` 默认项之前；某台主机需要例外（如 `ForwardAgent yes`、旧的 `ssh-rsa`）就写在它自己的块里。不存在的文件会被跳过。
 
 `Host *` 默认项：保活、`ControlMaster auto`（套接字在 `~/.ssh/controlmasters/`）、`ForwardAgent no`；macOS 上设 `ssh_1password_agent = true` 再加 1Password SSH agent 的 `IdentityAgent`。
+
+新机器要跑无人值守 Git 时，生成两类独立的钥匙。认证公钥登记到托管平台的账号 SSH 设置，签名公钥登记为 Signing key。私钥留在本机。配置 `git.conf` 后，用清除 `SSH_AUTH_SOCK` 的会话检查提交签名和 `git push --dry-run`，再分别用 `gh auth status`、`glab auth status` 检查建 PR/MR 所需的 API 登录。
 
 临时主机：
 
@@ -101,7 +105,7 @@ sshtmp prune
     ```
     把公钥加到 GitHub → Settings → SSH and GPG keys → **Signing key**（不要加成 Authentication key），并写进本机 data `automation_signing_pubkey`，`allowed_signers` 会多一行用于本地验证。
   - 关掉开关再 apply，只删除这组由它写入的 `GIT_CONFIG_*`；重启 Claude Code 后生效。连服务器的 SSH 仍走 1Password，写主机的操作照旧要人批准。
-  - 无人值守的远程开发主机再设 `automation_git_global = true`：同样的设置写进 `~/.config/git/config` 末尾，终端、Codex 等所有 git 都不再等 1Password（否则 SSH 会话里的 push 和签名每次都要在你面前的 Mac 上批准，人不在就卡住）。代价是这台机器上任何进程都能用 gh 令牌推送、用本机钥签名，所以 gh 令牌要限定到个人仓库。
+  - 无人值守的远程开发主机再设 `automation_git_global = true`，在 `~/.config/git/config` 启用本机签名。配置 `git.conf` 的机器沿用 GitHub SSH remote 和本机钥匙。其余机器用 `gh` 处理改写后的 GitHub HTTPS remote。
 - 主机清单很少变：改 infra 的 `fleet.json`，有 infra 仓库的机器 `chezmoi apply ~/.ssh/config.d/personal.conf`；读 1Password 文档的机器先在 infra 里 `scripts/fleet ssh --publish`，再 apply。
 
 切换前后用 `ssh -G <alias>` 逐个核对 hostname/user/port/proxyjump/identityfile；`ssh -G` 成功不代表能登录。
@@ -150,11 +154,11 @@ Mac 之间（以及家里主机）走 Tailscale，SSH 别名直接指向对方�
 
 ### 远端不弹窗
 
-远端合盖时，任何需要在它屏幕上点的确认都等于卡死。约定：在 SSH 会话里（`SSH_CONNECTION` 非空）需要签名的操作都走转发过来的 agent，1Password 在你面前这台 Mac 上确认：
+远端无人值守时，Git 用本机认证钥和签名钥。临时任务需要转发 agent 时，用 `ssh -A -S none <别名>` 开一条独立连接。如果该别名设了 `IdentityAgent none`，再加 `-o 'IdentityAgent="/path/to/agent.sock"'` 指定要转发的 socket。
 
-- `ssh`（含 `git push` 到 GitHub）：`~/.ssh/config` 的 `Match` 块在 SSH 会话中一律用 `SSH_AUTH_SOCK`；没有可用的转发 agent 时直接失败，不回落到远端的 1Password。
+- SSH 会话里仍使用 agent 的主机从 `SSH_AUTH_SOCK` 读取转发 socket。`git.conf`、`hosts.conf` 中显式指定本机钥的连接可以直接认证。
 - tmux 会话比 SSH 连接活得久，旧 pane 里的 `SSH_AUTH_SOCK` 会失效。`~/.zprofile` 在每次带终端的 SSH 登录时把 `~/.ssh/agent-forwarded.sock` 指向当前的转发 socket，并让后续进程都用这个固定路径；`mba-sync` 这类一次性命令的登录 shell 不改它（否则命令一结束链接就失效），只有链接已经失效时才顺手接上。已有 pane 可能保留旧环境，先在新建会话检查 `SSH_AUTH_SOCK`；不要为刷新变量结束仍有任务的 tmux 服务端。
-- 提交签名：`gpg.ssh.program` 是 `~/bin/git-ssh-sign`，本机用 `op-ssh-sign`，SSH 会话里改用 `ssh-keygen` 经转发 agent 签名。
+- 仍采用 1Password 签名的机器可用 `~/bin/git-ssh-sign` 在本机调用 `op-ssh-sign`，在 SSH 会话中经转发 agent 签名。
 - 远端 Claude Code 自己跑的 git 用 `automation_git`（见上文），完全不需要确认；远端也设上它。
 
 仍会在远端弹窗的：远端执行 `op` / 需要 1Password 的 `chezmoi apply`（1Password CLI 走远端的桌面 App），以及 macOS 钥匙串访问确认（例如 Claude Code 升级后首次读取登录凭据）。这些在远端本机处理一次即可，或在远端选“始终允许”。
