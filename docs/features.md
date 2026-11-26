@@ -24,7 +24,6 @@
 | 远程开发 | 远程 tmux、截图/剪贴板图片上传、Raycast 入口、SSH 内签名 | [远程开发说明](multi-mac.md#远程开发主机) |
 | Claude / Codex | Claude 代理、无人值守 Git、Roost 状态接入；按目标合并已有应用设置 | [Claude 模板](../home/private_dot_claude/modify_private_settings.json)、[Codex hooks](../home/dot_codex/modify_private_hooks.json)、[notify 迁移](../home/dot_codex/modify_private_config.toml) |
 | Agent skills | Claude Code 与 Codex 共用的通用 skill：自写和本地改编的提交在仓库里，与上游一致的列出官方安装命令；另含 Matt Pocock 的 Codex 插件源 | [skill 正本](../home/dot_agents/skills)、[说明](agent-skills.md) |
-| nori | 从密码管理器合并共享策略与本机配置，渲染订阅；定时健康检查与 Bark 通知 | [共享模板](../home/.chezmoitemplates/nori.yaml.tmpl)、[nori-watch](../home/bin/executable_nori-watch)、[使用说明](multi-mac.md#nori-定时检查) |
 | macOS 偏好 | Karabiner 指定键盘映射；独立手动系统偏好脚本 | [Karabiner](../home/private_dot_config/private_karabiner/private_karabiner.json)、[macOS 脚本](../scripts/manual/macos-defaults.sh) |
 | 开发小工具 | JSON 格式化、TCP 监听检查、HTTP 文件服务、直连/代理比较 | [命令速查](commands.md#开发小工具) |
 | 验证与维护 | 本地隔离测试、缓存集成、运行时检查、终端检查、CI、秘密扫描、Dependabot | [测试说明](testing.md)、[分支维护](branches.md) |
@@ -42,12 +41,12 @@ CLI 默认 full，直接 chezmoi 使用本机 `data.profile`，未设置也回�
 | 锁定插件与字体 | 跳过 | 还需选择 `--component externals`；ephemeral 跳过字体 |
 | 仓库内的 agent skills | 管理 | 管理 |
 | iTerm2、Ghostty、Karabiner、LaunchAgents | 跳过 | 仅 macOS |
-| SSH、Claude、Codex、nori 配置 | 由各自本机开关决定 | 由各自本机开关决定 |
+| SSH、Claude、Codex 配置 | 由各自本机开关决定 | 由各自本机开关决定 |
 | `scripts/software` | 拒绝执行 | 显式 plan / install / upgrade / apply / verify |
 
 Linux 跳过截图/剪贴板上传及 macOS 1Password 签名助手；其余工具仍按能力使用。
 Raycast 和 mba 的无 TTY 桌面启动依赖 macOS；
-nori-watch 需已有 nori；Roost 需应用仓库安装的 `~/bin/roost`。
+Roost 需应用仓库安装的 `~/bin/roost`。
 从 full 切换到 core 只忽略可选目标，保留既有文件与软件。所有开关见[配置参考](configuration.md)。
 
 ## Shell、编辑器与终端
@@ -105,10 +104,10 @@ Mac 之间经 Tailscale 互通（`tailscale-app`，无人值守主机用命令�
 这几个命令都可作为 Raycast Script Commands 使用，具体依赖见[远程开发说明](multi-mac.md#远程开发主机)。
 `automation_git_global` 让无人值守的远程主机上所有 git 都不等 1Password 批准。
 
-## 代理、AI 工具与 nori
+## 代理与 AI 工具
 
 代理地址来自同一份 `proxy.json.tmpl`，供 shell 函数、Claude Code、GUI
-LaunchAgent 和 nori-watch 使用。三种入口分别作用于当前 shell、Claude 子进程、
+LaunchAgent 使用。三种入口分别作用于当前 shell、Claude 子进程、
 GUI 登录会话；改变 shell 环境不会同步清理另两处。模板的 NO_PROXY 包含 loopback
 和 Apple 服务域名；应用是否采用环境变量，需在应用内验证。
 
@@ -123,15 +122,6 @@ hooks，并从 Codex notify 中移除旧的 Roost 包装，让 Computer Use 继�
 Claude 目标若已被其他开关共同关闭而
 忽略，需先恢复该目标的管理才能清理，详见[配置参考](configuration.md#关闭功能时的行为)。
 
-nori 配置由 1Password 中的共享策略深度合并 `nori_machine_json`，本机字段覆盖
-共享字段；订阅和 Bark URL 分别渲染到私有目标。目录名由 `nori_config_dir` 选择。
-仓库只提供配置和检查，不安装或重启 nori 服务。
-
-nori-watch 检查状态、维护/恢复标志、刷新结果和刷新年龄；加 `--proxy` 才做
-代理连通性探测，LaunchAgent 会传入这一参数。直连也不可达时跳过代理故障判断，
-但仍报告 nori 自身状态问题。定时器间隔 30 分钟，新问题和全部恢复会通知；
-比较问题时忽略不断增长的刷新小时数，同时保存最新文本用于恢复通知。
-
 ## macOS、软件和验证边界
 
 Karabiner 只为配置中匹配的键盘把右 Option 映射为右 Command；不重映射 Caps Lock。
@@ -141,7 +131,7 @@ Karabiner 只为配置中匹配的键盘把右 Option 映射为右 Command；不
 按键重复、Finder 列表视图/路径栏/状态栏/扩展名和菜单栏项目，并重启相关桌面进程。
 应用和恢复都会先保存托管键的原值，再写入并回读；只恢复托管键，其他设置不受影响。
 无差异时不写入或重启，失败会保留备份并返回非零。需要已有 Python 3.9+，
-命令与备份位置见[操作说明](commands.md#nori验证与手动系统偏好)。
+命令与备份位置见[操作说明](commands.md#验证与手动系统偏好)。
 它不由配置更新或软件安装入口执行；菜单栏使用 macOS 26 的键名，
 不同 macOS 版本对这些 defaults 键的支持需要实际验收。
 

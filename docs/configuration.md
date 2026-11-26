@@ -77,20 +77,6 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 需要迁移时只替换 notify 项，不会重写整份 TOML。
 登录凭据、会话、记忆、其他 Codex 设置和 Roost 程序本身由各工具维护。
 
-## nori 配置与定时检查
-
-| 键 | 默认 / 开启条件 | 作用 |
-| --- | --- | --- |
-| `nori_config_dir` | 未设置时不选择部署目录；支持 nori / nori-mba | 对应 `~/.config/<目录>/nori.yaml` 和订阅文件 |
-| `nori_machine_json` | 默认空 | JSON 字符串，含本机 deployment/target/storage/runtime 等字段；覆盖共享策略 |
-| `nori_watch` | 默认关闭 | 结合非空配置目录，在 macOS full 管理 30 分钟一次的检查 LaunchAgent |
-
-配置目录和 `nori_machine_json` 都有效时才渲染 nori 配置与订阅，渲染需要
-1Password CLI 授权。Bark URL 仅在开启检查且本机 nori 配置也从 1Password
-渲染时托管；否则由用户在本机放置 `~/.config/nori-watch/bark.url`（0600）。
-订阅 URL 和机器字段只写入本机私有目标，不进入公开 source；代理服务由其他部署
-流程管理。说明见[定时检查](multi-mac.md#nori-定时检查)。
-
 ## 运行时环境变量与本机文件
 
 这些是命令启动时的参数，不需要写入 chezmoi data。
@@ -109,9 +95,6 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 | `MBA_TUNNEL_PORT` | 2222；`mba-tunnel` 在远端 127.0.0.1 上监听的端口 |
 | `~/.config/mba/host` | 上述变量和 `-H` 均未指定时，取第一行 |
 | `SSHTMP_FILE` | 默认 `~/.ssh/config.d/temp.conf`；测试可用 `SSHTMP_TODAY` 固定日期 |
-| `NORI_WATCH_NORI` | 默认 `~/.local/bin/nori` |
-| `NORI_WATCH_BARK` | 默认 `~/.config/nori-watch/bark.url` |
-| `NORI_WATCH_STATE` | 默认 `~/.local/state/nori-watch/state.json` |
 | `PYTHON` | 测试入口选择已有 Python 3.11+，不会安装解释器 |
 
 ## 关闭功能时的行为
@@ -120,8 +103,7 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 后台会话和 hooks 保留。需要卸载集成时按[终端回退步骤](terminals.md)单独处理。
 两个开关必须是布尔值，重新 init 会保留；core 始终排除这些配置。
 
-开关通常改变的是管理范围，不是卸载动作。full → core、删除 SSH/nori 的选择值、
-关闭定时检查，都不会自动移除旧文件或已加载的 LaunchAgent；需审查具体目标并
+开关通常改变的是管理范围，不是卸载动作。full → core、删除 SSH 的选择值，都不会自动移除旧文件或已加载的 LaunchAgent；需审查具体目标并
 单独处理已有 job。禁用 GUI 代理还需清理登录会话里已设置的环境并重启应用。
 
 `claude_proxy=false` 不会自动删除 Claude 已有代理 env。

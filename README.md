@@ -23,7 +23,7 @@
 | 分支合并状态、worktree 和清理判断 | [分支维护](docs/branches.md) |
 
 功能包括 Git 身份与签名、Zsh/历史/代理、Vim/Tmux/Yazi、终端与字体、
-Python 工具配置、workspace、SSH 与远程截图、Claude/Codex 集成、nori 配置与检查、
+Python 工具配置、workspace、SSH 与远程截图、Claude/Codex 集成、
 macOS 键盘和手动系统偏好。软件安装与配置应用各有独立入口，下面是日常维护流程。
 
 ## 更新入口

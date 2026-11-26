@@ -84,29 +84,6 @@ Library/**
 {{   end }}
 {{ end }}
 
-{{- /* nori config from 1Password, opt-in per Mac: data.nori_config_dir names the folder its
-       deployment reads (nori or nori-mba) and data.nori_machine_json holds that Mac's own fields. */}}
-{{- $noriDir := get . "nori_config_dir" | default "" }}
-{{ if or (ne $noriDir "nori") (not (get . "nori_machine_json")) }}
-.config/nori
-.config/nori/**
-{{ end }}
-{{ if or (ne $noriDir "nori-mba") (not (get . "nori_machine_json")) }}
-.config/nori-mba
-.config/nori-mba/**
-{{ end }}
-
-{{- /* nori-watch, opt-in per Mac with data.nori_watch (checks the deployment in data.nori_config_dir).
-       The Bark URL renders from 1Password only where nori's config does (data.nori_machine_json);
-       elsewhere put it in ~/.config/nori-watch/bark.url by hand. */}}
-{{ if not (and (get . "nori_watch") $noriDir) }}
-Library/LaunchAgents/local.dotfiles.nori-watch.plist
-.config/nori-watch
-.config/nori-watch/**
-{{ else if not (get . "nori_machine_json") }}
-.config/nori-watch/bark.url
-{{ end }}
-
 {{/* Codex's config is only touched once roost_hooks is set (true or false, so switching it off unwraps). */}}
 {{ if not (hasKey . "roost_hooks") }}
 .codex
