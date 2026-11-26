@@ -1,7 +1,15 @@
-# Retired commands: the old names of the mba-* remote commands, and ssh-lan-reachable (2026-10).
+# Retired commands: the old names of the mba-* remote commands, and ssh-lan-reachable (2026-10);
+# the mba-* remote-dev commands themselves (2026-11, cmux and the mba-home tmux workflow retired).
 bin/rt
 bin/rtunnel
 bin/clip-to-remote
 bin/shot-to-remote
 bin/sync-remote
 bin/ssh-lan-reachable
+bin/mba
+bin/mba-sync
+bin/mba-clip
+bin/mba-shot
+bin/mba-tunnel
+.config/zsh/conf.d/50-tmux.zsh
+bin/tmux-agent-notify

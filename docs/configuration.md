@@ -18,7 +18,6 @@
 | `hostname` | 当前主机名，保留已有值 | 本机模板数据，不应把渲染结果加入公共仓库 |
 | `osid` | 初始化按 OS/发行版计算 | apt 判断支持的 Debian/Ubuntu/Pop!_OS/Raspbian 系统 |
 | `package_cask_groups` | macOS 默认 desktop 加 company 或 personal | 覆盖 cask 组选择；`[]` 表示不选 cask，当前两个角色附加组为空 |
-| `cmux_enabled` | 未设置时 full 默认开启；macOS | 管理 cmux 配置；不改变手动调用 mba 的行为 |
 | `package_cask_exclude` | 默认不排除 | 从选中 cask 中排除包名；不卸载现有软件 |
 
 软件完整清单在 [packages.yaml](../home/.chezmoidata/packages.yaml)。core 的软件入口
@@ -63,7 +62,7 @@ Zsh 在有效的 SSH agent 转发会话中维护 `~/.ssh/agent-forwarded.sock`�
 | `automation_git_global` | 默认关闭 | 把 `automation_git` 的做法用到这台机器上所有 git（终端、Codex 等）：写进 `~/.config/git/config` 末尾，个人目录也用本机签名钥；适合无人值守的远程开发主机 |
 | `automation_signing_pubkey` | 默认空 | 与 `personal_email` 一起增加本地 Git allowed signer；不生成私钥 |
 | `roost_hooks` | 未设置时忽略 Codex；true 开启，显式 false 用于清理 | Claude/Codex 生命周期 hooks，并清理旧 Codex notify 包装；需已安装 `~/bin/roost` |
-| `tmux_agent_notify` | 默认关闭 | Claude 的 Notification/Stop 在 tmux 里写成 OSC 777 通知，供 cmux 远程镜像显示；需 `jq` |
+| `tmux_agent_notify` | 已退役（2026-11，随 cmux） | 保留的旧值只用于下次 apply 时移除 Claude 里 `tmux-agent-notify` 的 hook |
 
 NO_PROXY 列表在 [proxy.json.tmpl](../home/.chezmoitemplates/proxy.json.tmpl) 中共享，
 目前不是单独的 data 选项。`claude_proxy` 不控制 shell 的 proxyon/proxyoff。
@@ -90,18 +89,10 @@ Codex hooks 合并到 `~/.codex/hooks.json`；config.toml 模板只迁移旧 not
 | `SERVE_HERE_BIND` | 127.0.0.1；HTTP 文件服务监听地址 |
 | `WORKSPACE_ROOT` / `WORKSPACE_VOLUME_UUID` / `WORKSPACE_COMPANY` | 覆盖命令的 workspace 根目录、卷校验值和公司目录选择；不改变 chezmoi 符号链接目标 |
 | `~/.config/workspace/repos.tsv` | workspace clone 默认清单；使用自定义 XDG_CONFIG_HOME 时随之改变 |
-| `MBA_HOST` | 所有 `mba*` 命令的远程主机，低于命令行 `-H` 的优先级 |
-| `MBA_APP` | `mba` 无终端时用 cmux（默认）还是 `ghostty` |
-| `MBA_TUNNEL_PORT` | 2222；`mba-tunnel` 在远端 127.0.0.1 上监听的端口 |
-| `~/.config/mba/host` | 上述变量和 `-H` 均未指定时，取第一行 |
 | `SSHTMP_FILE` | 默认 `~/.ssh/config.d/temp.conf`；测试可用 `SSHTMP_TODAY` 固定日期 |
 | `PYTHON` | 测试入口选择已有 Python 3.11+，不会安装解释器 |
 
 ## 关闭功能时的行为
-
-`cmux_enabled=false` 只停止管理对应配置。旧文件、已安装插件、
-后台会话和 hooks 保留。需要卸载集成时按[终端回退步骤](terminals.md)单独处理。
-两个开关必须是布尔值，重新 init 会保留；core 始终排除这些配置。
 
 开关通常改变的是管理范围，不是卸载动作。full → core、删除 SSH 的选择值，都不会自动移除旧文件或已加载的 LaunchAgent；需审查具体目标并
 单独处理已有 job。禁用 GUI 代理还需清理登录会话里已设置的环境并重启应用。

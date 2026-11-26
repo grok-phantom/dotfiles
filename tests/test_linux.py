@@ -28,10 +28,10 @@ class LinuxTests(base.Fixture):
         for profile in ('core','full'):
             contents = json.loads(self.render(profile, 'dump', '--format=json'))
             for name in contents:
-                self.assertFalse(name.startswith(('Library/', '.config/ghostty/', '.config/cmux/', '.config/karabiner/')))
-            for name in ('bin/mba-clip','bin/mba-shot','bin/git-ssh-sign'):
+                self.assertFalse(name.startswith(('Library/', '.config/ghostty/', '.config/karabiner/')))
+            for name in ('bin/git-ssh-sign',):
                 self.assertNotIn(name, contents)
-            for name in ('bin/mba','bin/mba-sync','bin/workspace','.zshrc','.config/git/config'):
+            for name in ('bin/workspace','.zshrc','.config/git/config'):
                 self.assertIn(name, contents)
             self.assertEqual('.vimrc' in contents, profile == 'full')
             self.assertNotIn('1Password.app', contents['.config/git/config']['contents'])
@@ -62,15 +62,6 @@ class LinuxTests(base.Fixture):
         for packages in data.values():
             self.assertEqual(len(packages), len(set(packages)))
 
-    def test_noninteractive_linux_mba_does_not_try_desktop_or_ssh(self):
-        self.mock('uname', 'echo Linux\n')
-        self.mock('ssh', 'touch "$TEST_ROOT/unexpected"\n')
-        result = self.cmd(['bash',base.ROOT/'home/bin/executable_mba','-H','example.invalid'],okay=False)
-        self.assertIn('交互终端',result.stdout)
-        self.assertFalse((self.root/'unexpected').exists())
-
-
-class LinuxPreflight(base.Fixture):
     def test_targeted_check_rejects_mac_and_old_fzf_without_installing(self):
         import importlib.machinery
         import importlib.util

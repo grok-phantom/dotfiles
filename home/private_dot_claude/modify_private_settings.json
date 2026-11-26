@@ -40,12 +40,12 @@
 {{- $changed := false -}}
 {{- /* Managed hook groups, recognised by their command so hooks added by hand are left alone.
        roost_hooks: report agent state to roost (tmux pane options and phone pushes, see the roost repo).
-       tmux_agent_notify: inside tmux, turn Notification/Stop into OSC 777 notifications, which cmux's
-       remote tmux mirror shows per workspace (its own remote hooks carry only the agent state). */ -}}
+       tmux-agent-notify: retired with cmux (2026-11). Always off, so hosts that had tmux_agent_notify
+       set lose its Notification/Stop hooks on the next apply; drop this entry once they have. */ -}}
 {{- $allEvents := list "SessionStart" "UserPromptSubmit" "PreToolUse" "PostToolUse" "PostToolUseFailure" "PermissionRequest" "PermissionDenied" "Notification" "Stop" "StopFailure" "SessionEnd" -}}
 {{- $managed := list
       (dict "command" (printf "%s/bin/roost hook claude" .chezmoi.homeDir) "timeout" 10 "events" $allEvents "on" (get . "roost_hooks"))
-      (dict "command" (printf "%s/bin/tmux-agent-notify" .chezmoi.homeDir) "timeout" 5 "events" (list "Notification" "Stop") "on" (get . "tmux_agent_notify")) -}}
+      (dict "command" (printf "%s/bin/tmux-agent-notify" .chezmoi.homeDir) "timeout" 5 "events" (list "Notification" "Stop") "on" false) -}}
 {{- if and (hasKey $settings "hooks") (not (kindIs "map" (get $settings "hooks"))) -}}
 {{-   fail "Claude settings.json hooks must contain a JSON object" -}}
 {{- end -}}
