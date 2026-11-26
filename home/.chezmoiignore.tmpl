@@ -6,12 +6,9 @@
 .vim_runtime/temp_dirs/**
 
 {{ if ne .chezmoi.os "darwin" }}
-bin/mba-clip
-bin/mba-shot
 bin/git-ssh-sign
 .config/karabiner/**
 .config/ghostty/**
-.config/cmux/**
 Library/**
 {{ end }}
 
@@ -54,19 +51,8 @@ Library/LaunchAgents/local.dotfiles.gui-proxy.plist
 .config/yazi/**
 .config/karabiner/**
 .config/ghostty/**
-.config/cmux/**
 Library/**
 .local/share/fonts/**
-{{ end }}
-
-{{- /* Optional terminal integrations default on for existing full-profile hosts. */}}
-{{ range $key := list "cmux_enabled" }}
-{{   if and (hasKey $ $key) (not (kindIs "bool" (get $ $key))) }}
-{{     fail (printf "%s must be a boolean" $key) }}
-{{   end }}
-{{ end }}
-{{ if and (hasKey . "cmux_enabled") (not .cmux_enabled) }}
-.config/cmux/**
 {{ end }}
 
 {{- /* SSH is opt-in per machine (data.ssh_managed); personal hosts render from the infra checkout's

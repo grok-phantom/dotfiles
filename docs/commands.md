@@ -120,43 +120,6 @@ Python 更新入口使用进程环境，不经过这些 shell 函数。
 `SSHTMP_FILE` 可改变文件位置。`ssh_managed=true` 时主配置会 include 此文件，
 否则需要自行 include。workspace 目录与外置盘规则见[专页](workspace.md)。
 
-## 远程开发
-
-远程开发主机（mba）的命令都以 `mba` 开头，主机名只写在本机。
-
-| 命令 | 行为与前提 |
-| --- | --- |
-| `mba [-H host] [session]` | SSH 登录 shell 中连接/创建 tmux 会话，默认 main；macOS 无 TTY 时镜像进 cmux，或通过 AppleScript 打开 Ghostty 标签页；Raycast 里只显示一行结果 |
-| `mba-clip [-H host] [-s] [image ...]` | macOS 剪贴板图片或文件上传；`-s` 先框选截图 |
-| `mba-shot` | 调用 `mba-clip -s` |
-| `mba-tunnel [-H host] [status \| on [hours] \| off \| toggle]` | 按需打开反向隧道，让远端 `ssh -p 2222 127.0.0.1` 登回本机，默认 2 小时后关闭 |
-| `mba-sync [-H host] [-r] [-n] [--all] [path ...]` | 用 rsync 把 `~` 下的目录或文件复制到远端 `~` 下同一相对路径（默认当前目录，缺的目录自动建）；`-r`（`--pull`）反过来从远端拉回；跳过 `.git`、`.DS_Store` 和 `.gitignore` 忽略的文件（拉取时远端须是 Git 仓库才按 `.gitignore` 过滤），`--all` 全部带上；`-n` 只预览；从不删除文件，接收端更新的文件不覆盖；Raycast 里先选方向，路径留空时用 Finder 选中项 |
-
-签名：
-
-| 命令 | 行为与前提 |
-| --- | --- |
-| `git-ssh-sign` | Git 自动调用的签名适配器：本机用 1Password signer，SSH 会话用 ssh-keygen |
-
-运行 Codex 时，先用 `mba codex` 连接名为 `codex` 的远程会话，再在远端运行 `codex`。
-`mba` 只管理 SSH/tmux 连接，会话名不会自动启动同名程序；远端需已安装 Codex。
-
-cmux 内按 `⌘⇧P` 搜索 `MBA · Tmux`：从临时本地工作区运行 `mba`，
-连接成功后聚焦远端 tmux 工作区并关闭启动页；失败时保留启动页显示错误。
-入口由 dotfiles 的 `~/.config/cmux/cmux.json` 管理，适用于 macOS full profile。
-cmux 0.65.2 的 `⌘N` 强制新建本地工作区，不会在 tmux 镜像主机上新建 session。
-聚焦远端 tmux 镜像工作区后，按 `⌘⌥⇧N` 或在命令面板选择 `Tmux · 新建会话`，
-调用原生 `cmux.newWorkspace` 动作，在该主机上新建 session；在本地工作区调用则新建本地工作区。
-`⌘T` 在当前 session 新建 window。新会话首次 `cd` 到项目目录时，会按目录名自动命名，
-需要远端已应用 dotfiles 的 zsh 配置。此自定义动作不依赖 `cmux ssh` 工作区。
-
-主机优先级：`-H` → `MBA_HOST` → `~/.config/mba/host` 第一行，所有 `mba*` 命令相同。截图工具需要 macOS 截屏/自动化权限与可用
-SSH；上传会更新剪贴板，并在符合条件时把路径输入前台 Ghostty。
-文件扩展名仅接受字母和数字；没有扩展名时使用 `.png`。
-目录创建或上传写入失败时返回错误，保留原剪贴板，不输入上传路径。
-远端 `~/.cache/clip` 超过 7 天的文件在上传后清理；清理失败只在 stderr 提醒，
-已上传的文件仍返回路径并更新剪贴板。设置步骤见[远程开发说明](multi-mac.md#远程开发主机)。
-
 ## 编辑器与文件管理
 
 | 程序 | 自有配置提供的操作 |

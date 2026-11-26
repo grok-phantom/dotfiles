@@ -25,8 +25,7 @@ core/full 区分配置深度，不区分服务器和桌面角色。无桌面的�
 Linux 桌面沿用相同终端配置，桌面环境、终端模拟器、输入法、剪贴板和 GUI 软件需另外安装验收。
 不把 macOS cask 清单套用到 Linux，也不新增角色 profile。
 
-Linux 不管理 macOS 的 iTerm2、Ghostty、cmux、Karabiner、LaunchAgents、截图/剪贴板上传和 1Password 本地签名助手。
-`mba` 支持交互终端中的 SSH/tmux；无 TTY 的桌面启动只支持 macOS。
+Linux 不管理 macOS 的 iTerm2、Ghostty、Karabiner、LaunchAgents 和 1Password 本地签名助手。
 终端通知、剪贴板和按键仍需按实际终端验收。
 
 ## 按使用场景选择
@@ -71,7 +70,6 @@ chezmoi init --source "$PWD"
 ```toml
 profile = "core"
 homebrew = false
-cmux_enabled = false
 claude_proxy = false
 ```
 

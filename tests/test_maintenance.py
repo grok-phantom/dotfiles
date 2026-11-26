@@ -128,21 +128,15 @@ class LocalChoicesTests(base.Fixture):
         self.assertEqual(off['hooks'], {'Stop': [mine]})
         self.assertIsNone(self.render_claude({'claude_proxy': False}, '{}'))
 
-    def test_tmux_agent_notify_hooks_only_notification_and_stop(self):
+    def test_retired_tmux_agent_notify_hooks_are_removed_even_when_still_switched_on(self):
         command = f'{self.target}/bin/tmux-agent-notify'
         mine = {'hooks': [{'type': 'command', 'command': 'say done'}]}
-        current = json.dumps({'hooks': {'Stop': [mine]}})
-        on = self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True}, current)
-        merged = json.loads(on)
-        self.assertEqual(sorted(merged['hooks']), ['Notification', 'Stop'])
-        self.assertEqual(merged['hooks']['Stop'][0], mine)
-        for event in ('Notification', 'Stop'):
-            self.assertEqual(merged['hooks'][event][-1], {'hooks': [{'type': 'command', 'command': command, 'timeout': 5}]})
-        # Next to roost's entries, both stay put on a second apply.
-        both = self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True, 'roost_hooks': True}, on)
-        self.assertEqual(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': True, 'roost_hooks': True}, both), both)
-        off = json.loads(self.render_claude({'claude_proxy': False, 'tmux_agent_notify': False}, on))
-        self.assertEqual(off['hooks'], {'Stop': [mine]})
+        theirs = {'hooks': [{'type': 'command', 'command': command, 'timeout': 5}]}
+        current = json.dumps({'hooks': {'Stop': [mine, theirs], 'Notification': [theirs]}})
+        for data in ({'tmux_agent_notify': True}, {'tmux_agent_notify': False}):
+            with self.subTest(**data):
+                off = json.loads(self.render_claude(dict(claude_proxy=False, **data), current))
+                self.assertEqual(off['hooks'], {'Stop': [mine]})
 
     def render_codex(self, data, content, name='config.toml'):
         self.config.write_text(json.dumps({'data': dict(profile='full', ephemeral=False, claude_proxy=False, **data)}))
@@ -260,15 +254,12 @@ class LocalChoicesTests(base.Fixture):
         directories = ['bin','go/bin','.cargo/bin','.local/bin']
         for name in directories:
             (self.target/name).mkdir(parents=True)
-        # A cmux agent shim found late in PATH must end up ahead of the user directories.
-        shim = self.target/'.cmuxterm/cmux-cli-shims/test'
-        inherited = [p for p in self.env.get('PATH', os.defpath).split(os.pathsep) if 'cmux' not in p]
-        env = dict(self.env, TERM_PROGRAM='', PATH=os.pathsep.join(inherited+[str(shim)]))
+        env = dict(self.env, TERM_PROGRAM='')
         output = self.cmd(['zsh','-f','-c','source ~/.zshrc; source ~/.zshrc; print -l -- $path'],
                           env=env).stdout.splitlines()
         for name in directories:
             self.assertEqual(output.count(str(self.target/name)), 1)
-        self.assertEqual(output[:5], [str(shim)]+[str(self.target/name) for name in directories])
+        self.assertEqual(output[:4], [str(self.target/name) for name in directories])
 
     def test_conda_source_and_explicit_or_missing_script_hook_fallback(self):
         prefix = self.target/'opt/miniforge3'

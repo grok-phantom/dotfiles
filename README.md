@@ -10,12 +10,12 @@
 | --- | --- |
 | 配置、软件、插件与本机状态的职责边界 | [架构与维护](docs/architecture.md) |
 | 仓库管理哪些功能、文件在哪里、哪些集成已退役 | [功能总览](docs/features.md) |
-| 更新、软件维护、shell、远程开发和小工具怎么用 | [命令速查](docs/commands.md) |
+| 更新、软件维护、shell 和小工具怎么用 | [命令速查](docs/commands.md) |
 | core/full、平台守卫、本机 data 和环境变量 | [本机配置参考](docs/configuration.md) |
 | Ubuntu 24.04 x86_64 部署、apt 与 Linux 验收 | [Linux 部署](docs/linux.md) |
 | 首次使用、新 Mac 迁移、SSH、签名与代理 | [多 Mac 迁移](docs/multi-mac.md) |
 | 代码目录、外置盘、仓库清单和克隆 | [Workspace](docs/workspace.md) |
-| Ghostty、cmux、快捷键和回退 | [终端](docs/terminals.md) |
+| Ghostty、快捷键和回退 | [终端](docs/terminals.md) |
 | 本地测试、CI、缓存与运行时检查 | [测试说明](docs/testing.md) |
 | 完整安装与系统偏好验收范围 | [macOS VM 验收计划](docs/macos-vm-acceptance.md) |
 | 外部插件、字体和 Miniforge 的版本来源 | [依赖锁](locks/README.md) |
@@ -23,7 +23,7 @@
 | 分支合并状态、worktree 和清理判断 | [分支维护](docs/branches.md) |
 
 功能包括 Git 身份与签名、Zsh/历史/代理、Vim/Tmux/Yazi、终端与字体、
-Python 工具配置、workspace、SSH 与远程截图、Claude/Codex 集成、
+Python 工具配置、workspace、SSH、Claude/Codex 集成、
 macOS 键盘和手动系统偏好。软件安装与配置应用各有独立入口，下面是日常维护流程。
 
 ## 更新入口
