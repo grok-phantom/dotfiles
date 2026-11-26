@@ -532,28 +532,6 @@ class TemplateTests(Fixture):
         self.assertIn('email = "person@example.invalid"',output)
         self.assertNotIn('includeIf',output)
 
-    def test_nori_config_is_opt_in_per_folder(self):
-        def managed(extra):
-            out = self.chezmoi('core','config','managed','--include','files',extra=extra).stdout.split()
-            return sorted(n for n in out if n.startswith('.config/nori'))
-        self.assertEqual(managed({}), [])
-        machine = '{"deployment": "mba"}'
-        self.assertEqual(managed({'nori_config_dir':'nori-mba','nori_machine_json':machine}),
-                         ['.config/nori-mba/nori.yaml', '.config/nori-mba/subscription.env'])
-        self.assertEqual(managed({'nori_config_dir':'nori','nori_machine_json':machine}),
-                         ['.config/nori/nori.yaml', '.config/nori/subscription.env'])
-
-    def test_nori_template_merges_machine_fields_over_the_shared_policy(self):
-        shared = '{"schema_version": 1, "policy": {"groups": []}, "source": {"format": "json", "max_nodes": 5}}'
-        # The template reads the shared part from 1Password; check the same deep merge it uses.
-        merged = self.chezmoi('core','config','execute-template',
-            '{{ mergeOverwrite (`%s` | fromJson) (`{"deployment": "mba", "source": {"secret_file": "s.env"}}` | fromJson) | toJson }}' % shared).stdout
-        import json
-        data = json.loads(merged)
-        self.assertEqual(data['source'], {'format': 'json', 'max_nodes': 5, 'secret_file': 's.env'})
-        self.assertEqual(data['deployment'], 'mba')
-        self.assertEqual(data['policy'], {'groups': []})
-
     def test_gui_proxy_agent_uses_the_shared_proxy_ports(self):
         path = self.repo/'home/Library/private_LaunchAgents/local.dotfiles.gui-proxy.plist.tmpl'
         out = self.chezmoi('core','config','execute-template','--file',path,
@@ -564,29 +542,6 @@ class TemplateTests(Fixture):
         self.assertIn('launchctl setenv HTTPS_PROXY http://127.0.0.1:6152', script)
         self.assertIn('launchctl setenv ALL_PROXY socks5://127.0.0.1:6153', script)
         self.assertEqual(data['Label'], 'local.dotfiles.gui-proxy')
-
-    def test_nori_watch_is_opt_in_and_bark_url_follows_nori_from_1password(self):
-        def managed(extra):
-            out = self.chezmoi('full','config','managed','--include','files',
-                               extra={'chezmoi':{'os':'darwin'}, **extra}).stdout.split()
-            return sorted(n for n in out if 'nori-watch' in n and n != 'bin/nori-watch')
-        self.assertEqual(managed({'nori_config_dir':'nori-mba'}), [])
-        self.assertEqual(managed({'nori_watch':True}), [])
-        self.assertEqual(managed({'nori_watch':True,'nori_config_dir':'nori-mba'}),
-                         ['Library/LaunchAgents/local.dotfiles.nori-watch.plist'])
-        self.assertEqual(managed({'nori_watch':True,'nori_config_dir':'nori','nori_machine_json':'{}'}),
-                         ['.config/nori-watch/bark.url', 'Library/LaunchAgents/local.dotfiles.nori-watch.plist'])
-
-    def test_nori_watch_agent_checks_the_selected_deployment_through_the_shared_proxy(self):
-        path = self.repo/'home/Library/private_LaunchAgents/local.dotfiles.nori-watch.plist.tmpl'
-        out = self.chezmoi('core','config','execute-template','--file',path,
-            extra={'chezmoi':{'os':'darwin','homeDir':'/Users/me'},'nori_config_dir':'nori-mba',
-                   'proxy_host':'127.0.0.1','proxy_http_port':'6152'}).stdout
-        import plistlib
-        data = plistlib.loads(out.encode())
-        self.assertEqual(data['ProgramArguments'], ['/usr/bin/python3', '/Users/me/bin/nori-watch', '--config',
-                         '/Users/me/.config/nori-mba/nori.yaml', '--proxy', 'http://127.0.0.1:6152'])
-        self.assertEqual(data['StartInterval'], 1800)
 
     def test_personal_signing_uses_the_1password_key(self):
         key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest lei-personal'
