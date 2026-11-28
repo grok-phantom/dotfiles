@@ -39,3 +39,15 @@ cxt() {
   local dir="$HOME/workspace/scratch/$name"
   mkdir -p -- "$dir" && builtin cd -- "$dir" && command codex "$@"
 }
+
+# A headless SSH session can write the client terminal's clipboard via OSC 52.
+if [[ $OSTYPE == linux* && -n $SSH_TTY ]] && (( $+functions[detect-clipboard] )) && ! detect-clipboard; then
+  clipcopy() {
+    local encoded
+    encoded=$(command base64 -w 0 < "${1:-/dev/stdin}") || return
+    printf '\033]52;c;%s\007' "$encoded" > /dev/tty
+  }
+
+  # Oh My Zsh's paste detection redefines both functions. Keep it in a subshell.
+  clippaste() ( detect-clipboard; clippaste "$@" )
+fi
